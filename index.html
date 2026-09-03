@@ -1585,10 +1585,78 @@
       else { dot.style.background = '#46d7ad'; live.textContent = 'LIVE'; live.style.color = '#238e70'; live.style.background = '#e8f7f1'; copy.textContent = '已连接 QMS 数据源 · 每 5 分钟自动同步'; }
     }
 
+    function slimRecord(r) {
+      return {
+        orderNumber: r.orderNumber, materialNumber: r.materialNumber, materialName: r.materialName,
+        materialCategory: r.materialCategory, supplierName: r.supplierName, supplierCode: r.supplierCode,
+        qty: r.qty, expeditedFlagName: r.expeditedFlagName, createDate: r.createDate,
+        inspectorName: r.inspectorName, taskName: r.taskName, inspectionStatus: r.inspectionStatus,
+        inspectionStatusName: r.inspectionStatusName, syncInspectionResultName: r.syncInspectionResultName,
+        totalTime: r.totalTime
+      };
+    }
+    function renderAll() {
+      renderKpis();
+      setFlowRange(currentFlowRange);
+      renderTrend();
+      renderResultStats();
+      renderInspectors();
+      renderSupplierSummary();
+      renderSupplierRankings();
+      renderSupplierDetail();
+      renderAlerts();
+      renderTableRows();
+      applyFilters();
+      updateDatePill();
+      $('#lastRefresh').textContent = currentTimeString();
+    }
+    function computeDerived(records, active, overdueTotal) {
+      const today = todayStr();
+      const mp = monthPrefix(0), pmp = monthPrefix(-1);
+      DASH.records = records;
+      DASH.today = records.filter((r) => r.createDate === today);
+      DASH.week = records.filter((r) => (r.createDate || '') >= daysAgoStr(6));
+      DASH.month = records.filter((r) => (r.createDate || '').startsWith(mp));
+      DASH.prevMonth = records.filter((r) => (r.createDate || '').startsWith(pmp));
+      DASH.byDate = {};
+      records.forEach((r) => { const k = r.createDate; (DASH.byDate[k] = DASH.byDate[k] || []).push(r); });
+      DASH.flow.today = computeFlow(DASH.today);
+      DASH.flow.week = computeFlow(DASH.week);
+      DASH.flow.month = computeFlow(DASH.month);
+      DASH.resultStats = computeResultStats(DASH.month);
+      const prevRs = computeResultStats(DASH.prevMonth);
+      DASH.prevPassRate = prevRs.total > 0 ? prevRs.passRate : null;
+      DASH.suppliers = computeSuppliers(DASH.month);
+      const act = active || records.filter((r) => r.inspectionStatus === '0');
+      DASH.inspectors = computeInspectors(act);
+      DASH.alerts = computeAlerts();
+      DASH.pendingTotal = act.length;
+      if (overdueTotal != null) DASH.overdueTotal = overdueTotal;
+    }
+    function loadCachedDash() {
+      try {
+        const raw = localStorage.getItem('qms_dash_cache');
+        if (!raw) return false;
+        const data = JSON.parse(raw);
+        if (data && data.records && data.records.length) {
+          computeDerived(data.records, null, data.overdueTotal);
+          renderAll();
+          return true;
+        }
+      } catch (e) {}
+      return false;
+    }
+    function saveDashCache() {
+      try {
+        localStorage.setItem('qms_dash_cache', JSON.stringify({ ts: Date.now(), records: DASH.records.map(slimRecord), overdueTotal: DASH.overdueTotal }));
+      } catch (e) {}
+    }
     async function loadDashboardData(silent = false) {
       if (qmsLoading) return;
       qmsLoading = true;
-      setSyncState(true);
+      // 先用本地缓存立即渲染，打开即见上次数据
+      const fromCache = loadCachedDash();
+      if (!fromCache) setSyncState(true);
       try {
         await qmsLogin();
         const today = todayStr();
@@ -1598,44 +1666,16 @@
         ]);
         const map = new Map();
         [...recent, ...active].forEach((r) => { if (r.orderNumber) map.set(r.orderNumber, r); });
-        DASH.records = Array.from(map.values()).sort((a, b) => (b.createDate || '').localeCompare(a.createDate || ''));
-        const mp = monthPrefix(0), pmp = monthPrefix(-1);
-        DASH.today = DASH.records.filter((r) => r.createDate === today);
-        DASH.week = DASH.records.filter((r) => (r.createDate || '') >= daysAgoStr(6));
-        DASH.month = DASH.records.filter((r) => (r.createDate || '').startsWith(mp));
-        DASH.prevMonth = DASH.records.filter((r) => (r.createDate || '').startsWith(pmp));
-        DASH.byDate = {};
-        DASH.records.forEach((r) => { const k = r.createDate; (DASH.byDate[k] = DASH.byDate[k] || []).push(r); });
-        DASH.flow.today = computeFlow(DASH.today);
-        DASH.flow.week = computeFlow(DASH.week);
-        DASH.flow.month = computeFlow(DASH.month);
-        DASH.resultStats = computeResultStats(DASH.month);
-        const prevRs = computeResultStats(DASH.prevMonth);
-        DASH.prevPassRate = prevRs.total > 0 ? prevRs.passRate : null;
-        DASH.suppliers = computeSuppliers(DASH.month);
-        DASH.inspectors = computeInspectors(active);
-        DASH.alerts = computeAlerts();
-        DASH.pendingTotal = active.length;
-        DASH.overdueTotal = await qmsCount({ factoryCode: QMS_CONFIG.factoryCode, inspectionStatus: '2' });
-
-        renderKpis();
-        setFlowRange(currentFlowRange);
-        renderTrend();
-        renderResultStats();
-        renderInspectors();
-        renderSupplierSummary();
-        renderSupplierRankings();
-        renderSupplierDetail();
-        renderAlerts();
-        renderTableRows();
-        applyFilters();
-        updateDatePill();
-        $('#lastRefresh').textContent = currentTimeString();
+        const records = Array.from(map.values()).sort((a, b) => (b.createDate || '').localeCompare(a.createDate || ''));
+        const overdueTotal = await qmsCount({ factoryCode: QMS_CONFIG.factoryCode, inspectionStatus: '2' });
+        computeDerived(records, active, overdueTotal);
+        renderAll();
+        saveDashCache();
         setSyncState(false);
       } catch (err) {
         console.error(err);
-        setSyncState(false, err);
-        if (!silent) showToast('数据加载失败：' + (err.message || err));
+        if (fromCache) { setSyncState(false); }
+        else { setSyncState(false, err); if (!silent) showToast('数据加载失败：' + (err.message || err)); }
       } finally { qmsLoading = false; }
     }
 
