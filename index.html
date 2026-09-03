@@ -1668,18 +1668,27 @@
     }
     let tableAutoScrollTimer = null;
     function stopTableAutoScroll() {
-      if (tableAutoScrollTimer) { clearInterval(tableAutoScrollTimer); tableAutoScrollTimer = null; }
+      if (tableAutoScrollTimer) { cancelAnimationFrame(tableAutoScrollTimer); tableAutoScrollTimer = null; }
     }
     function startTableAutoScroll() {
       stopTableAutoScroll();
       const wrap = $('.table-card .table-wrap');
       if (!wrap) return;
-      tableAutoScrollTimer = setInterval(() => {
-        if (wrap.matches(':hover')) return;
-        const max = wrap.scrollHeight - wrap.clientHeight;
-        if (max <= 0) return;
-        wrap.scrollTop = wrap.scrollTop >= max - 1 ? 0 : wrap.scrollTop + 1;
-      }, 40);
+      let last = performance.now();
+      const speed = 40; // 像素/秒
+      const step = (now) => {
+        const dt = Math.min((now - last) / 1000, 0.1);
+        last = now;
+        if (!wrap.matches(':hover')) {
+          const max = wrap.scrollHeight - wrap.clientHeight;
+          if (max > 0) {
+            const next = wrap.scrollTop + speed * dt;
+            wrap.scrollTop = next >= max - 1 ? 0 : next;
+          }
+        }
+        tableAutoScrollTimer = requestAnimationFrame(step);
+      };
+      tableAutoScrollTimer = requestAnimationFrame(step);
     }
     function syncWallboardClasses() {
       document.body.classList.toggle('wallboard-mode', wallboardMode);
