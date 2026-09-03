@@ -1,0 +1,1843 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#f3f6fa" />
+  <title>Q-Insight IQC · 来料质量驾驶舱</title>
+  <style>
+    :root {
+      --bg: #f3f6fa;
+      --card: #ffffff;
+      --card-soft: #f7f9fc;
+      --navy: #0f1e35;
+      --navy-2: #1b2d49;
+      --ink: #182942;
+      --muted: #728198;
+      --subtle: #a2adbd;
+      --line: #e6ebf2;
+      --line-strong: #d8e0eb;
+      --blue: #3977ef;
+      --blue-soft: #eaf1ff;
+      --teal: #14b39e;
+      --teal-soft: #e6f8f5;
+      --green: #2c9b76;
+      --green-soft: #e8f6f0;
+      --amber: #e5a43b;
+      --amber-soft: #fff5de;
+      --red: #e55d68;
+      --red-soft: #ffedef;
+      --purple: #6f72d7;
+      --shadow: 0 14px 40px rgba(15, 30, 53, .055);
+      --shadow-strong: 0 16px 50px rgba(15, 30, 53, .12);
+      --radius: 18px;
+      --radius-sm: 11px;
+      --font-sans: Inter, "SF Pro Display", "Segoe UI", "Noto Sans SC", "Noto Sans Thai", Arial, sans-serif;
+      --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html { background: var(--bg); }
+    body {
+      margin: 0;
+      min-width: 1180px;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--font-sans);
+      -webkit-font-smoothing: antialiased;
+    }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+    a { color: inherit; text-decoration: none; }
+    svg { display: block; }
+
+    .app-shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 244px minmax(0, 1fr);
+    }
+
+    /* Sidebar */
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 26px 16px 18px;
+      color: #53647c;
+      background: #ffffff;
+      border-right: 1px solid var(--line);
+      box-shadow: 9px 0 28px rgba(15, 30, 53, .035);
+      overflow: hidden;
+    }
+    .plant-switch {
+      margin: 4px 4px 24px;
+      padding: 13px 13px 12px;
+      border: 1px solid #f0c4ca;
+      border-radius: 14px;
+      background: #fff8f8;
+      box-shadow: 0 8px 20px rgba(229, 93, 104, .055);
+    }
+    .eyebrow {
+      display: block;
+      margin-bottom: 7px;
+      color: #c45b67;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .plant-name {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      color: #cf3f50;
+      font-size: 14px;
+      font-weight: 650;
+    }
+    .plant-name > span { min-width: 0; line-height: 1.35; }
+    .plant-name svg { color: #d9858e; }
+    .plant-sub {
+      display: block;
+      margin-top: 5px;
+      color: #c87882;
+      font-size: 11px;
+    }
+    .nav-label {
+      margin: 0 11px 10px;
+      color: #8998ad;
+      font-size: 11px;
+      font-weight: 750;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+    .nav-list { display: grid; gap: 4px; }
+    .nav-item {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      min-height: 43px;
+      padding: 0 12px;
+      border-radius: 11px;
+      color: #718198;
+      font-size: 13px;
+      font-weight: 620;
+      transition: .18s ease;
+    }
+    .nav-item svg { flex: 0 0 auto; color: #8a9ab0; }
+    .nav-item:hover { color: var(--ink); background: #f4f7fb; }
+    .nav-item.active {
+      color: var(--ink);
+      background: var(--blue-soft);
+      box-shadow: inset 3px 0 0 var(--blue);
+    }
+    .nav-item.active svg { color: var(--blue); }
+    .nav-badge {
+      min-width: 20px;
+      height: 20px;
+      display: grid;
+      place-items: center;
+      margin-left: auto;
+      padding: 0 6px;
+      border-radius: 99px;
+      color: #cf4353;
+      background: #fff0f2;
+      font-size: 10px;
+      font-weight: 750;
+    }
+    .sidebar-spacer { flex: 1; }
+    .sync-card {
+      margin: 0 4px 14px;
+      padding: 13px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #f8fbff;
+    }
+    .sync-head { display: flex; align-items: center; gap: 8px; }
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      display: inline-block;
+      border-radius: 50%;
+      background: #46d7ad;
+      box-shadow: 0 0 0 4px rgba(70,215,173,.12);
+    }
+    .sync-title { color: var(--ink); font-size: 12px; font-weight: 750; }
+    .sync-live {
+      margin-left: auto;
+      padding: 3px 6px;
+      border-radius: 5px;
+      color: #238e70;
+      background: #e8f7f1;
+      font-family: var(--font-mono);
+      font-size: 8px;
+      font-weight: 800;
+      letter-spacing: .08em;
+    }
+    .sync-copy { margin-top: 9px; color: #7b8ca3; font-size: 11px; line-height: 1.55; }
+    .user-chip {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 8px 9px;
+      border-top: 1px solid var(--line);
+      color: #7b8ca3;
+      font-size: 11px;
+    }
+    .avatar-small, .avatar {
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      color: #fff;
+      background: #5872c9;
+      font-weight: 750;
+    }
+    .avatar-small { width: 27px; height: 27px; font-size: 10px; }
+    .user-chip strong { display: block; color: var(--ink); font-size: 11px; font-weight: 650; }
+    .user-chip span { display: block; margin-top: 2px; color: #8a99ad; font-size: 9px; }
+
+    /* Main */
+    .main { min-width: 0; }
+    .app-shell.sidebar-hidden { grid-template-columns: 0 minmax(0, 1fr); }
+    .sidebar { width: 244px; transition: width .24s ease, transform .24s ease, opacity .2s ease, padding .24s ease; }
+    .sidebar-hidden .sidebar { width: 0; padding-left: 0; padding-right: 0; opacity: 0; transform: translateX(-18px); pointer-events: none; }
+    .topbar {
+      height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 34px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255,255,255,.72);
+    }
+    .topbar-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .sidebar-toggle { flex: 0 0 auto; }
+    .breadcrumbs { display: flex; align-items: center; gap: 9px; color: var(--muted); font-size: 11px; }
+    .breadcrumbs strong { color: var(--ink); font-weight: 700; }
+    .breadcrumbs svg { color: #aab5c4; }
+    .top-actions { display: flex; align-items: center; gap: 12px; }
+    .locale-switch {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      padding: 3px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: #fff;
+    }
+    .locale-switch button {
+      height: 27px;
+      padding: 0 9px;
+      border: 0;
+      border-radius: 6px;
+      color: var(--muted);
+      background: transparent;
+      font-size: 10px;
+      font-weight: 700;
+    }
+    .locale-switch button.active { color: #fff; background: var(--navy); }
+    .icon-button {
+      width: 32px;
+      height: 32px;
+      display: grid;
+      place-items: center;
+      padding: 0;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      color: var(--muted);
+      background: #fff;
+    }
+    .icon-button:hover { color: var(--blue); border-color: #b8cdfa; background: var(--blue-soft); }
+    .wallboard-button { color: var(--blue); border-color: #cbdafa; background: var(--blue-soft); }
+    .wallboard-button:hover { color: #fff; border-color: var(--blue); background: var(--blue); }
+    .avatar { width: 32px; height: 32px; font-size: 11px; }
+    .content { padding: 28px 34px 32px; }
+    .hero {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 25px;
+    }
+    .kicker { display: flex; align-items: center; gap: 8px; color: var(--teal); font-size: 11px; font-weight: 800; letter-spacing: .06em; }
+    .kicker .live-dot { width: 6px; height: 6px; box-shadow: 0 0 0 3px rgba(20,179,158,.1); }
+    h1 { margin: 8px 0 7px; color: var(--navy); font-size: 29px; font-weight: 790; letter-spacing: -.055em; line-height: 1.1; }
+    .hero-copy { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
+    .factory-context { display: flex; align-items: center; gap: 7px; margin-top: 11px; color: var(--muted); font-size: 10px; }
+    .factory-context svg { flex: 0 0 auto; color: var(--teal); }
+    .factory-context strong { min-width: 0; overflow: hidden; color: var(--ink); font-family: var(--font-mono); font-size: 9px; font-weight: 760; letter-spacing: -.02em; text-overflow: ellipsis; white-space: nowrap; }
+    .hero-actions { display: flex; align-items: center; gap: 9px; }
+    .date-pill {
+      height: 38px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      color: var(--muted);
+      background: #fff;
+      font-size: 11px;
+      font-weight: 650;
+    }
+    .date-pill svg { color: var(--blue); }
+    .btn {
+      height: 38px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 0 13px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      color: var(--muted);
+      background: #fff;
+      font-size: 11px;
+      font-weight: 720;
+      transition: .18s ease;
+    }
+    .btn:hover { color: var(--blue); border-color: #b8cdfa; background: var(--blue-soft); }
+    .btn.primary { color: #fff; border-color: var(--blue); background: var(--blue); box-shadow: 0 8px 17px rgba(57,119,239,.18); }
+    .btn.primary:hover { color: #fff; background: #2c68dd; }
+    .btn.is-loading svg { animation: spin .7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* KPI row */
+    .kpi-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 13px; margin-bottom: 15px; }
+    .card {
+      border: 1px solid rgba(216,224,235,.78);
+      border-radius: var(--radius);
+      background: var(--card);
+      box-shadow: var(--shadow);
+    }
+    .kpi-card { position: relative; min-height: 139px; padding: 17px 18px 15px; overflow: hidden; }
+    .kpi-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+    .kpi-label { color: var(--muted); font-size: 11px; font-weight: 650; }
+    .kpi-icon {
+      width: 30px;
+      height: 30px;
+      display: grid;
+      place-items: center;
+      border-radius: 10px;
+    }
+    .kpi-icon.blue { color: var(--blue); background: var(--blue-soft); }
+    .kpi-icon.teal { color: var(--teal); background: var(--teal-soft); }
+    .kpi-icon.amber { color: var(--amber); background: var(--amber-soft); }
+    .kpi-icon.red { color: var(--red); background: var(--red-soft); }
+    .kpi-icon.purple { color: var(--purple); background: #efefff; }
+    .kpi-value { margin-top: 13px; color: var(--navy); font-size: 27px; font-weight: 780; letter-spacing: -.05em; line-height: 1; }
+    .kpi-value small { margin-left: 3px; color: var(--muted); font-size: 11px; font-weight: 650; letter-spacing: 0; }
+    .kpi-foot { display: flex; align-items: center; gap: 8px; margin-top: 13px; color: var(--muted); font-size: 10px; }
+    .trend-up, .trend-down, .trend-flat { font-weight: 750; }
+    .trend-up { color: var(--green); }
+    .trend-down { color: var(--red); }
+    .trend-flat { color: var(--amber); }
+    .micro-bars { position: absolute; right: 17px; bottom: 16px; display: flex; align-items: flex-end; gap: 3px; height: 26px; opacity: .65; }
+    .micro-bars i { display: block; width: 3px; border-radius: 5px; background: var(--blue); }
+    .micro-bars i:nth-child(1) { height: 8px; opacity: .35; }
+    .micro-bars i:nth-child(2) { height: 13px; opacity: .45; }
+    .micro-bars i:nth-child(3) { height: 18px; opacity: .6; }
+    .micro-bars i:nth-child(4) { height: 24px; }
+    .micro-bars.teal i { background: var(--teal); }
+    .micro-bars.amber i { background: var(--amber); }
+    .micro-bars.red i { background: var(--red); }
+    .micro-bars.purple i { background: var(--purple); }
+
+    /* Overview cards */
+    .overview-grid { display: grid; grid-template-columns: minmax(350px, 1.18fr) minmax(430px, 1.48fr) minmax(275px, .86fr); gap: 15px; margin-bottom: 15px; }
+    .overview-card { min-height: 275px; padding: 20px 21px; }
+    .card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
+    .card-title { margin: 0; color: var(--navy); font-size: 15px; font-weight: 760; letter-spacing: -.025em; }
+    .card-subtitle { margin: 5px 0 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
+    .segmented { display: flex; gap: 3px; padding: 3px; border: 1px solid var(--line); border-radius: 8px; background: var(--card-soft); }
+    .segmented button {
+      height: 24px;
+      padding: 0 8px;
+      border: 0;
+      border-radius: 5px;
+      color: var(--muted);
+      background: transparent;
+      font-size: 10px;
+      font-weight: 720;
+    }
+    .segmented button.active { color: var(--navy); background: #fff; box-shadow: 0 2px 6px rgba(15,30,53,.08); }
+    .flow-body { display: grid; grid-template-columns: 1fr .95fr; align-items: center; gap: 12px; height: 202px; }
+    .donut-wrap { display: grid; place-items: center; }
+    .donut {
+      position: relative;
+      width: 151px;
+      height: 151px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: conic-gradient(var(--blue) 0 4%, var(--teal) 4% 9%, #77a4f3 9% 96%, var(--red) 96% 100%);
+      transform: rotate(-17deg);
+    }
+    .donut::before { content: ""; position: absolute; width: 111px; height: 111px; border-radius: 50%; background: #fff; }
+    .donut-core { position: relative; z-index: 1; display: grid; place-items: center; transform: rotate(17deg); }
+    .donut-core strong { color: var(--navy); font-size: 27px; font-weight: 790; letter-spacing: -.06em; }
+    .donut-core span { margin-top: 3px; color: var(--muted); font-size: 10px; }
+    .donut-caption { margin-top: 12px; color: var(--muted); font-size: 10px; text-align: center; }
+    .status-stack { display: grid; gap: 11px; }
+    .status-row { display: grid; grid-template-columns: 9px 1fr auto; align-items: center; gap: 8px; }
+    .status-mark { width: 8px; height: 8px; border-radius: 50%; }
+    .status-mark.blue { background: var(--blue); }
+    .status-mark.teal { background: var(--teal); }
+    .status-mark.light-blue { background: #77a4f3; }
+    .status-mark.red { background: var(--red); }
+    .status-name { color: var(--muted); font-size: 11px; }
+    .status-value { color: var(--navy); font-family: var(--font-mono); font-size: 12px; font-weight: 750; }
+    .status-progress { grid-column: 2 / -1; height: 4px; margin-top: -4px; overflow: hidden; border-radius: 5px; background: #eff2f7; }
+    .status-progress i { display: block; height: 100%; border-radius: inherit; }
+    .status-progress i.blue { width: 4%; background: var(--blue); }
+    .status-progress i.teal { width: 7%; background: var(--teal); }
+    .status-progress i.light-blue { width: 96%; background: #77a4f3; }
+    .status-progress i.red { width: 2%; background: var(--red); }
+
+    .trend-summary { display: flex; align-items: flex-end; gap: 8px; margin-top: 15px; }
+    .trend-number { color: var(--navy); font-size: 27px; font-weight: 790; letter-spacing: -.06em; line-height: 1; }
+    .trend-context { color: var(--green); font-size: 10px; font-weight: 750; }
+    .chart-legend { display: flex; align-items: center; gap: 13px; color: var(--muted); font-size: 9px; }
+    .legend-item { display: flex; align-items: center; gap: 5px; }
+    .legend-line { width: 17px; height: 3px; border-radius: 4px; background: var(--blue); }
+    .legend-line.teal { background: var(--teal); }
+    .trend-chart { width: 100%; height: 122px; margin-top: 7px; overflow: visible; }
+    .trend-chart .grid { stroke: #edf1f6; stroke-width: 1; }
+    .trend-chart .axis-label { fill: #a1acbb; font-family: var(--font-sans); font-size: 9px; }
+    .trend-chart .area { fill: #eef4ff; }
+    .trend-chart .line { fill: none; stroke: var(--blue); stroke-linecap: round; stroke-linejoin: round; stroke-width: 3; }
+    .trend-chart .line-secondary { fill: none; stroke: var(--teal); stroke-dasharray: 4 4; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2; }
+    .trend-chart .point { fill: #fff; stroke: var(--blue); stroke-width: 2.5; }
+    .trend-foot { display: flex; justify-content: space-between; margin-top: -3px; color: var(--subtle); font-size: 9px; }
+    .trend-note { display: flex; align-items: center; gap: 7px; margin-top: 10px; padding: 7px 9px; border-radius: 8px; color: #3e6e9b; background: #f1f7ff; font-size: 9px; line-height: 1.4; }
+    .trend-note svg { flex: 0 0 auto; color: var(--blue); }
+
+    .alert-card { padding: 20px 19px; }
+    .alert-count { padding: 5px 7px; border-radius: 6px; color: var(--red); background: var(--red-soft); font-size: 9px; font-weight: 750; white-space: nowrap; }
+    .alert-list { display: grid; gap: 4px; margin-top: 14px; }
+    .alert-item { display: grid; grid-template-columns: 27px 1fr; align-items: center; gap: 9px; padding: 9px 0; border-bottom: 1px solid #f0f2f6; }
+    .alert-item:last-child { border-bottom: 0; }
+    .alert-icon { width: 27px; height: 27px; display: grid; place-items: center; border-radius: 8px; color: var(--amber); background: var(--amber-soft); }
+    .alert-item.danger .alert-icon { color: var(--red); background: var(--red-soft); }
+    .alert-item.info .alert-icon { color: var(--blue); background: var(--blue-soft); }
+    .alert-main { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+    .alert-title { color: var(--ink); font-size: 10px; font-weight: 700; }
+    .alert-time { color: var(--subtle); font-size: 9px; white-space: nowrap; }
+    .alert-copy { margin-top: 3px; overflow: hidden; color: var(--muted); font-size: 9px; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
+    .alert-link { display: inline-flex; align-items: center; gap: 5px; margin-top: 9px; border: 0; color: var(--blue); background: transparent; font-size: 10px; font-weight: 750; }
+    .alert-link:hover { color: var(--navy); }
+
+    /* Table */
+    .table-card { overflow: hidden; margin-bottom: 15px; }
+    .table-toolbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding: 20px 21px 15px; }
+    .table-toolbar .card-subtitle { margin-top: 6px; }
+    .filters { display: flex; align-items: center; gap: 7px; }
+    .search-box { position: relative; display: flex; align-items: center; }
+    .search-box svg { position: absolute; left: 10px; color: #99a7b8; pointer-events: none; }
+    .search-box input, .filter-select {
+      height: 34px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      outline: 0;
+      color: var(--ink);
+      background: #fff;
+      font-size: 10px;
+      font-weight: 600;
+    }
+    .search-box input { width: 190px; padding: 0 10px 0 31px; }
+    .search-box input::placeholder { color: #a5afbd; }
+    .search-box input:focus, .filter-select:focus { border-color: #99b8f8; box-shadow: 0 0 0 3px rgba(57,119,239,.08); }
+    .filter-select { min-width: 92px; padding: 0 26px 0 9px; }
+    .filter-toggle { height: 34px; padding: 0 10px; }
+    .filter-toggle.active { color: var(--red); border-color: #f1b5bb; background: var(--red-soft); }
+    .table-meta { display: flex; align-items: center; justify-content: space-between; padding: 0 21px 12px; color: var(--muted); font-size: 9px; }
+    .table-meta-left { display: flex; align-items: center; gap: 7px; }
+    .table-meta-left .live-dot { width: 5px; height: 5px; box-shadow: 0 0 0 3px rgba(70,215,173,.1); }
+    .table-wrap { width: 100%; overflow-x: auto; border-top: 1px solid var(--line); }
+    table { width: 100%; min-width: 1430px; border-collapse: collapse; table-layout: fixed; }
+    th, td { border-bottom: 1px solid #eef1f5; text-align: left; }
+    th { height: 40px; padding: 0 10px; color: #8996a8; background: #f8fafc; font-size: 9px; font-weight: 750; white-space: nowrap; }
+    th:first-child, td:first-child { padding-left: 21px; }
+    th:last-child, td:last-child { padding-right: 21px; }
+    th[data-sort] { cursor: pointer; user-select: none; }
+    th[data-sort]:hover { color: var(--blue); }
+    .th-wrap { display: inline-flex; align-items: center; gap: 4px; }
+    .sort-arrow { color: #bdc7d3; font-size: 8px; }
+    td { height: 47px; padding: 0 10px; color: #55657c; font-size: 10px; font-weight: 570; white-space: nowrap; }
+    tbody tr { transition: .15s ease; }
+    tbody tr:hover { background: #fbfdff; }
+    tbody tr.urgent { background: #fffafa; }
+    tbody tr.urgent:hover { background: #fff6f6; }
+    tbody tr.urgent td:first-child { box-shadow: inset 3px 0 0 var(--red); }
+    td.mono, .mono { font-family: var(--font-mono); font-size: 9px; letter-spacing: -.03em; }
+    .id-link { color: var(--blue); font-weight: 720; }
+    .id-link:hover { text-decoration: underline; }
+    .material-name { display: block; overflow: hidden; text-overflow: ellipsis; }
+    .factory-cell { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .supplier-cell strong { display: block; color: var(--ink); font-size: 10px; font-weight: 650; }
+    .supplier-cell small { display: block; margin-top: 3px; color: var(--subtle); font-family: var(--font-mono); font-size: 8px; }
+    .qty { color: var(--ink); font-family: var(--font-mono); font-size: 10px; font-weight: 700; }
+    .tag { display: inline-flex; align-items: center; justify-content: center; min-width: 31px; height: 21px; padding: 0 6px; border-radius: 6px; font-size: 9px; font-weight: 730; }
+    .tag.yes { color: var(--red); background: var(--red-soft); }
+    .tag.no { color: var(--muted); background: #f0f3f7; }
+    .status-pill { display: inline-flex; align-items: center; gap: 5px; padding: 5px 7px; border-radius: 6px; font-size: 9px; font-weight: 720; }
+    .status-pill::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+    .status-pill.processing { color: var(--blue); background: var(--blue-soft); }
+    .status-pill.pending { color: var(--amber); background: var(--amber-soft); }
+    .status-pill.done { color: var(--green); background: var(--green-soft); }
+    .status-pill.overdue { color: var(--red); background: var(--red-soft); }
+    .status-pill.special { color: #aa7a1d; background: var(--amber-soft); }
+    .status-pill.fail { color: var(--red); background: var(--red-soft); }
+    .status-pill.pass { color: var(--green); background: var(--green-soft); }
+    .action-btn { width: 25px; height: 25px; display: inline-grid; place-items: center; padding: 0; border: 1px solid var(--line); border-radius: 7px; color: var(--muted); background: #fff; }
+    .action-btn:hover { color: var(--blue); border-color: #b8cdfa; background: var(--blue-soft); }
+    .empty-row { display: none; }
+    .empty-row td { height: 92px; color: var(--muted); text-align: center; }
+
+    /* Analytics */
+    .analytics-grid { display: grid; grid-template-columns: 1.05fr .95fr; gap: 15px; }
+    .analytics-card { min-height: 306px; padding: 20px 21px; }
+    .analytics-card .card-head { align-items: flex-start; }
+    .inspector-summary { display: flex; align-items: baseline; gap: 5px; margin-top: 15px; }
+    .inspector-summary strong { color: var(--navy); font-size: 25px; font-weight: 790; letter-spacing: -.06em; }
+    .inspector-summary span { color: var(--muted); font-size: 10px; }
+    .inspector-columns { display: grid; grid-template-columns: repeat(5, minmax(58px, 1fr)); align-items: end; gap: 10px; height: 176px; margin-top: 10px; padding: 10px 5px 0; border-bottom: 1px solid var(--line); }
+    .inspector-column { flex: none; display: flex; flex-direction: column; align-items: center; justify-content: end; gap: 7px; min-width: 0; height: 100%; }
+    .inspector-column strong { color: var(--navy); font-family: var(--font-mono); font-size: 12px; font-weight: 800; }
+    .inspector-column i { width: 34px; height: var(--h); min-height: 12px; border-radius: 8px 8px 2px 2px; background: var(--amber); box-shadow: 0 5px 12px rgba(229,164,59,.15); }
+    .inspector-column:first-child i { background: var(--blue); box-shadow: 0 5px 12px rgba(57,119,239,.18); }
+    .inspector-column span { width: max-content; max-width: none; overflow: visible; color: var(--muted); font-size: 10px; text-align: center; text-overflow: clip; white-space: nowrap; }
+    .capacity-line { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; padding-top: 13px; border-top: 1px solid var(--line); color: var(--muted); font-size: 9px; }
+    .capacity-line strong { color: var(--ink); font-family: var(--font-mono); font-size: 10px; }
+    .result-content { display: grid; grid-template-columns: 155px 1fr; align-items: center; gap: 7px; min-height: 222px; }
+    .result-donut {
+      position: relative;
+      width: 145px;
+      height: 145px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: conic-gradient(var(--green) 0 92%, var(--amber) 92% 97%, var(--red) 97% 100%);
+      transform: rotate(-18deg);
+    }
+    .result-donut::before { content: ""; position: absolute; width: 107px; height: 107px; border-radius: 50%; background: #fff; }
+    .result-core { position: relative; z-index: 1; display: grid; place-items: center; transform: rotate(18deg); }
+    .result-core strong { color: var(--navy); font-size: 25px; font-weight: 790; letter-spacing: -.06em; }
+    .result-core span { margin-top: 4px; color: var(--muted); font-size: 9px; }
+    .result-legend { display: grid; gap: 12px; }
+    .result-row { display: grid; grid-template-columns: 9px 1fr auto; align-items: center; gap: 7px; }
+    .result-mark { width: 8px; height: 8px; border-radius: 50%; }
+    .result-mark.green { background: var(--green); }
+    .result-mark.amber { background: var(--amber); }
+    .result-mark.red { background: var(--red); }
+    .result-row span { color: var(--muted); font-size: 10px; }
+    .result-row strong { color: var(--navy); font-family: var(--font-mono); font-size: 12px; }
+    .result-row small { grid-column: 2 / -1; margin-top: -5px; color: var(--subtle); font-size: 8px; }
+    .result-foot { display: flex; align-items: center; justify-content: space-between; padding-top: 13px; border-top: 1px solid var(--line); color: var(--muted); font-size: 9px; }
+    .result-foot strong { color: var(--green); font-family: var(--font-mono); font-size: 10px; }
+
+    .supplier-dashboard { margin-top: 15px; padding: 22px 23px 19px; }
+    .supplier-dashboard .card-head { align-items: center; }
+    .supplier-head-actions { display: flex; align-items: center; gap: 8px; }
+    .supplier-wallboard-button, .supplier-wallboard-entry { height: 30px; padding: 0 9px; font-size: 9px; }
+    .supplier-board-body { display: grid; grid-template-columns: minmax(470px, 1.35fr) minmax(360px, .9fr); gap: 25px; margin-top: 18px; }
+    .supplier-chart-panel { min-width: 0; }
+    .supplier-chart-topline { display: flex; justify-content: space-between; color: var(--muted); font-size: 9px; }
+    .supplier-chart-topline strong { color: var(--ink); font-family: var(--font-mono); font-size: 10px; }
+    .supplier-column-chart { display: flex; align-items: end; gap: 14px; height: 247px; margin-top: 8px; padding: 18px 10px 0; overflow-x: auto; border-bottom: 1px solid var(--line); }
+    .supplier-bar-item { flex: 0 0 58px; display: flex; flex-direction: column; align-items: center; justify-content: end; gap: 7px; height: 100%; }
+    .supplier-bar-item strong { color: var(--navy); font-family: var(--font-mono); font-size: 10px; font-weight: 800; }
+    .supplier-bar-item i { width: 40px; height: var(--bar-height); min-height: 22px; border-radius: 10px 10px 2px 2px; background: var(--green); box-shadow: 0 7px 13px rgba(44,155,118,.16); }
+    .supplier-bar-item.is-bottom i { background: var(--red); box-shadow: 0 7px 13px rgba(229,93,104,.14); }
+    .supplier-bar-item span { width: 100%; overflow: hidden; color: var(--muted); font-size: 9px; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
+    .supplier-board-list { min-width: 0; }
+    .supplier-list-head { display: grid; grid-template-columns: 30px 1fr 75px 55px; gap: 7px; padding: 0 8px 8px; border-bottom: 1px solid var(--line); color: var(--subtle); font-size: 9px; font-weight: 700; }
+    .supplier-list-scroll { max-height: 246px; overflow-y: auto; padding: 3px 5px 3px 0; scrollbar-width: thin; scrollbar-color: #cfd9e5 transparent; }
+    .supplier-dashboard .rank-list { margin-top: 0; gap: 3px; }
+    .supplier-dashboard .rank-row { grid-template-columns: 30px minmax(90px,1fr) 75px 55px; min-height: 39px; padding: 0 8px; border-bottom: 1px solid #f0f3f6; }
+    .supplier-dashboard .rank-row:last-child { border-bottom: 0; }
+    .supplier-dashboard .rank-progress { height: 8px; }
+    .supplier-dashboard .rank-score { font-size: 11px; }
+    .supplier-dashboard .rank-footer { margin-top: 14px; }
+    .rank-tabs { display: flex; gap: 3px; padding: 3px; border: 1px solid var(--line); border-radius: 8px; background: var(--card-soft); }
+    .rank-tabs button { height: 24px; padding: 0 8px; border: 0; border-radius: 5px; color: var(--muted); background: transparent; font-size: 9px; font-weight: 720; }
+    .rank-tabs button.active { color: var(--navy); background: #fff; box-shadow: 0 2px 6px rgba(15,30,53,.08); }
+    .rank-list { display: grid; gap: 7px; margin-top: 16px; }
+    .rank-row { display: grid; grid-template-columns: 25px minmax(90px,1fr) 83px 47px; align-items: center; gap: 8px; min-height: 32px; }
+    .rank-no { width: 22px; height: 22px; display: grid; place-items: center; border-radius: 7px; color: var(--muted); background: #f1f4f8; font-family: var(--font-mono); font-size: 9px; font-weight: 750; }
+    .rank-row:nth-child(1) .rank-no { color: #9a6d16; background: #fff2c9; }
+    .rank-row:nth-child(2) .rank-no { color: #657487; background: #e9eef4; }
+    .rank-row:nth-child(3) .rank-no { color: #a96c47; background: #f8e8df; }
+    .rank-supplier { overflow: hidden; color: var(--ink); font-size: 10px; font-weight: 670; text-overflow: ellipsis; white-space: nowrap; }
+    .rank-progress { height: 5px; overflow: hidden; border-radius: 5px; background: #edf1f5; }
+    .rank-progress i { display: block; width: var(--score); height: 100%; border-radius: inherit; background: var(--green); }
+    .rank-row.is-bottom .rank-progress i { background: var(--red); }
+    .rank-score { color: var(--navy); font-family: var(--font-mono); font-size: 10px; font-weight: 750; text-align: right; }
+    .rank-batches { color: var(--subtle); font-family: var(--font-mono); font-size: 8px; text-align: right; }
+    .rank-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 13px; padding-top: 11px; border-top: 1px solid var(--line); color: var(--muted); font-size: 9px; }
+    .rank-footer strong { color: var(--red); font-family: var(--font-mono); font-size: 10px; }
+
+    .page-footer { display: flex; align-items: center; justify-content: space-between; padding: 18px 2px 0; color: #9aa6b6; font-size: 9px; }
+    .page-footer strong { color: var(--muted); font-family: var(--font-mono); font-weight: 700; }
+
+    /* Wallboard mode */
+    .wallboard-bar { position: fixed; top: 12px; left: 50%; right: auto; z-index: 12; display: none; align-items: center; gap: 14px; padding: 7px 8px 7px 11px; border: 1px solid rgba(216,224,235,.92); border-radius: 10px; color: var(--muted); background: rgba(255,255,255,.94); box-shadow: var(--shadow); font-size: 10px; white-space: nowrap; transform: translateX(-50%); backdrop-filter: blur(10px); }
+    .wallboard-status { display: flex; align-items: center; gap: 8px; }
+    .wallboard-status strong { color: var(--ink); font-size: 10px; font-weight: 760; }
+    .wallboard-clock { color: var(--blue); font-family: var(--font-mono); font-size: 10px; font-weight: 750; }
+    .wallboard-exit { height: 27px; display: inline-flex; align-items: center; gap: 5px; padding: 0 8px; border: 1px solid var(--line); border-radius: 7px; color: var(--muted); background: #fff; font-size: 9px; font-weight: 730; }
+    .wallboard-exit:hover { color: var(--red); border-color: #f1b5bb; background: var(--red-soft); }
+    body.wallboard-mode .app-shell { grid-template-columns: minmax(0, 1fr); }
+    body.wallboard-mode .sidebar, body.wallboard-mode .topbar { display: none; }
+    body.wallboard-mode .content { max-width: 1920px; margin: 0 auto; padding: 29px 32px 24px; }
+    body.wallboard-mode .hero,
+    body.wallboard-mode .kpi-grid,
+    body.wallboard-mode .overview-grid,
+    body.wallboard-mode .page-footer { display: none; }
+    body.wallboard-mode .hero { padding-right: 180px; }
+    body.wallboard-mode .wallboard-bar { display: flex; }
+    body.wallboard-mode .content { padding: 18px 24px 16px; }
+    body.wallboard-mode .table-card { min-height: 50vh; display: flex; flex-direction: column; }
+    body.wallboard-mode .table-card .table-wrap { flex: 1; max-height: none; min-height: 0; }
+    body.wallboard-mode .table-card tbody tr { height: 39px; }
+    body.wallboard-mode .table-card { margin-bottom: 10px; }
+    body.wallboard-mode .table-toolbar { padding: 13px 17px 9px; }
+    body.wallboard-mode .table-meta { padding: 0 17px 8px; }
+    body.wallboard-mode .table-wrap { max-height: 238px; overflow-y: auto; }
+    body.wallboard-mode th { height: 32px; }
+    body.wallboard-mode td { height: 35px; }
+    body.wallboard-mode .analytics-grid { gap: 10px; }
+    body.wallboard-mode .analytics-card { min-height: 210px; padding: 14px 16px 12px; }
+    body.wallboard-mode .inspector-summary { margin-top: 7px; }
+    body.wallboard-mode .inspector-columns { height: 105px; gap: 8px; margin-top: 3px; padding-top: 4px; }
+    body.wallboard-mode .inspector-column i { width: 27px; }
+    body.wallboard-mode .capacity-line { margin-top: 7px; padding-top: 8px; }
+    body.wallboard-mode .result-content { grid-template-columns: 108px 1fr; min-height: 126px; }
+    body.wallboard-mode .result-donut { width: 102px; height: 102px; }
+    body.wallboard-mode .result-donut::before { width: 75px; height: 75px; }
+    body.wallboard-mode .result-core strong { font-size: 17px; }
+    body.wallboard-mode .result-core span { font-size: 8px; }
+    body.wallboard-mode .result-legend { gap: 7px; }
+    body.wallboard-mode .result-foot { padding-top: 8px; }
+    body.wallboard-mode .supplier-dashboard { margin-top: 10px; padding: 15px 18px 12px; }
+    body.wallboard-mode .supplier-board-body { gap: 16px; margin-top: 10px; }
+    body.wallboard-mode .supplier-column-chart,
+    body.wallboard-mode .supplier-list-scroll { height: 182px; max-height: 182px; }
+    body.wallboard-mode .supplier-column-chart { padding-top: 10px; }
+    body.wallboard-mode .supplier-dashboard .rank-row { min-height: 28px; }
+    /* Incoming wallboard: task table on top, stacked analytics on the left, supplier quality on the right. */
+    body.wallboard-mode .content {
+      display: grid;
+      grid-template-columns: minmax(0, .92fr) minmax(0, 1.08fr);
+      grid-template-rows: minmax(45vh, 1.15fr) minmax(0, .75fr) minmax(0, .75fr);
+      grid-template-areas: "tasks tasks" "inspector supplier" "result supplier";
+      gap: 14px;
+      height: 100vh;
+      overflow: hidden;
+    }
+    body.wallboard-mode .table-card { grid-area: tasks; min-height: 0; height: auto; margin: 0; }
+    body.wallboard-mode .table-card .table-wrap { flex: 1; max-height: none; }
+    body.wallboard-mode .analytics-grid { display: contents; }
+    body.wallboard-mode .analytics-grid > .analytics-card:first-child { grid-area: inspector; min-width: 0; }
+    body.wallboard-mode .analytics-grid > .analytics-card:nth-child(2) { grid-area: result; min-width: 0; }
+    /* Keep the supplier ranking visible, spanning both lower rows with chart + scrollable list. */
+    body.wallboard-mode .content > .supplier-dashboard#suppliers {
+      display: flex !important;
+      flex-direction: column;
+      visibility: visible !important;
+      opacity: 1 !important;
+      grid-area: supplier;
+      min-width: 0;
+      min-height: 0;
+      height: 100%;
+      overflow: hidden;
+      margin: 0;
+      padding: 17px 18px 13px;
+    }
+    body.wallboard-mode .supplier-wallboard-entry { display: none; }
+    body.wallboard-mode .supplier-board-body {
+      display: grid;
+      grid-template-columns: minmax(0, 1.16fr) minmax(250px, .84fr);
+      align-items: stretch;
+      flex: 1;
+      min-height: 0;
+      gap: 17px;
+      margin-top: 13px;
+    }
+    body.wallboard-mode .supplier-chart-panel { display: flex !important; flex-direction: column; min-width: 0; min-height: 0; }
+    body.wallboard-mode .supplier-column-chart { flex: 1; height: auto; max-height: none; min-height: 0; gap: 15px; padding: 16px 10px 0; }
+    body.wallboard-mode .supplier-bar-item { flex-basis: 64px; gap: 8px; }
+    body.wallboard-mode .supplier-bar-item i { width: 44px; }
+    body.wallboard-mode .supplier-board-list { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+    body.wallboard-mode .supplier-list-head { grid-template-columns: 29px 1fr 62px 45px; padding: 0 5px 8px; font-size: 10px; }
+    body.wallboard-mode .supplier-list-scroll { flex: 1; height: auto; max-height: none; min-height: 0; }
+    body.wallboard-mode .supplier-dashboard .rank-row { grid-template-columns: 29px minmax(78px,1fr) 62px 45px; min-height: 31px; padding: 0 5px; }
+    body.wallboard-mode .supplier-dashboard .rank-no { width: 22px; height: 22px; font-size: 9px; }
+    body.wallboard-mode .supplier-dashboard .rank-supplier { font-size: 11px; }
+    body.wallboard-mode .supplier-dashboard .rank-score,
+    body.wallboard-mode .supplier-dashboard .rank-batches { font-size: 10px; }
+    body.wallboard-mode .supplier-dashboard .rank-footer { margin-top: 9px; padding-top: 9px; font-size: 10px; }
+    body.wallboard-mode .card-title { font-size: 18px; }
+    body.wallboard-mode .card-subtitle { font-size: 11px; }
+    body.wallboard-mode .table-meta { font-size: 10px; }
+    body.wallboard-mode th { font-size: 10px; }
+    body.wallboard-mode td { font-size: 11px; }
+    body.wallboard-mode .supplier-chart-topline,
+    body.wallboard-mode .supplier-chart-topline strong { font-size: 11px; }
+    body.wallboard-mode .supplier-bar-item strong { font-size: 11px; }
+    body.wallboard-mode .supplier-bar-item span { font-size: 10px; }
+    body.wallboard-mode .inspector-summary strong { font-size: 28px; }
+    body.wallboard-mode .inspector-summary span { font-size: 11px; }
+    body.wallboard-mode .inspector-column strong { font-size: 13px; }
+    body.wallboard-mode .inspector-column span { font-size: 10px; }
+    body.wallboard-mode .capacity-line { font-size: 10px; }
+    body.wallboard-mode .result-row span { font-size: 11px; }
+    body.wallboard-mode .result-row strong { font-size: 13px; }
+    body.wallboard-mode .result-row small { font-size: 9px; }
+    body.wallboard-mode .analytics-card { min-height: 0; overflow: hidden; }
+    body.wallboard-mode .inspector-columns { display: grid; grid-template-columns: repeat(5, minmax(58px, 1fr)); height: clamp(78px, 8.5vh, 105px); gap: 8px; }
+    body.wallboard-mode .inspector-column span { width: max-content; max-width: none; overflow: visible; text-overflow: clip; white-space: nowrap; font-size: 11px; }
+    body.wallboard-mode .result-content { min-height: clamp(106px, 10.2vh, 126px); }
+    body.supplier-wallboard-mode .app-shell { grid-template-columns: minmax(0, 1fr); }
+    body.supplier-wallboard-mode .sidebar, body.supplier-wallboard-mode .topbar { display: none; }
+    body.supplier-wallboard-mode .hero,
+    body.supplier-wallboard-mode .kpi-grid,
+    body.supplier-wallboard-mode .overview-grid,
+    body.supplier-wallboard-mode .table-card,
+    body.supplier-wallboard-mode .analytics-grid,
+    body.supplier-wallboard-mode .page-footer { display: none; }
+    body.supplier-wallboard-mode .content { max-width: 1920px; min-height: 100vh; margin: 0 auto; padding: 30px 34px 24px; }
+    body.supplier-wallboard-mode .supplier-dashboard { display: block; min-height: calc(100vh - 54px); margin-top: 0; padding: 24px 26px 18px; }
+    body.supplier-wallboard-mode .supplier-board-body { grid-template-columns: minmax(560px, 1.45fr) minmax(420px, .85fr); margin-top: 24px; }
+    body.supplier-wallboard-mode .supplier-column-chart,
+    body.supplier-wallboard-mode .supplier-list-scroll { height: calc(100vh - 235px); max-height: calc(100vh - 235px); }
+    body.supplier-wallboard-mode .supplier-column-chart { padding-top: 20px; }
+    body.supplier-wallboard-mode .supplier-dashboard .rank-row { min-height: 40px; }
+
+    /* Independent page views */
+    .supplier-page-header { display: none; align-items: flex-end; justify-content: space-between; gap: 24px; margin-bottom: 20px; }
+    .supplier-page-header .hero-copy { max-width: 760px; }
+    .supplier-page-header .factory-context { margin-top: 11px; }
+    .supplier-page-summary,
+    .supplier-detail-card { display: none; }
+    .supplier-page-summary { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 13px; margin-bottom: 15px; }
+    .supplier-summary-card { min-height: 116px; padding: 16px 18px 14px; }
+    .supplier-summary-card .kpi-top { align-items: center; }
+    .supplier-summary-label { color: var(--muted); font-size: 11px; font-weight: 650; }
+    .supplier-summary-value { margin-top: 13px; color: var(--navy); font-family: var(--font-mono); font-size: 27px; font-weight: 790; letter-spacing: -.06em; line-height: 1; }
+    .supplier-summary-value small { margin-left: 4px; color: var(--muted); font-family: var(--font-sans); font-size: 11px; font-weight: 650; letter-spacing: 0; }
+    .supplier-summary-note { margin-top: 11px; color: var(--muted); font-size: 9px; }
+    .supplier-summary-card.risk .supplier-summary-value { color: var(--red); }
+    .supplier-summary-card.good .supplier-summary-value { color: var(--green); }
+    .supplier-summary-card.teal .supplier-summary-value { color: var(--teal); }
+    .supplier-detail-card { margin-top: 15px; padding: 20px 21px 18px; }
+    .supplier-detail-table-wrap { max-height: 318px; margin-top: 15px; overflow: auto; border-top: 1px solid var(--line); }
+    .supplier-detail-table { width: 100%; min-width: 980px; border-collapse: collapse; table-layout: fixed; }
+    .supplier-detail-table th,
+    .supplier-detail-table td { height: 42px; padding: 0 12px; border-bottom: 1px solid #eef1f5; text-align: left; white-space: nowrap; }
+    .supplier-detail-table th { color: #8996a8; background: #f8fafc; font-size: 10px; font-weight: 750; }
+    .supplier-detail-table td { color: #55657c; font-size: 11px; font-weight: 570; }
+    .supplier-detail-table th:first-child,
+    .supplier-detail-table td:first-child { padding-left: 14px; }
+    .supplier-detail-table .supplier-detail-name { color: var(--ink); font-weight: 700; }
+    .supplier-detail-table .supplier-detail-code { color: var(--subtle); font-family: var(--font-mono); font-size: 10px; }
+    .supplier-detail-table .metric-good { color: var(--green); font-family: var(--font-mono); font-weight: 750; }
+    .supplier-detail-table .metric-watch { color: #b27b1d; font-family: var(--font-mono); font-weight: 750; }
+    .supplier-detail-table .metric-risk { color: var(--red); font-family: var(--font-mono); font-weight: 750; }
+    .supplier-trend { font-family: var(--font-mono); font-weight: 750; }
+    .supplier-trend.up { color: var(--green); }
+    .supplier-trend.down { color: var(--red); }
+    .supplier-state { display: inline-flex; align-items: center; gap: 5px; padding: 5px 8px; border-radius: 7px; font-size: 10px; font-weight: 720; }
+    .supplier-state::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+    .supplier-state.stable { color: var(--green); background: var(--green-soft); }
+    .supplier-state.watch { color: #b27b1d; background: var(--amber-soft); }
+    .supplier-state.risk { color: var(--red); background: var(--red-soft); }
+
+    body[data-page="tasks"]:not(.wallboard-mode):not(.supplier-wallboard-mode) .hero,
+    body[data-page="tasks"]:not(.wallboard-mode):not(.supplier-wallboard-mode) .kpi-grid,
+    body[data-page="tasks"]:not(.wallboard-mode):not(.supplier-wallboard-mode) .overview-grid,
+    body[data-page="tasks"]:not(.wallboard-mode):not(.supplier-wallboard-mode) .supplier-page-header,
+    body[data-page="tasks"]:not(.wallboard-mode):not(.supplier-wallboard-mode) .supplier-page-summary,
+    body[data-page="tasks"]:not(.wallboard-mode):not(.supplier-wallboard-mode) .supplier-dashboard,
+    body[data-page="tasks"]:not(.wallboard-mode):not(.supplier-wallboard-mode) .supplier-detail-card,
+    body[data-page="tasks"]:not(.wallboard-mode):not(.supplier-wallboard-mode) .page-footer { display: none; }
+    body[data-page="tasks"]:not(.wallboard-mode):not(.supplier-wallboard-mode) .content { padding-top: 31px; }
+    body[data-page="tasks"]:not(.wallboard-mode):not(.supplier-wallboard-mode) .table-card { margin-bottom: 15px; }
+
+    body[data-page="suppliers"]:not(.wallboard-mode):not(.supplier-wallboard-mode) .hero,
+    body[data-page="suppliers"]:not(.wallboard-mode):not(.supplier-wallboard-mode) .kpi-grid,
+    body[data-page="suppliers"]:not(.wallboard-mode):not(.supplier-wallboard-mode) .overview-grid,
+    body[data-page="suppliers"]:not(.wallboard-mode):not(.supplier-wallboard-mode) .table-card,
+    body[data-page="suppliers"]:not(.wallboard-mode):not(.supplier-wallboard-mode) .analytics-grid,
+    body[data-page="suppliers"]:not(.wallboard-mode):not(.supplier-wallboard-mode) .page-footer { display: none; }
+    body[data-page="suppliers"]:not(.wallboard-mode):not(.supplier-wallboard-mode) .content { min-height: calc(100vh - 72px); padding-top: 31px; }
+    body[data-page="suppliers"]:not(.wallboard-mode):not(.supplier-wallboard-mode) .supplier-page-header { display: flex; }
+    body[data-page="suppliers"]:not(.wallboard-mode):not(.supplier-wallboard-mode) .supplier-page-summary { display: grid; }
+    body[data-page="suppliers"]:not(.wallboard-mode):not(.supplier-wallboard-mode) .supplier-detail-card { display: block; }
+
+    /* Modal and toast */
+    .modal-backdrop { position: fixed; inset: 0; z-index: 20; display: none; place-items: center; padding: 24px; background: rgba(12,25,48,.38); backdrop-filter: blur(5px); }
+    .modal-backdrop.open { display: grid; }
+    .detail-modal { width: min(620px, 100%); overflow: hidden; border: 1px solid rgba(255,255,255,.65); border-radius: 19px; background: #fff; box-shadow: var(--shadow-strong); }
+    .modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 15px; padding: 22px 23px 17px; border-bottom: 1px solid var(--line); }
+    .modal-kicker { color: var(--blue); font-size: 10px; font-weight: 780; letter-spacing: .07em; text-transform: uppercase; }
+    .modal-title { margin: 5px 0 0; color: var(--navy); font-size: 19px; font-weight: 780; letter-spacing: -.04em; }
+    .modal-close { width: 30px; height: 30px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 8px; color: var(--muted); background: #f4f6f9; }
+    .modal-close:hover { color: var(--red); background: var(--red-soft); }
+    .modal-body { padding: 19px 23px 22px; }
+    .detail-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 13px 20px; }
+    .detail-item label { display: block; margin-bottom: 5px; color: var(--subtle); font-size: 9px; }
+    .detail-item div { overflow: hidden; color: var(--ink); font-size: 11px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+    .detail-section-title { margin: 20px 0 10px; color: var(--navy); font-size: 11px; font-weight: 750; }
+    .timeline { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; }
+    .timeline-step { position: relative; padding-top: 17px; color: var(--subtle); font-size: 9px; }
+    .timeline-step::before { content: ""; position: absolute; top: 0; left: 0; width: 9px; height: 9px; border: 2px solid #d7dee9; border-radius: 50%; background: #fff; }
+    .timeline-step:not(:last-child)::after { content: ""; position: absolute; top: 4px; left: 13px; right: 0; height: 1px; background: #dfe6ee; }
+    .timeline-step.done { color: var(--green); }
+    .timeline-step.done::before { border-color: var(--green); background: var(--green); }
+    .timeline-step.current { color: var(--blue); font-weight: 750; }
+    .timeline-step.current::before { border-color: var(--blue); box-shadow: 0 0 0 4px var(--blue-soft); }
+    .modal-foot { display: flex; justify-content: flex-end; gap: 8px; margin-top: 22px; }
+    .toast { position: fixed; right: 28px; bottom: 28px; z-index: 30; display: flex; align-items: center; gap: 8px; padding: 11px 13px; border: 1px solid rgba(204,216,230,.9); border-radius: 10px; color: var(--ink); background: #fff; box-shadow: var(--shadow-strong); font-size: 10px; font-weight: 650; opacity: 0; transform: translateY(10px); pointer-events: none; transition: .2s ease; }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast svg { color: var(--green); }
+
+    @media (max-width: 1450px) {
+      .content { padding-left: 25px; padding-right: 25px; }
+      .topbar { padding-left: 25px; padding-right: 25px; }
+      .overview-grid { grid-template-columns: 1.12fr 1.35fr .9fr; }
+      .filters { flex-wrap: wrap; justify-content: flex-end; }
+    }
+    @media (max-width: 1240px) {
+      .app-shell { grid-template-columns: 212px minmax(0,1fr); }
+      .overview-grid { grid-template-columns: 1fr 1fr; }
+      .alert-card { grid-column: 1 / -1; min-height: 190px; }
+      .alert-list { grid-template-columns: repeat(3, 1fr); gap: 14px; }
+      .alert-item { border-bottom: 0; }
+    }
+  </style>
+</head>
+<body data-page="overview">
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="icon-grid" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="6" height="6" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.8"/><rect x="14.5" y="3.5" width="6" height="6" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.8"/><rect x="3.5" y="14.5" width="6" height="6" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.8"/><rect x="14.5" y="14.5" width="6" height="6" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.8"/></symbol>
+    <symbol id="icon-sidebar" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 4.8v14.4M12.5 9h4M12.5 12h4M12.5 15h2.6" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.7"/></symbol>
+    <symbol id="icon-inbox" viewBox="0 0 24 24"><path d="M4 5.5h16v12.8a1.7 1.7 0 0 1-1.7 1.7H5.7A1.7 1.7 0 0 1 4 18.3V5.5Z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4.3 14h4.2l1.5 2h4l1.5-2h4.2M8 8.8h8" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"/></symbol>
+    <symbol id="icon-truck" viewBox="0 0 24 24"><path d="M3.5 6h10.8v10.4H3.5zM14.3 9.2h3.6l2.6 3.2v4h-6.2z" fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="1.8"/><circle cx="7.2" cy="18" r="1.7" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17.4" cy="18" r="1.7" fill="none" stroke="currentColor" stroke-width="1.8"/></symbol>
+    <symbol id="icon-briefcase" viewBox="0 0 24 24"><rect x="3.5" y="6.5" width="17" height="13" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 6.5V5a1.5 1.5 0 0 1 1.5-1.5h5A1.5 1.5 0 0 1 16 5v1.5M3.7 12h16.6M10 12v2h4v-2" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"/></symbol>
+    <symbol id="icon-chart" viewBox="0 0 24 24"><path d="M4 19.5V4.5M4 19.5h16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.8"/><path d="m7 15 3.2-3.5 3 2 4.4-6" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"/><circle cx="17.6" cy="7.5" r="1.2" fill="currentColor"/></symbol>
+    <symbol id="icon-settings" viewBox="0 0 24 24"><path d="M12 8.6a3.4 3.4 0 1 0 0 6.8 3.4 3.4 0 0 0 0-6.8Z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m19.1 13.6 1.4 1.1-1.9 3.2-1.6-.7a7.7 7.7 0 0 1-1.9 1.1l-.2 1.8h-3.8l-.2-1.8a7.8 7.8 0 0 1-1.9-1.1l-1.6.7-1.9-3.2 1.4-1.1a7.6 7.6 0 0 1 0-2.2L5.5 10l1.9-3.2L9 7.5a7.7 7.7 0 0 1 1.9-1.1l.2-1.8h3.8l.2 1.8A7.7 7.7 0 0 1 17 7.5l1.6-.7 1.9 3.2-1.4 1.1a7.6 7.6 0 0 1 0 2.5Z" fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="1.4"/></symbol>
+    <symbol id="icon-chevron" viewBox="0 0 24 24"><path d="m7 9 5 5 5-5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></symbol>
+    <symbol id="icon-chevron-right" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></symbol>
+    <symbol id="icon-calendar" viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 3.5v4M16 3.5v4M4 10h16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.8"/></symbol>
+    <symbol id="icon-refresh" viewBox="0 0 24 24"><path d="M19.5 8.6A8 8 0 0 0 5.4 6.3L4 8M4 4v4h4M4.5 15.4a8 8 0 0 0 14.1 2.3l1.4-1.7M20 20v-4h-4" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"/></symbol>
+    <symbol id="icon-download" viewBox="0 0 24 24"><path d="M12 3.5v11M7.8 10.7 12 15l4.2-4.3M4.5 19.5h15" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"/></symbol>
+    <symbol id="icon-search" viewBox="0 0 24 24"><circle cx="10.7" cy="10.7" r="6.7" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m16 16 4.5 4.5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.8"/></symbol>
+    <symbol id="icon-filter" viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M10 18h4" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.8"/></symbol>
+    <symbol id="icon-bell" viewBox="0 0 24 24"><path d="M18.5 9.8a6.5 6.5 0 0 0-13 0c0 7-2.5 7-2.5 8.7h18c0-1.7-2.5-1.7-2.5-8.7ZM10 21h4" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"/></symbol>
+    <symbol id="icon-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 7v5l3.5 2" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"/></symbol>
+    <symbol id="icon-alert" viewBox="0 0 24 24"><path d="M12 4 3.7 19h16.6L12 4Z" fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="1.8"/><path d="M12 9v4.5M12 16.5v.1" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.8"/></symbol>
+    <symbol id="icon-check" viewBox="0 0 24 24"><path d="m5 12.5 4.3 4.2L19 7" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></symbol>
+    <symbol id="icon-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 10.5v5M12 7.6v.1" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.8"/></symbol>
+    <symbol id="icon-external" viewBox="0 0 24 24"><path d="M13 5h6v6M19 5l-8 8" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"/><path d="M18 13.5v4A1.5 1.5 0 0 1 16.5 19h-10A1.5 1.5 0 0 1 5 17.5v-10A1.5 1.5 0 0 1 6.5 6h4" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.8"/></symbol>
+    <symbol id="icon-close" viewBox="0 0 24 24"><path d="m7 7 10 10M17 7 7 17" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"/></symbol>
+    <symbol id="icon-package" viewBox="0 0 24 24"><path d="m4 7 8-3 8 3-8 3-8-3Z M4 7v10l8 3 8-3V7M12 10v10" fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="1.7"/></symbol>
+    <symbol id="icon-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.8"/></symbol>
+  </svg>
+
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="plant-switch">
+        <span class="eyebrow" data-i18n="current_plant">当前工厂</span>
+        <div class="plant-name"><span>SHARETRONIC DATA TECHNOLOGY (THAILAND)CO.,LTD.</span><svg width="15" height="15"><use href="#icon-chevron"/></svg></div>
+        <span class="plant-sub" data-i18n="factory_sub">Thailand · Plant 01 · IQC</span>
+      </div>
+
+      <nav>
+        <p class="nav-label" data-i18n="navigation">导航菜单</p>
+        <div class="nav-list">
+          <a class="nav-item active" href="#overview" data-page="overview"><svg width="17" height="17"><use href="#icon-grid"/></svg><span data-i18n="menu_overview">质量总览</span></a>
+          <a class="nav-item" href="#tasks" data-page="tasks"><svg width="17" height="17"><use href="#icon-inbox"/></svg><span data-i18n="menu_tasks">检验任务</span><span class="nav-badge">24</span></a>
+          <a class="nav-item" href="#suppliers" data-page="suppliers"><svg width="17" height="17"><use href="#icon-truck"/></svg><span data-i18n="menu_supplier">供应商质量</span></a>
+          <a class="nav-item" href="#settings"><svg width="17" height="17"><use href="#icon-settings"/></svg><span data-i18n="menu_settings">系统设置</span></a>
+        </div>
+      </nav>
+
+      <div class="sidebar-spacer"></div>
+      <div class="sync-card">
+        <div class="sync-head"><span class="live-dot"></span><span class="sync-title">QMS API</span><span class="sync-live">LIVE</span></div>
+        <div class="sync-copy" data-i18n="sync_copy">已连接 QMS 数据源，任务与状态实时同步。</div>
+      </div>
+      <div class="user-chip">
+        <div class="avatar-small">Yy</div>
+        <div><strong>Quality Admin</strong><span data-i18n="role_label">质量管理员</span></div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="icon-button sidebar-toggle" id="sidebarToggle" title="收起导航" aria-label="收起导航" aria-pressed="false"><svg width="16" height="16"><use href="#icon-sidebar"/></svg></button>
+          <div class="breadcrumbs"><span data-i18n="breadcrumb_parent">质量运营</span><svg width="13" height="13"><use href="#icon-chevron-right"/></svg><strong id="breadcrumbCurrent">IQC 来料检验</strong></div>
+        </div>
+        <div class="top-actions">
+          <button class="btn wallboard-button" id="wallboardToggle" aria-pressed="false"><svg width="14" height="14"><use href="#icon-grid"/></svg><span id="wallboardToggleText" data-i18n="enter_wallboard">看板模式</span></button>
+          <button class="btn supplier-wallboard-button" id="supplierWallboardToggle" aria-pressed="false"><svg width="14" height="14"><use href="#icon-chart"/></svg><span id="supplierWallboardToggleText" data-i18n="supplier_wallboard_entry">供应商看板</span></button>
+          <div class="locale-switch" aria-label="Language switcher">
+            <button data-locale="zh" class="active">中文</button>
+            <button data-locale="th">ไทย</button>
+            <button data-locale="en">EN</button>
+            <button data-locale="mix">中泰</button>
+          </div>
+          <button class="icon-button" id="notificationBtn" title="Notifications"><svg width="16" height="16"><use href="#icon-bell"/></svg></button>
+          <div class="avatar">Yy</div>
+        </div>
+      </header>
+
+      <div class="content">
+        <section class="hero" id="overview">
+          <div>
+            <div class="kicker"><span class="live-dot"></span><span data-i18n="hero_kicker">来料质量运营</span></div>
+            <h1 data-i18n="hero_title">IQC 来料检验看板</h1>
+            <p class="hero-copy" data-i18n="hero_subtitle">连接 QMS 的实时质量驾驶舱，快速识别待检、超时与供应商风险。</p>
+            <div class="factory-context"><svg width="14" height="14"><use href="#icon-package"/></svg><span data-i18n="factory_label">当前工厂</span><strong>SHARETRONIC DATA TECHNOLOGY (THAILAND)CO.,LTD.</strong></div>
+          </div>
+          <div class="hero-actions">
+            <div class="date-pill"><svg width="15" height="15"><use href="#icon-calendar"/></svg><span data-i18n="date_today">2026年09月01日 · 周二</span></div>
+            <button class="btn" id="refreshBtn"><svg width="14" height="14"><use href="#icon-refresh"/></svg><span data-i18n="refresh">刷新数据</span></button>
+            <button class="btn primary" id="exportBtn"><svg width="14" height="14"><use href="#icon-download"/></svg><span data-i18n="export">导出看板</span></button>
+          </div>
+        </section>
+
+        <section class="kpi-grid" aria-label="KPI">
+          <article class="card kpi-card">
+            <div class="kpi-top"><span class="kpi-label" data-i18n="kpi_incoming">今日送检批次</span><span class="kpi-icon blue"><svg width="16" height="16"><use href="#icon-inbox"/></svg></span></div>
+            <div class="kpi-value" id="kpiIncoming">86<small data-i18n="unit_lot">批</small></div>
+            <div class="kpi-foot"><span class="trend-up" id="kpiIncomingFoot">↗ 12.4%</span><span data-i18n="vs_yesterday">较昨日</span></div>
+            <div class="micro-bars"><i></i><i></i><i></i><i></i></div>
+          </article>
+          <article class="card kpi-card">
+            <div class="kpi-top"><span class="kpi-label" data-i18n="kpi_pending">待检总批次</span><span class="kpi-icon amber"><svg width="16" height="16"><use href="#icon-clock"/></svg></span></div>
+            <div class="kpi-value" id="kpiPending">24<small data-i18n="unit_lot">批</small></div>
+            <div class="kpi-foot"><span class="trend-flat" id="kpiPendingFoot">6 <span data-i18n="unit_urgent">加急</span></span><span data-i18n="need_assignment">需及时分配</span></div>
+            <div class="micro-bars amber"><i></i><i></i><i></i><i></i></div>
+          </article>
+          <article class="card kpi-card">
+            <div class="kpi-top"><span class="kpi-label" data-i18n="kpi_overdue">超时未完成</span><span class="kpi-icon red"><svg width="16" height="16"><use href="#icon-alert"/></svg></span></div>
+            <div class="kpi-value" id="kpiOverdue">7<small data-i18n="unit_lot">批</small></div>
+            <div class="kpi-foot"><span class="trend-down" id="kpiOverdueFoot">↘ 18.2%</span><span data-i18n="vs_last_week">较上周</span></div>
+            <div class="micro-bars red"><i></i><i></i><i></i><i></i></div>
+          </article>
+          <article class="card kpi-card">
+            <div class="kpi-top"><span class="kpi-label" data-i18n="kpi_passrate">本月一次合格率</span><span class="kpi-icon teal"><svg width="16" height="16"><use href="#icon-check"/></svg></span></div>
+            <div class="kpi-value" id="kpiPassrate">98.6<small>%</small></div>
+            <div class="kpi-foot"><span class="trend-up" id="kpiPassrateFoot">↗ 1.8%</span><span data-i18n="vs_last_month">较上月</span></div>
+            <div class="micro-bars teal"><i></i><i></i><i></i><i></i></div>
+          </article>
+          <article class="card kpi-card">
+            <div class="kpi-top"><span class="kpi-label" data-i18n="kpi_urgent">加急批次</span><span class="kpi-icon purple"><svg width="16" height="16"><use href="#icon-truck"/></svg></span></div>
+            <div class="kpi-value" id="kpiUrgent">13<small data-i18n="unit_lot">批</small></div>
+            <div class="kpi-foot"><span class="trend-up" id="kpiUrgentFoot">↗ 5.6%</span><span data-i18n="of_today_incoming">占今日送检</span></div>
+            <div class="micro-bars purple"><i></i><i></i><i></i><i></i></div>
+          </article>
+        </section>
+
+        <section class="overview-grid">
+          <article class="card overview-card">
+            <div class="card-head">
+              <div><h2 class="card-title" data-i18n="flow_title">检验流转总览</h2><p class="card-subtitle" data-i18n="flow_subtitle">按检验状态实时分布</p></div>
+              <div class="segmented" id="flowRange"><button class="active" data-range="today" data-i18n="range_today_short">今日</button><button data-range="week" data-i18n="range_week_short">本周</button><button data-range="month" data-i18n="range_month_short">本月</button></div>
+            </div>
+            <div class="flow-body">
+              <div class="donut-wrap">
+                <div class="donut" id="flowDonut"><div class="donut-core"><strong id="flowTotal">1,248</strong><span data-i18n="unit_lot_full">检验批次</span></div></div>
+                <div class="donut-caption"><span data-i18n="flow_caption">今日累计送检 · 截止 09:42</span></div>
+              </div>
+              <div class="status-stack">
+                <div class="status-row"><i class="status-mark blue"></i><span class="status-name" data-i18n="status_pending">待检</span><strong class="status-value" id="flowPending">24</strong><div class="status-progress"><i class="blue"></i></div></div>
+                <div class="status-row"><i class="status-mark teal"></i><span class="status-name" data-i18n="status_processing">检验中</span><strong class="status-value" id="flowProcessing">18</strong><div class="status-progress"><i class="teal"></i></div></div>
+                <div class="status-row"><i class="status-mark light-blue"></i><span class="status-name" data-i18n="status_done">已完成</span><strong class="status-value" id="flowDone">1,199</strong><div class="status-progress"><i class="light-blue"></i></div></div>
+                <div class="status-row"><i class="status-mark red"></i><span class="status-name" data-i18n="status_overdue">超时未完成</span><strong class="status-value" id="flowOverdue">7</strong><div class="status-progress"><i class="red"></i></div></div>
+              </div>
+            </div>
+          </article>
+
+          <article class="card overview-card">
+            <div class="card-head"><div><h2 class="card-title" data-i18n="trend_title">一次合格率趋势</h2><p class="card-subtitle" data-i18n="trend_subtitle">近 7 日来料质量变化</p></div><div class="chart-legend"><span class="legend-item"><i class="legend-line"></i><span data-i18n="legend_passrate">一次合格率</span></span><span class="legend-item"><i class="legend-line teal"></i><span data-i18n="legend_lots">送检批次</span></span></div></div>
+            <div class="trend-summary"><strong class="trend-number" id="trendNumber">98.6%</strong><span class="trend-context">↗ 1.8% <span data-i18n="vs_last_week">较上周</span></span></div>
+            <svg class="trend-chart" id="iqcTrendChart" viewBox="0 0 700 150" preserveAspectRatio="none" role="img" aria-label="Pass rate trend">
+              <line class="grid" x1="15" y1="20" x2="685" y2="20"/><line class="grid" x1="15" y1="55" x2="685" y2="55"/><line class="grid" x1="15" y1="90" x2="685" y2="90"/><line class="grid" x1="15" y1="125" x2="685" y2="125"/>
+              <text class="axis-label" x="0" y="23">100%</text><text class="axis-label" x="0" y="58">98%</text><text class="axis-label" x="0" y="93">96%</text><text class="axis-label" x="0" y="128">94%</text>
+              <path class="area" d="M30 82 C100 76 130 87 185 70 S290 56 342 65 S445 49 500 54 S600 41 670 27 L670 125 L30 125 Z"/>
+              <path class="line" d="M30 82 C100 76 130 87 185 70 S290 56 342 65 S445 49 500 54 S600 41 670 27"/>
+              <path class="line-secondary" d="M30 101 C100 95 130 103 185 92 S290 81 342 94 S445 77 500 88 S600 73 670 65"/>
+              <circle class="point" cx="30" cy="82" r="3.5"/><circle class="point" cx="185" cy="70" r="3.5"/><circle class="point" cx="342" cy="65" r="3.5"/><circle class="point" cx="500" cy="54" r="3.5"/><circle class="point" cx="670" cy="27" r="3.5"/>
+            </svg>
+            <div class="trend-foot" id="iqcTrendFoot"><span>08/26</span><span>08/27</span><span>08/28</span><span>08/29</span><span>08/30</span><span>08/31</span><span>09/01</span></div>
+            <div class="trend-note" id="trendNote"><svg width="14" height="14"><use href="#icon-info"/></svg><span data-i18n="trend_note">—</span></div>
+          </article>
+
+          <article class="card overview-card alert-card">
+            <div class="card-head"><div><h2 class="card-title" data-i18n="alert_title">异常与预警</h2><p class="card-subtitle" data-i18n="alert_subtitle">需要质量团队及时关注</p></div><span class="alert-count" id="alertCount" data-i18n="alert_count">3 条需关注</span></div>
+            <div class="alert-list" id="alertList">
+              <div class="alert-item danger"><span class="alert-icon"><svg width="14" height="14"><use href="#icon-alert"/></svg></span><div><div class="alert-main"><span class="alert-title" data-i18n="alert_overdue">时效已超 SLA</span><span class="alert-time">09:38</span></div><div class="alert-copy">TC3701-260900190 · V0528 · 超时 36 min</div></div></div>
+              <div class="alert-item"><span class="alert-icon"><svg width="14" height="14"><use href="#icon-clock"/></svg></span><div><div class="alert-main"><span class="alert-title" data-i18n="alert_urgent">加急任务待分配</span><span class="alert-time">09:31</span></div><div class="alert-copy">6 <span data-i18n="unit_lot_full">检验批次</span>等待检验员接单</div></div></div>
+              <div class="alert-item info"><span class="alert-icon"><svg width="14" height="14"><use href="#icon-info"/></svg></span><div><div class="alert-main"><span class="alert-title" data-i18n="alert_fail">供应商批次不合格</span><span class="alert-time">08:56</span></div><div class="alert-copy">鑫实达 · 440601190 · 不良率 4.8%</div></div></div>
+            </div>
+            <button class="alert-link" id="alertLink"><span data-i18n="view_all_alerts">查看全部预警</span><svg width="12" height="12"><use href="#icon-chevron-right"/></svg></button>
+          </article>
+        </section>
+
+        <section class="card table-card" id="tasks">
+          <div class="table-toolbar">
+            <div><h2 class="card-title" data-i18n="table_title">来料检验任务</h2><p class="card-subtitle" data-i18n="table_subtitle">接入 QMS 的最新检验任务 · 支持按状态、加急与关键字快速定位</p></div>
+            <div class="filters">
+              <label class="search-box"><svg width="14" height="14"><use href="#icon-search"/></svg><input id="globalSearch" type="search" data-i18n-placeholder="search_placeholder" placeholder="搜索单号 / 料号 / 供应商" /></label>
+              <select class="filter-select" id="rangeFilter" aria-label="Date range"><option value="today" data-i18n="range_today">今日</option><option value="week" data-i18n="range_week">本周</option><option value="month" data-i18n="range_month">本月</option></select>
+              <select class="filter-select" id="statusFilter" aria-label="Status"><option value="all" data-i18n="all_status">全部状态</option><option value="pending" data-i18n="status_pending">待检</option><option value="processing" data-i18n="status_processing">检验中</option><option value="overdue" data-i18n="status_overdue">超时未完成</option><option value="done" data-i18n="status_done">已完成</option></select>
+              <button class="btn filter-toggle" id="urgentFilter"><svg width="14" height="14"><use href="#icon-filter"/></svg><span data-i18n="urgent_only">仅看加急</span></button>
+            </div>
+          </div>
+          <div class="table-meta"><div class="table-meta-left"><span class="live-dot"></span><span data-i18n="live_data">QMS 实时同步</span><span>·</span><span data-i18n="refresh_every">每 5 分钟刷新</span></div><div><strong id="visibleCount">8</strong> <span data-i18n="unit_task">条任务</span></div></div>
+          <div class="table-wrap">
+            <table id="iqcTable">
+              <colgroup><col style="width:155px"><col style="width:92px"><col style="width:207px"><col style="width:83px"><col style="width:98px"><col style="width:141px"><col style="width:90px"><col style="width:66px"><col style="width:107px"><col style="width:78px"><col style="width:84px"><col style="width:100px"><col style="width:100px"><col style="width:58px"></colgroup>
+              <thead><tr>
+                <th data-sort="id"><span class="th-wrap"><span data-i18n="col_id">单号</span><i class="sort-arrow">↕</i></span></th>
+                <th data-sort="part"><span class="th-wrap"><span data-i18n="col_part">料号</span><i class="sort-arrow">↕</i></span></th>
+                <th><span data-i18n="col_name">物料名称</span></th>
+                <th><span data-i18n="col_category">物料类别</span></th>
+                <th><span data-i18n="col_factory">收料工厂</span></th>
+                <th><span data-i18n="col_supplier">供应商 / 编码</span></th>
+                <th data-sort="qty"><span class="th-wrap"><span data-i18n="col_qty">来料数量</span><i class="sort-arrow">↕</i></span></th>
+                <th><span data-i18n="col_urgent">加急</span></th>
+                <th data-sort="date"><span class="th-wrap"><span data-i18n="col_date">送检日期</span><i class="sort-arrow">↕</i></span></th>
+                <th><span data-i18n="col_inspector">检验员</span></th>
+                <th><span data-i18n="col_node">流程节点</span></th>
+                <th><span data-i18n="col_sla">时效状态</span></th>
+                <th><span data-i18n="col_result">检验结果</span></th>
+                <th><span data-i18n="col_action">操作</span></th>
+              </tr></thead>
+              <tbody id="iqcTableBody">
+                <tr class="empty-row" id="emptyRow"><td colspan="14"><span data-i18n="empty_state">没有符合当前筛选条件的任务</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="analytics-grid" id="reports">
+          <article class="card analytics-card">
+            <div class="card-head"><div><h2 class="card-title" data-i18n="inspector_title">检验员待检统计</h2><p class="card-subtitle" data-i18n="inspector_subtitle">当前待检任务 · 按数量排序</p></div><span class="kpi-icon amber"><svg width="16" height="16"><use href="#icon-user"/></svg></span></div>
+            <div class="inspector-summary"><strong id="inspectorTotal">24</strong><span data-i18n="unit_waiting_lot">个待检批次</span></div>
+            <div class="inspector-columns" id="inspectorColumns">
+              <div class="inspector-column"><strong>9</strong><i style="--h:93%"></i><span>王克晨</span></div>
+              <div class="inspector-column"><strong>7</strong><i style="--h:74%"></i><span>王前梅</span></div>
+              <div class="inspector-column"><strong>4</strong><i style="--h:48%"></i><span>梁燕珍</span></div>
+              <div class="inspector-column"><strong>3</strong><i style="--h:37%"></i><span>黄孝君</span></div>
+              <div class="inspector-column"><strong>1</strong><i style="--h:18%"></i><span>阳程</span></div>
+            </div>
+            <div class="capacity-line"><span data-i18n="capacity_label">团队产能使用率</span><strong id="capacityValue">68.4%</strong></div>
+          </article>
+
+          <article class="card analytics-card">
+            <div class="card-head"><div><h2 class="card-title" data-i18n="result_title">检验结果统计</h2><p class="card-subtitle" id="resultSubtitle" data-i18n="result_subtitle">本月累计 · 2026.09</p></div><span class="kpi-icon teal"><svg width="16" height="16"><use href="#icon-chart"/></svg></span></div>
+            <div class="result-content">
+              <div class="result-donut" id="resultDonut"><div class="result-core"><strong id="resultTotal">1,203</strong><span data-i18n="total_inspections">总检验批次</span></div></div>
+              <div class="result-legend" id="resultLegend">
+                <div class="result-row"><i class="result-mark green"></i><span data-i18n="result_pass">合格</span><strong>1,144</strong><small>95.1%</small></div>
+                <div class="result-row"><i class="result-mark amber"></i><span data-i18n="result_special">特采</span><strong>38</strong><small>3.2%</small></div>
+                <div class="result-row"><i class="result-mark red"></i><span data-i18n="result_fail">不合格</span><strong>21</strong><small>1.7%</small></div>
+              </div>
+            </div>
+            <div class="result-foot"><span data-i18n="result_note">一次合格率</span><strong id="resultPassRate">98.6% ↗</strong></div>
+          </article>
+
+        </section>
+
+        <section class="supplier-page-header">
+          <div>
+            <div class="kicker"><span class="live-dot"></span><span data-i18n="supplier_page_kicker">供应商质量运营</span></div>
+            <h1 data-i18n="supplier_page_title">供应商质量管理</h1>
+            <p class="hero-copy" data-i18n="supplier_page_subtitle">按工厂、月份与 QMS 检验结果全面追踪供应商质量表现。</p>
+            <div class="factory-context"><svg width="14" height="14"><use href="#icon-package"/></svg><span data-i18n="factory_label">当前工厂</span><strong>SHARETRONIC DATA TECHNOLOGY (THAILAND)CO.,LTD.</strong></div>
+          </div>
+          <div class="hero-actions"><div class="date-pill"><svg width="15" height="15"><use href="#icon-calendar"/></svg><span data-i18n="date_today">2026年09月01日 · 周二</span></div></div>
+        </section>
+
+        <section class="supplier-page-summary">
+          <article class="card supplier-summary-card">
+            <div class="kpi-top"><span class="supplier-summary-label" data-i18n="supplier_kpi_total">供应商总数</span><span class="kpi-icon blue"><svg width="16" height="16"><use href="#icon-truck"/></svg></span></div>
+            <div class="supplier-summary-value" id="supplierTotal">12<small data-i18n="supplier_unit_company">家</small></div>
+            <div class="supplier-summary-note" data-i18n="supplier_kpi_total_note">已纳入本月质量评价</div>
+          </article>
+          <article class="card supplier-summary-card good">
+            <div class="kpi-top"><span class="supplier-summary-label" data-i18n="supplier_kpi_average">平均一次合格率</span><span class="kpi-icon teal"><svg width="16" height="16"><use href="#icon-check"/></svg></span></div>
+            <div class="supplier-summary-value" id="supplierAvg">96.8<small>%</small></div>
+            <div class="supplier-summary-note" data-i18n="supplier_kpi_average_note">按供应商加权计算 · 较上月提升</div>
+          </article>
+          <article class="card supplier-summary-card risk">
+            <div class="kpi-top"><span class="supplier-summary-label" data-i18n="supplier_kpi_risk">风险供应商</span><span class="kpi-icon red"><svg width="16" height="16"><use href="#icon-alert"/></svg></span></div>
+            <div class="supplier-summary-value" id="supplierRisk">3<small data-i18n="supplier_unit_company">家</small></div>
+            <div class="supplier-summary-note" data-i18n="supplier_kpi_risk_note">需要重点跟进与改善</div>
+          </article>
+          <article class="card supplier-summary-card teal">
+            <div class="kpi-top"><span class="supplier-summary-label" data-i18n="supplier_kpi_lots">本月检验批次</span><span class="kpi-icon purple"><svg width="16" height="16"><use href="#icon-inbox"/></svg></span></div>
+            <div class="supplier-summary-value" id="supplierLots">1,203<small data-i18n="unit_lot">批</small></div>
+            <div class="supplier-summary-note" data-i18n="supplier_kpi_lots_note">QMS 已完成及在检批次</div>
+          </article>
+        </section>
+
+        <section class="card supplier-dashboard" id="suppliers">
+          <div class="card-head"><div><h2 class="card-title" data-i18n="supplier_title">供应商质量排名</h2><p class="card-subtitle" data-i18n="supplier_board_subtitle">独立供应商质量看板 · 柱状图可横向滚动，排名列表可纵向滚动</p></div><div class="supplier-head-actions"><button class="btn supplier-wallboard-entry" id="supplierWallboardEntry"><svg width="13" height="13"><use href="#icon-grid"/></svg><span data-i18n="supplier_wallboard_entry">供应商看板</span></button><div class="rank-tabs"><button class="active" data-supplier-mode="top" data-i18n="top_rank">正向排名</button><button data-supplier-mode="bottom" data-i18n="bottom_rank">倒数排名</button></div></div></div>
+          <div class="supplier-board-body">
+            <div class="supplier-chart-panel"><div class="supplier-chart-topline"><span data-i18n="supplier_chart_hint">一次合格率 · 供应商 Top 12</span><strong id="supplierChartMetric">99.8%</strong></div><div class="supplier-column-chart" id="supplierColumnChart"></div></div>
+            <div class="supplier-board-list"><div class="supplier-list-head"><span>#</span><span data-i18n="col_supplier">供应商 / 编码</span><span data-i18n="score">合格率</span><span data-i18n="supplier_batches">批次</span></div><div class="supplier-list-scroll"><div class="rank-list" id="rankList"></div></div></div>
+          </div>
+          <div class="rank-footer"><span id="rankFooterLabel" data-i18n="bottom_risk">倒数第一供应商</span><strong id="rankFooterValue">鑫实达 · 89.4%</strong></div>
+        </section>
+
+        <section class="card supplier-detail-card" id="supplierDetails">
+          <div class="card-head"><div><h2 class="card-title" data-i18n="supplier_detail_title">供应商质量明细</h2><p class="card-subtitle" data-i18n="supplier_detail_subtitle">按供应商汇总本月来料质量、缺陷率、批次与改进状态</p></div><span class="kpi-icon blue"><svg width="16" height="16"><use href="#icon-chart"/></svg></span></div>
+          <div class="supplier-detail-table-wrap">
+            <table class="supplier-detail-table">
+              <colgroup><col style="width:20%"><col style="width:13%"><col style="width:12%"><col style="width:15%"><col style="width:13%"><col style="width:13%"><col style="width:14%"></colgroup>
+              <thead><tr><th data-i18n="supplier_col_name">供应商</th><th data-i18n="supplier_col_code">供应商编码</th><th data-i18n="supplier_col_lots">检验批次</th><th data-i18n="supplier_col_passrate">一次合格率</th><th data-i18n="supplier_col_defect">缺陷率</th><th data-i18n="supplier_col_trend">月度趋势</th><th data-i18n="supplier_col_status">质量状态</th></tr></thead>
+              <tbody id="supplierDetailBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <footer class="page-footer"><span>Q-Insight IQC · UI Prototype v0.9</span><span><span data-i18n="last_refresh">上次更新</span> <strong id="lastRefresh">2026-09-01 09:42:16</strong></span></footer>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="detailBackdrop" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
+    <div class="detail-modal">
+      <div class="modal-head"><div><div class="modal-kicker" data-i18n="detail_kicker">QMS INSPECTION RECORD</div><h2 class="modal-title" id="detailTitle">TC3701-260900191</h2></div><button class="modal-close" id="modalClose"><svg width="16" height="16"><use href="#icon-close"/></svg></button></div>
+      <div class="modal-body">
+        <div class="detail-grid">
+          <div class="detail-item"><label data-i18n="detail_part">料号</label><div id="detailPart">440601190</div></div>
+          <div class="detail-item"><label data-i18n="detail_material">物料名称</label><div id="detailMaterial">T8353_WIFI_SHIELD_CONNECTOR</div></div>
+          <div class="detail-item"><label data-i18n="detail_category">物料类别</label><div id="detailCategory">五金件</div></div>
+          <div class="detail-item"><label data-i18n="detail_supplier">供应商</label><div id="detailSupplier">鑫实达 / V0528</div></div>
+          <div class="detail-item"><label data-i18n="detail_quantity">来料数量</label><div id="detailQuantity">2,630</div></div>
+          <div class="detail-item"><label data-i18n="detail_inspector">检验员</label><div id="detailInspector">黄孝君</div></div>
+          <div class="detail-item"><label data-i18n="detail_date">送检日期</label><div id="detailDate">2026-09-01 08:42</div></div>
+          <div class="detail-item"><label data-i18n="detail_status">当前状态</label><div id="detailStatus"><span class="status-pill overdue">超时未完成</span></div></div>
+          <div class="detail-item"><label data-i18n="detail_sla">SLA 时限</label><div id="detailSla">已超时 36 min</div></div>
+        </div>
+        <h3 class="detail-section-title" data-i18n="detail_timeline">流程轨迹</h3>
+        <div class="timeline"><div class="timeline-step done" data-i18n="timeline_received">收料登记</div><div class="timeline-step done" data-i18n="timeline_submitted">送检申请</div><div class="timeline-step current" data-i18n="timeline_inspecting">IQC 检验</div><div class="timeline-step" data-i18n="timeline_closed">结果关闭</div></div>
+        <div class="modal-foot"><button class="btn" id="modalCloseSecondary" data-i18n="close">关闭</button><button class="btn primary" id="openQms"><svg width="13" height="13"><use href="#icon-external"/></svg><span data-i18n="open_qms">打开 QMS 检验单</span></button></div>
+      </div>
+    </div>
+  </div>
+  <div class="toast" id="toast"><svg width="14" height="14"><use href="#icon-check"/></svg><span id="toastText">操作完成</span></div>
+  <div class="wallboard-bar" id="wallboardBar">
+    <div class="wallboard-status"><span class="live-dot"></span><strong id="wallboardModeLabel" data-i18n="wallboard_live">看板模式 · 实时</strong><span class="wallboard-clock" id="wallboardClock">09:42:16</span></div>
+    <button class="wallboard-exit" id="wallboardExit"><svg width="12" height="12"><use href="#icon-close"/></svg><span id="wallboardExitText" data-i18n="exit_wallboard">退出看板</span></button>
+  </div>
+
+  <script>
+    /*
+     * QMS integration contract (replace demo data with API responses):
+     * const QMS_CONFIG = {
+     *   enabled: true,
+     *   baseUrl: '/api/qms',
+     *   endpoints: {
+     *     dashboard: '/iqc/dashboard/summary',
+     *     inspections: '/iqc/incoming-inspections',
+     *     inspectors: '/iqc/inspectors/pending',
+     *     suppliers: '/iqc/suppliers/ranking'
+     *   }
+     * };
+     * Expected inspection fields: inspectionNo, materialNo, materialName,
+     * category, factory, supplierName, supplierCode, quantity, urgent,
+     * submitTime, inspector, processNode, slaStatus, result.
+     */
+    const FACTORY_NAME = 'SHARETRONIC DATA TECHNOLOGY (THAILAND)CO.,LTD.';
+    const QMS_CONFIG = window.QMS_CONFIG || {
+      enabled: true,
+      baseUrl: 'https://qms.sharetronic.com',
+      ssoUrl: 'https://qms.sharetronic.com/qmsSso/oauth/login',
+      supplierQualityUrl: 'https://qms.sharetronic.com/qmsSupplierQuality',
+      dataUrl: 'https://qms.sharetronic.com/qmsData',
+      basicAuth: 'Basic cW1zLWRhdGE6JDJhJDEwJGs2dk5uUzlPUDN0alRtZktyRWVmVnU1bkVUeU1HY0hZZzBPektTMXdnL0V6SHd1eWU2QW9D',
+      username: 'zhangyouyi',
+      password: '123456',
+      factoryCode: 'STTH',
+      factoryName: 'SHARETRONIC DATA TECHNOLOGY (THAILAND)CO.,LTD.'
+    };
+    window.QMS_CONFIG = QMS_CONFIG;
+
+    const I18N = {
+      zh: {
+        current_plant: '当前工厂', navigation: '导航菜单', menu_overview: '质量总览', menu_tasks: '检验任务', menu_supplier: '供应商质量', menu_reports: '报表中心', menu_settings: '系统设置', sync_copy: '已连接 QMS 数据源 · 每 5 分钟自动同步。', role_label: '质量管理员', breadcrumb_parent: '质量运营', breadcrumb_current: 'IQC 来料检验', hero_kicker: '来料质量运营', hero_title: 'IQC 来料检验看板', hero_subtitle: '连接 QMS 的实时质量驾驶舱，快速识别待检、超时与供应商风险。', date_today: '2026年09月01日 · 周二', refresh: '刷新数据', export: '导出看板', kpi_incoming: '今日送检批次', kpi_pending: '待检总批次', kpi_overdue: '超时未完成', kpi_passrate: '本月一次合格率', kpi_urgent: '加急批次', unit_lot: '批', unit_urgent: '加急', vs_yesterday: '较昨日', need_assignment: '需及时分配', vs_last_week: '较上周', vs_last_month: '较上月', of_today_incoming: '占今日送检', flow_title: '检验流转总览', flow_subtitle: '按检验状态实时分布', range_today_short: '今日', range_week_short: '本周', range_month_short: '本月', unit_lot_full: '检验批次', flow_caption: '今日累计送检 · 截止 09:42', status_pending: '待检', status_processing: '检验中', status_done: '已完成', status_overdue: '超时未完成', trend_title: '一次合格率趋势', trend_subtitle: '近 7 日来料质量变化', legend_passrate: '一次合格率', legend_lots: '送检批次', trend_note: '根据近 7 日检验数据动态计算', alert_title: '异常与预警', alert_subtitle: '需要质量团队及时关注', alert_count: '3 条需关注', alert_overdue: '时效已超 SLA', alert_urgent: '加急任务待分配', alert_fail: '供应商批次不合格', view_all_alerts: '查看全部预警', table_title: '来料检验任务', table_subtitle: '接入 QMS 的最新检验任务 · 支持按状态、加急与关键字快速定位', search_placeholder: '搜索单号 / 料号 / 供应商', range_today: '今日', range_week: '本周', range_month: '本月', all_status: '全部状态', urgent_only: '仅看加急', live_data: 'QMS 实时同步', refresh_every: '每 5 分钟刷新', unit_task: '条任务', col_id: '单号', col_part: '料号', col_name: '物料名称', col_category: '物料类别', col_factory: '收料工厂', col_supplier: '供应商 / 编码', col_qty: '来料数量', col_urgent: '加急', col_date: '送检日期', col_inspector: '检验员', col_node: '流程节点', col_sla: '时效状态', col_result: '检验结果', col_action: '操作', yes: '是', no: '否', result_processing: '进行中', result_pending: '未开始', result_pass: '合格', empty_state: '没有符合当前筛选条件的任务', inspector_title: '检验员待检统计', inspector_subtitle: '当前待检任务 · 按数量排序', unit_waiting_lot: '个待检批次', capacity_label: '团队产能使用率', result_title: '检验结果统计', result_subtitle: '本月累计', total_inspections: '总检验批次', result_special: '特采', result_fail: '不合格', result_note: '一次合格率', supplier_title: '供应商质量排名', supplier_subtitle: '按本月一次合格率 · Top 12', top_rank: '正向排名', bottom_rank: '倒数排名', bottom_risk: '倒数第一供应商', supplier_batches: '批', close: '关闭', detail_kicker: 'QMS 检验记录', detail_part: '料号', detail_material: '物料名称', detail_category: '物料类别', detail_supplier: '供应商', detail_quantity: '来料数量', detail_inspector: '检验员', detail_date: '送检日期', detail_status: '当前状态', detail_sla: 'SLA 时限', detail_timeline: '流程轨迹', timeline_received: '收料登记', timeline_submitted: '送检申请', timeline_inspecting: 'IQC 检验', timeline_closed: '结果关闭', open_qms: '打开 QMS 检验单', last_refresh: '上次更新', refresh_done: '数据已刷新', export_done: '已导出当前筛选任务', alert_done: '暂无更多预警', qms_demo: '演示模式：请在 QMS_CONFIG 中开启真实接口。'
+      },
+      th: {
+        current_plant: 'โรงงานปัจจุบัน', navigation: 'เมนูนำทาง', menu_overview: 'ภาพรวมคุณภาพ', menu_tasks: 'งานตรวจรับเข้า', menu_supplier: 'คุณภาพซัพพลายเออร์', menu_reports: 'ศูนย์รายงาน', menu_settings: 'ตั้งค่าระบบ', sync_copy: 'เชื่อมต่อ QMS แล้ว · ซิงค์อัตโนมัติทุก 5 นาที', role_label: 'ผู้ดูแลคุณภาพ', breadcrumb_parent: 'การดำเนินงานคุณภาพ', breadcrumb_current: 'ตรวจรับเข้า IQC', hero_kicker: 'การดำเนินงานคุณภาพขาเข้า', hero_title: 'แดชบอร์ดตรวจรับเข้า IQC', hero_subtitle: 'แดชบอร์ดคุณภาพแบบเรียลไทม์จาก QMS เพื่อค้นหางานรอตรวจ งานเกินเวลา และความเสี่ยงซัพพลายเออร์', date_today: '1 ก.ย. 2026 · อังคาร', refresh: 'รีเฟรชข้อมูล', export: 'ส่งออกแดชบอร์ด', kpi_incoming: 'ล็อตส่งตรวจวันนี้', kpi_pending: 'ล็อตรอตรวจ', kpi_overdue: 'เกินกำหนด', kpi_passrate: 'อัตราผ่านครั้งแรกเดือนนี้', kpi_urgent: 'ล็อตเร่งด่วน', unit_lot: 'ล็อต', unit_urgent: 'เร่งด่วน', vs_yesterday: 'เทียบเมื่อวาน', need_assignment: 'ต้องจัดสรรทันที', vs_last_week: 'เทียบสัปดาห์ก่อน', vs_last_month: 'เทียบเดือนก่อน', of_today_incoming: 'ของงานส่งตรวจวันนี้', flow_title: 'ภาพรวมการไหลของการตรวจสอบ', flow_subtitle: 'กระจายตามสถานะการตรวจแบบเรียลไทม์', range_today_short: 'วันนี้', range_week_short: 'สัปดาห์นี้', range_month_short: 'เดือนนี้', unit_lot_full: 'ล็อตตรวจสอบ', flow_caption: 'ส่งตรวจสะสมวันนี้ · ถึง 09:42', status_pending: 'รอตรวจ', status_processing: 'กำลังตรวจ', status_done: 'เสร็จสิ้น', status_overdue: 'เกินกำหนด', trend_title: 'แนวโน้มอัตราผ่านครั้งแรก', trend_subtitle: 'การเปลี่ยนแปลงคุณภาพขาเข้า 7 วันล่าสุด', legend_passrate: 'อัตราผ่านครั้งแรก', legend_lots: 'ล็อตส่งตรวจ', trend_note: 'คำนวณจากข้อมูลตรวจ 7 วันล่าสุด', alert_title: 'ความผิดปกติและการแจ้งเตือน', alert_subtitle: 'ประเด็นที่ทีมคุณภาพควรติดตาม', alert_count: '3 รายการต้องติดตาม', alert_overdue: 'เกิน SLA แล้ว', alert_urgent: 'งานเร่งด่วนรอจัดสรร', alert_fail: 'ล็อตซัพพลายเออร์ไม่ผ่าน', view_all_alerts: 'ดูการแจ้งเตือนทั้งหมด', table_title: 'งานตรวจรับเข้าวัตถุดิบ', table_subtitle: 'งานตรวจล่าสุดจาก QMS · ค้นหาตามสถานะ งานเร่งด่วน และคำสำคัญได้', search_placeholder: 'ค้นหาเลขที่ / รหัสวัสดุ / ซัพพลายเออร์', range_today: 'วันนี้', range_week: 'สัปดาห์นี้', range_month: 'เดือนนี้', all_status: 'ทุกสถานะ', urgent_only: 'เฉพาะเร่งด่วน', live_data: 'ซิงค์ QMS แบบเรียลไทม์', refresh_every: 'รีเฟรชทุก 5 นาที', unit_task: 'งาน', col_id: 'เลขที่', col_part: 'รหัสวัสดุ', col_name: 'ชื่อวัสดุ', col_category: 'ประเภทวัสดุ', col_factory: 'โรงงานรับของ', col_supplier: 'ซัพพลายเออร์ / รหัส', col_qty: 'จำนวนรับเข้า', col_urgent: 'เร่งด่วน', col_date: 'วันที่ส่งตรวจ', col_inspector: 'ผู้ตรวจสอบ', col_node: 'ขั้นตอน', col_sla: 'สถานะเวลา', col_result: 'ผลตรวจ', col_action: 'ดำเนินการ', yes: 'ใช่', no: 'ไม่ใช่', result_processing: 'กำลังดำเนินการ', result_pending: 'ยังไม่เริ่ม', result_pass: 'ผ่าน', empty_state: 'ไม่พบงานตามเงื่อนไขที่เลือก', inspector_title: 'สถิติงานรอตรวจตามผู้ตรวจ', inspector_subtitle: 'งานรอตรวจปัจจุบัน · เรียงตามจำนวน', unit_waiting_lot: 'ล็อตรอตรวจ', capacity_label: 'อัตราใช้กำลังการตรวจของทีม', result_title: 'สถิติผลการตรวจ', result_subtitle: 'สะสมเดือนนี้', total_inspections: 'ล็อตตรวจทั้งหมด', result_special: 'ยอมรับพิเศษ', result_fail: 'ไม่ผ่าน', result_note: 'อัตราผ่านครั้งแรก', supplier_title: 'อันดับคุณภาพซัพพลายเออร์', supplier_subtitle: 'ตามอัตราผ่านครั้งแรกเดือนนี้ · Top 12', top_rank: 'อันดับสูงสุด', bottom_rank: 'อันดับท้าย', bottom_risk: 'ซัพพลายเออร์อันดับสุดท้าย', supplier_batches: 'ล็อต', close: 'ปิด', detail_kicker: 'บันทึกการตรวจ QMS', detail_part: 'รหัสวัสดุ', detail_material: 'ชื่อวัสดุ', detail_category: 'ประเภทวัสดุ', detail_supplier: 'ซัพพลายเออร์', detail_quantity: 'จำนวนรับเข้า', detail_inspector: 'ผู้ตรวจสอบ', detail_date: 'วันที่ส่งตรวจ', detail_status: 'สถานะปัจจุบัน', detail_sla: 'เวลา SLA', detail_timeline: 'เส้นทางกระบวนการ', timeline_received: 'ลงทะเบียนรับของ', timeline_submitted: 'ยื่นคำขอตรวจ', timeline_inspecting: 'ตรวจ IQC', timeline_closed: 'ปิดผลตรวจ', open_qms: 'เปิดใบตรวจใน QMS', last_refresh: 'อัปเดตล่าสุด', refresh_done: 'รีเฟรชข้อมูลแล้ว', export_done: 'ส่งออกงานตามตัวกรองแล้ว', alert_done: 'ไม่มีการแจ้งเตือนเพิ่มเติม', qms_demo: 'โหมดสาธิต: เปิดใช้อินเทอร์เฟซจริงได้ใน QMS_CONFIG'
+      }
+    };
+
+    Object.assign(I18N.zh, {
+      factory_label: '当前工厂', factory_sub: '泰国 · 工厂 01 · IQC', supplier_board_subtitle: '独立供应商质量看板 · 柱状图可横向滚动，排名列表可纵向滚动', supplier_chart_hint: '一次合格率 · 供应商 Top 12', score: '合格率', enter_wallboard: '看板模式', exit_wallboard: '退出看板', wallboard_live: '看板模式 · 实时', sidebar_hide: '收起导航', sidebar_show: '展开导航', top_risk: '正向第一供应商'
+    });
+    Object.assign(I18N.th, {
+      factory_label: 'โรงงานปัจจุบัน', factory_sub: 'ประเทศไทย · โรงงาน 01 · IQC', supplier_board_subtitle: 'แดชบอร์ดคุณภาพซัพพลายเออร์แยกต่างหาก · เลื่อนกราฟแนวนอนและรายการแนวตั้งได้', supplier_chart_hint: 'อัตราผ่านครั้งแรก · ซัพพลายเออร์ Top 12', score: 'อัตราผ่าน', enter_wallboard: 'โหมดแดชบอร์ด', exit_wallboard: 'ออกจากโหมดแดชบอร์ด', wallboard_live: 'โหมดแดชบอร์ด · เรียลไทม์', sidebar_hide: 'ซ่อนเมนูนำทาง', sidebar_show: 'แสดงเมนูนำทาง', top_risk: 'ซัพพลายเออร์อันดับหนึ่ง'
+    });
+    I18N.en = {
+      current_plant: 'Current plant', factory_sub: 'Thailand · Plant 01 · IQC', navigation: 'Navigation', menu_overview: 'Quality overview', menu_tasks: 'Inspection tasks', menu_supplier: 'Supplier quality', menu_reports: 'Reports center', menu_settings: 'System settings', sync_copy: 'QMS connected · auto-sync every 5 min.', role_label: 'Quality administrator', breadcrumb_parent: 'Quality operations', breadcrumb_current: 'IQC incoming inspection', hero_kicker: 'Incoming quality operations', hero_title: 'IQC Incoming Inspection Dashboard', hero_subtitle: 'A real-time quality cockpit connected to QMS for quickly identifying pending, overdue, and supplier risks.', date_today: 'Sep 1, 2026 · Tue', refresh: 'Refresh data', export: 'Export dashboard', kpi_incoming: 'Today’s inspection lots', kpi_pending: 'Pending lots', kpi_overdue: 'Overdue / incomplete', kpi_passrate: 'Monthly first-pass yield', kpi_urgent: 'Urgent lots', unit_lot: 'lots', unit_urgent: 'urgent', vs_yesterday: 'vs yesterday', need_assignment: 'Needs assignment', vs_last_week: 'vs last week', vs_last_month: 'vs last month', of_today_incoming: 'of today’s intake', flow_title: 'Inspection flow overview', flow_subtitle: 'Real-time distribution by inspection status', range_today_short: 'Today', range_week_short: 'This week', range_month_short: 'This month', unit_lot_full: 'inspection lots', flow_caption: 'Today’s cumulative intake · as of 09:42', status_pending: 'Pending', status_processing: 'In inspection', status_done: 'Completed', status_overdue: 'Overdue / incomplete', trend_title: 'First-pass yield trend', trend_subtitle: 'Incoming quality change over the last 7 days', legend_passrate: 'First-pass yield', legend_lots: 'Inspection lots', trend_note: 'Computed from the last 7 days of inspection data', alert_title: 'Exceptions & alerts', alert_subtitle: 'Items requiring quality team attention', alert_count: '3 need attention', alert_overdue: 'SLA exceeded', alert_urgent: 'Urgent task awaiting assignment', alert_fail: 'Supplier lot failed', view_all_alerts: 'View all alerts', table_title: 'Incoming inspection tasks', table_subtitle: 'Latest QMS inspection tasks · filter quickly by status, urgency, or keyword', search_placeholder: 'Search no. / material / supplier', range_today: 'Today', range_week: 'This week', range_month: 'This month', all_status: 'All statuses', urgent_only: 'Urgent only', live_data: 'QMS live sync', refresh_every: 'Refreshes every 5 min', unit_task: 'tasks', col_id: 'Inspection no.', col_part: 'Material no.', col_name: 'Material name', col_category: 'Category', col_factory: 'Receiving factory', col_supplier: 'Supplier / code', col_qty: 'Received qty.', col_urgent: 'Urgent', col_date: 'Submitted at', col_inspector: 'Inspector', col_node: 'Process node', col_sla: 'SLA status', col_result: 'Inspection result', col_action: 'Action', yes: 'Yes', no: 'No', result_processing: 'In progress', result_pending: 'Not started', result_pass: 'Pass', empty_state: 'No tasks match the current filters', inspector_title: 'Pending lots by inspector', inspector_subtitle: 'Current pending tasks · sorted by count', unit_waiting_lot: 'pending lots', capacity_label: 'Team capacity utilization', result_title: 'Inspection result statistics', result_subtitle: 'Month to date', total_inspections: 'Total inspected lots', result_special: 'Special acceptance', result_fail: 'Fail', result_note: 'First-pass yield', supplier_title: 'Supplier quality ranking', supplier_subtitle: 'By monthly first-pass yield · Top 12', supplier_board_subtitle: 'Standalone supplier quality board · horizontal chart and vertical list scrolling', supplier_chart_hint: 'First-pass yield · Supplier Top 12', score: 'Pass rate', top_rank: 'Top ranking', bottom_rank: 'Bottom ranking', bottom_risk: 'Lowest-ranked supplier', supplier_batches: 'lots', close: 'Close', detail_kicker: 'QMS INSPECTION RECORD', detail_part: 'Material no.', detail_material: 'Material name', detail_category: 'Category', detail_supplier: 'Supplier', detail_quantity: 'Received quantity', detail_inspector: 'Inspector', detail_date: 'Submitted at', detail_status: 'Current status', detail_sla: 'SLA limit', detail_timeline: 'Process timeline', timeline_received: 'Goods received', timeline_submitted: 'Inspection request', timeline_inspecting: 'IQC inspection', timeline_closed: 'Result closed', open_qms: 'Open QMS inspection', last_refresh: 'Last updated', refresh_done: 'Data refreshed', export_done: 'Current filtered tasks exported', alert_done: 'No more alerts', qms_demo: 'Demo mode: enable the real API in QMS_CONFIG.', flow_week_caption: 'Week-to-date intake · as of 09:42', flow_month_caption: 'Month-to-date intake · as of 09:42', factory_label: 'Current factory', enter_wallboard: 'Wallboard mode', exit_wallboard: 'Exit wallboard', wallboard_live: 'Wallboard live', sidebar_hide: 'Hide navigation', sidebar_show: 'Show navigation', top_risk: 'Top-ranked supplier'
+    };
+    Object.assign(I18N.zh, { supplier_wallboard_entry: '供应商看板', supplier_wallboard_live: '供应商质量看板 · 实时', exit_supplier_wallboard: '退出供应商看板' });
+    Object.assign(I18N.th, { supplier_wallboard_entry: 'แดชบอร์ดซัพพลายเออร์', supplier_wallboard_live: 'แดชบอร์ดคุณภาพซัพพลายเออร์ · เรียลไทม์', exit_supplier_wallboard: 'ออกจากแดชบอร์ดซัพพลายเออร์' });
+    Object.assign(I18N.en, { supplier_wallboard_entry: 'Supplier board', supplier_wallboard_live: 'Supplier quality board · Live', exit_supplier_wallboard: 'Exit supplier board' });
+    Object.assign(I18N.zh, {
+      breadcrumb_overview: 'IQC 来料检验', breadcrumb_tasks: '检验任务', breadcrumb_suppliers: '供应商质量', supplier_page_kicker: '供应商质量运营', supplier_page_title: '供应商质量管理', supplier_page_subtitle: '按工厂、月份与 QMS 检验结果全面追踪供应商质量表现。', supplier_kpi_total: '供应商总数', supplier_unit_company: '家', supplier_kpi_total_note: '已纳入本月质量评价', supplier_kpi_average: '平均一次合格率', supplier_kpi_average_note: '按供应商加权计算 · 较上月提升', supplier_kpi_risk: '风险供应商', supplier_kpi_risk_note: '需要重点跟进与改善', supplier_kpi_lots: '本月检验批次', supplier_kpi_lots_note: 'QMS 已完成及在检批次', supplier_detail_title: '供应商质量明细', supplier_detail_subtitle: '按供应商汇总本月来料质量、缺陷率、批次与改进状态', supplier_col_name: '供应商', supplier_col_code: '供应商编码', supplier_col_lots: '检验批次', supplier_col_passrate: '一次合格率', supplier_col_defect: '缺陷率', supplier_col_trend: '月度趋势', supplier_col_status: '质量状态', supplier_status_stable: '稳定', supplier_status_watch: '关注', supplier_status_risk: '高风险', supplier_board_subtitle: '供应商质量排名 · 柱状图可横向滚动，排名列表可纵向滚动'
+    });
+    Object.assign(I18N.th, {
+      breadcrumb_overview: 'ตรวจรับเข้า IQC', breadcrumb_tasks: 'งานตรวจรับเข้า', breadcrumb_suppliers: 'คุณภาพซัพพลายเออร์', supplier_page_kicker: 'การดำเนินงานคุณภาพซัพพลายเออร์', supplier_page_title: 'การจัดการคุณภาพซัพพลายเออร์', supplier_page_subtitle: 'ติดตามผลคุณภาพซัพพลายเออร์อย่างครบถ้วนตามโรงงาน เดือน และผลการตรวจจาก QMS', supplier_kpi_total: 'จำนวนซัพพลายเออร์', supplier_unit_company: 'ราย', supplier_kpi_total_note: 'รวมในการประเมินคุณภาพเดือนนี้', supplier_kpi_average: 'อัตราผ่านครั้งแรกเฉลี่ย', supplier_kpi_average_note: 'คำนวณแบบถ่วงน้ำหนัก · ดีขึ้นจากเดือนก่อน', supplier_kpi_risk: 'ซัพพลายเออร์ความเสี่ยง', supplier_kpi_risk_note: 'ต้องติดตามและปรับปรุงเป็นพิเศษ', supplier_kpi_lots: 'ล็อตตรวจเดือนนี้', supplier_kpi_lots_note: 'ล็อตที่เสร็จแล้วและกำลังตรวจจาก QMS', supplier_detail_title: 'รายละเอียดคุณภาพซัพพลายเออร์', supplier_detail_subtitle: 'สรุปคุณภาพขาเข้า อัตราข้อบกพร่อง จำนวนล็อต และสถานะการปรับปรุงรายซัพพลายเออร์', supplier_col_name: 'ซัพพลายเออร์', supplier_col_code: 'รหัสซัพพลายเออร์', supplier_col_lots: 'ล็อตตรวจ', supplier_col_passrate: 'อัตราผ่านครั้งแรก', supplier_col_defect: 'อัตราข้อบกพร่อง', supplier_col_trend: 'แนวโน้มรายเดือน', supplier_col_status: 'สถานะคุณภาพ', supplier_status_stable: 'คงที่', supplier_status_watch: 'ต้องติดตาม', supplier_status_risk: 'ความเสี่ยงสูง', supplier_board_subtitle: 'อันดับคุณภาพซัพพลายเออร์ · เลื่อนกราฟแนวนอนและรายการแนวตั้งได้'
+    });
+    Object.assign(I18N.en, {
+      breadcrumb_overview: 'IQC incoming inspection', breadcrumb_tasks: 'Inspection tasks', breadcrumb_suppliers: 'Supplier quality', supplier_page_kicker: 'Supplier quality operations', supplier_page_title: 'Supplier quality management', supplier_page_subtitle: 'Track supplier quality performance comprehensively by plant, month, and QMS inspection results.', supplier_kpi_total: 'Total suppliers', supplier_unit_company: 'suppliers', supplier_kpi_total_note: 'Included in this month’s evaluation', supplier_kpi_average: 'Average first-pass yield', supplier_kpi_average_note: 'Weighted by supplier · improved vs last month', supplier_kpi_risk: 'Risk suppliers', supplier_kpi_risk_note: 'Require focused follow-up and improvement', supplier_kpi_lots: 'Inspection lots this month', supplier_kpi_lots_note: 'Completed and in-progress lots from QMS', supplier_detail_title: 'Supplier quality details', supplier_detail_subtitle: 'Monthly incoming quality, defect rate, lots, and improvement status by supplier', supplier_col_name: 'Supplier', supplier_col_code: 'Supplier code', supplier_col_lots: 'Inspection lots', supplier_col_passrate: 'First-pass yield', supplier_col_defect: 'Defect rate', supplier_col_trend: 'Monthly trend', supplier_col_status: 'Quality status', supplier_status_stable: 'Stable', supplier_status_watch: 'Watch', supplier_status_risk: 'High risk', supplier_board_subtitle: 'Supplier quality ranking · horizontal chart and vertical list scrolling'
+    });
+
+    let locale = 'zh';
+    let currentFlowRange = 'today';
+    let sidebarHidden = false;
+    let wallboardMode = false;
+    let supplierWallboardMode = false;
+    const validPages = ['overview', 'tasks', 'suppliers'];
+    let currentPage = validPages.includes(window.location.hash.slice(1)) ? window.location.hash.slice(1) : 'overview';
+    const nf = new Intl.NumberFormat('en-US');
+    const $ = (selector, root = document) => root.querySelector(selector);
+    const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
+    const getTableRows = () => $$('#iqcTableBody tr[data-status]');
+
+    /* ===================== QMS 数据层 ===================== */
+    let qmsToken = null;
+    let qmsLoading = false;
+    const DASH = {
+      records: [], today: [], week: [], month: [], prevMonth: [],
+      byDate: {}, suppliers: [], inspectors: [], alerts: [],
+      flow: { today: { pending: 0, processing: 0, done: 0, overdue: 0 }, week: { pending: 0, processing: 0, done: 0, overdue: 0 }, month: { pending: 0, processing: 0, done: 0, overdue: 0 } },
+      pendingTotal: 0, overdueTotal: 0,
+      resultStats: { pass: 0, special: 0, fail: 0, total: 0, passRate: 0 }, prevPassRate: null
+    };
+
+    function pad2(n) { return String(n).padStart(2, '0'); }
+    function fmtDate(d) { return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`; }
+    function todayStr() { return fmtDate(new Date()); }
+    function daysAgoStr(n) { const d = new Date(); d.setDate(d.getDate() - n); return fmtDate(d); }
+    function monthPrefix(offset = 0) { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + offset); return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}`; }
+
+    async function qmsLogin() {
+      const res = await fetch(QMS_CONFIG.ssoUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'Authorization': QMS_CONFIG.basicAuth },
+        body: JSON.stringify({ username: QMS_CONFIG.username, password: QMS_CONFIG.password })
+      });
+      const data = await res.json();
+      if (data && data.access_token) { qmsToken = data.access_token; return qmsToken; }
+      throw new Error((data && data.message) || 'QMS 登录失败');
+    }
+    async function qmsRequest(url, retry = true) {
+      if (!qmsToken) await qmsLogin();
+      const res = await fetch(url, { headers: { 'Authorization': 'bearer ' + qmsToken, 'X-Requested-With': 'XMLHttpRequest' } });
+      if (res.status === 401 && retry) { qmsToken = null; await qmsLogin(); return qmsRequest(url, false); }
+      const data = await res.json();
+      if (data && data.status && data.status !== '200') throw new Error(data.message || ('QMS 请求失败 ' + data.status));
+      return data;
+    }
+    function qmsSelectPageUrl(searchParams, pageSize = 500, pageNum = 1, sort = 'create_date', order = 'desc') {
+      const sp = new URLSearchParams();
+      sp.set('pageSize', String(pageSize)); sp.set('pageNum', String(pageNum));
+      if (sort) sp.set('sort', sort);
+      if (order) sp.set('order', order);
+      Object.entries(searchParams || {}).forEach(([k, v]) => { if (v !== null && v !== undefined && v !== '') sp.set('searchParams[' + k + ']', v); });
+      return QMS_CONFIG.supplierQualityUrl + '/iqc/documents/selectPage?' + sp.toString();
+    }
+    async function qmsSelectAll(searchParams, pageSize = 500) {
+      const all = [];
+      let pageNum = 1;
+      while (true) {
+        const res = await qmsRequest(qmsSelectPageUrl(searchParams, pageSize, pageNum));
+        const d = res.data || {};
+        const rows = d.resultData || [];
+        all.push(...rows);
+        if (!rows.length || rows.length < pageSize || all.length >= (d.total || 0)) break;
+        pageNum += 1;
+      }
+      return all;
+    }
+    async function qmsCount(searchParams) {
+      const res = await qmsRequest(qmsSelectPageUrl(searchParams, 1, 1));
+      return (res.data && res.data.total) || 0;
+    }
+
+    function cleanSupplierName(name) {
+      const s = String(name || '').trim();
+      const i = s.indexOf('_');
+      return i > 0 ? s.slice(0, i) : s;
+    }
+    function escHtml(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+    function fmtQty(n) { return nf.format(Math.round(Number(n) || 0)); }
+    function mapStatus(r) {
+      const s = r.inspectionStatus;
+      if (s === '2') return { key: 'overdue', i18n: 'status_overdue', label: t('status_overdue') };
+      if (s === '0') {
+        if (['组长确认', '配置模板'].includes(r.taskName)) return { key: 'pending', i18n: 'status_pending', label: t('status_pending') };
+        return { key: 'processing', i18n: 'status_processing', label: t('status_processing') };
+      }
+      return { key: 'done', i18n: 'status_done', label: t('status_done') };
+    }
+    function mapResult(r) {
+      if (r.inspectionStatus === '0') return { key: 'processing', i18n: 'result_processing', label: t('result_processing') };
+      const res = r.syncInspectionResultName;
+      if (res === '合格') return { key: 'pass', i18n: 'result_pass', label: t('result_pass') };
+      if (res === '退货') return { key: 'fail', i18n: 'result_fail', label: t('result_fail') };
+      if (res === '特采') return { key: 'special', i18n: 'result_special', label: t('result_special') };
+      return { key: 'pending', i18n: 'result_pending', label: t('result_pending') };
+    }
+
+    /* ===================== 聚合 ===================== */
+    function computeFlow(records) {
+      const f = { pending: 0, processing: 0, done: 0, overdue: 0 };
+      records.forEach((r) => {
+        const s = mapStatus(r).key;
+        if (s === 'pending') f.pending += 1;
+        else if (s === 'processing') f.processing += 1;
+        else if (s === 'overdue') f.overdue += 1;
+        else f.done += 1;
+      });
+      return f;
+    }
+    function computeResultStats(records) {
+      const s = { pass: 0, special: 0, fail: 0, total: 0, passRate: 0 };
+      records.forEach((r) => {
+        const res = r.syncInspectionResultName;
+        if (res === '合格') s.pass += 1; else if (res === '退货') s.fail += 1; else if (res === '特采') s.special += 1;
+      });
+      s.total = s.pass + s.special + s.fail;
+      s.passRate = s.total > 0 ? (s.pass / s.total * 100) : 0;
+      return s;
+    }
+    function computeSuppliers(records) {
+      const map = new Map();
+      records.forEach((r) => {
+        const code = r.supplierCode || r.supplierName || '未知';
+        if (!map.has(code)) map.set(code, { code, name: cleanSupplierName(r.supplierName), rawName: r.supplierName, batches: 0, pass: 0, fail: 0, special: 0 });
+        const e = map.get(code);
+        e.batches += 1;
+        const res = r.syncInspectionResultName;
+        if (res === '合格') e.pass += 1; else if (res === '退货') e.fail += 1; else if (res === '特采') e.special += 1;
+      });
+      return Array.from(map.values()).map((e) => {
+        const total = e.pass + e.fail + e.special;
+        const rate = total > 0 ? (e.pass / total * 100) : 0;
+        return { ...e, total, rate, score: rate.toFixed(1) + '%', raw: rate };
+      }).sort((a, b) => b.rate - a.rate);
+    }
+    function computeInspectors(records) {
+      const map = new Map();
+      records.forEach((r) => { const n = r.inspectorName || '未分配'; map.set(n, (map.get(n) || 0) + 1); });
+      return Array.from(map.entries()).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count).slice(0, 5);
+    }
+    function computeAlerts() {
+      const alerts = [];
+      DASH.records.filter((r) => r.inspectionStatus === '2').slice(0, 2).forEach((r) => {
+        alerts.push({ type: 'danger', titleKey: 'alert_overdue', copy: `${r.orderNumber} · ${cleanSupplierName(r.supplierName)} · ${r.totalTime || '超时'}` });
+      });
+      const urgentPending = DASH.records.filter((r) => r.expeditedFlagName === '是' && r.inspectionStatus === '0' && ['组长确认', '配置模板'].includes(r.taskName));
+      if (urgentPending.length) alerts.push({ type: 'warn', titleKey: 'alert_urgent', copy: `${urgentPending.length} ${t('unit_lot_full')}等待检验员接单` });
+      const failRec = DASH.month.find((r) => r.syncInspectionResultName === '退货');
+      if (failRec) alerts.push({ type: 'info', titleKey: 'alert_fail', copy: `${cleanSupplierName(failRec.supplierName)} · ${failRec.materialNumber} · ${t('result_fail')}` });
+      return alerts.slice(0, 3);
+    }
+
+    /* ===================== 渲染 ===================== */
+    function renderTableRows() {
+      const body = $('#iqcTableBody');
+      const rows = applyRangeFilter(DASH.records, $('#rangeFilter').value);
+      const html = rows.map((r) => {
+        const st = mapStatus(r), res = mapResult(r);
+        const urgent = r.expeditedFlagName === '是' ? '1' : '0';
+        const name = r.materialName || '';
+        const supplier = cleanSupplierName(r.supplierName), code = r.supplierCode || '';
+        const factory = QMS_CONFIG.factoryName;
+        const search = [r.orderNumber, r.materialNumber, name, r.materialCategory, factory, r.supplierName, code].join(' ');
+        return `<tr data-status="${st.key}" data-urgent="${urgent}" data-id="${escHtml(r.orderNumber)}" data-search="${escHtml(search)}">
+          <td><span class="id-link mono">${escHtml(r.orderNumber)}</span></td>
+          <td class="mono">${escHtml(r.materialNumber)}</td>
+          <td title="${escHtml(name)}"><span class="material-name">${escHtml(name)}</span></td>
+          <td>${escHtml(r.materialCategory || '')}</td>
+          <td><span class="factory-cell" title="${escHtml(factory)}">${escHtml(factory)}</span></td>
+          <td class="supplier-cell"><strong>${escHtml(supplier)}</strong><small>${escHtml(code)}</small></td>
+          <td class="qty">${fmtQty(r.qty)}</td>
+          <td><span class="tag ${urgent === '1' ? 'yes' : 'no'}" data-i18n="${urgent === '1' ? 'yes' : 'no'}">${urgent === '1' ? t('yes') : t('no')}</span></td>
+          <td class="mono">${escHtml(r.createDate || '')}</td>
+          <td>${escHtml(r.inspectorName || '—')}</td>
+          <td>${escHtml(r.taskName || '')}</td>
+          <td><span class="status-pill ${st.key}" data-i18n="${st.i18n}">${st.label}</span></td>
+          <td><span class="status-pill ${res.key}" data-i18n="${res.i18n}">${res.label}</span></td>
+          <td><button class="action-btn detail-btn" title="View"><svg width="13" height="13"><use href="#icon-external"/></svg></button></td>
+        </tr>`;
+      }).join('');
+      body.innerHTML = html + `<tr class="empty-row" id="emptyRow"><td colspan="14"><span data-i18n="empty_state">${t('empty_state')}</span></td></tr>`;
+    }
+    function applyRangeFilter(records, range) {
+      const today = todayStr();
+      if (range === 'week') return records.filter((r) => (r.createDate || '') >= daysAgoStr(6));
+      if (range === 'month') return records.filter((r) => (r.createDate || '').startsWith(monthPrefix(0)));
+      return records.filter((r) => r.createDate === today);
+    }
+
+    function renderKpis() {
+      const today = DASH.today;
+      const urgentToday = today.filter((r) => r.expeditedFlagName === '是').length;
+      const prevToday = DASH.byDate[daysAgoStr(1)] || [];
+      const rs = DASH.resultStats, pr = DASH.prevPassRate;
+      $('#kpiIncoming').innerHTML = `${today.length}<small data-i18n="unit_lot">${t('unit_lot')}</small>`;
+      if (prevToday.length) {
+        const d = (today.length - prevToday.length) / prevToday.length * 100;
+        $('#kpiIncomingFoot').textContent = (d >= 0 ? '↗ ' : '↘ ') + Math.abs(d).toFixed(1) + '%';
+        $('#kpiIncomingFoot').className = d >= 0 ? 'trend-up' : 'trend-down';
+      } else {
+        $('#kpiIncomingFoot').textContent = '—';
+        $('#kpiIncomingFoot').className = 'trend-flat';
+      }
+      $('#kpiPending').innerHTML = `${DASH.pendingTotal}<small data-i18n="unit_lot">${t('unit_lot')}</small>`;
+      const urgentPending = DASH.records.filter((r) => r.expeditedFlagName === '是' && r.inspectionStatus === '0').length;
+      $('#kpiPendingFoot').innerHTML = `${urgentPending} <span data-i18n="unit_urgent">${t('unit_urgent')}</span>`;
+      $('#kpiOverdue').innerHTML = `${DASH.overdueTotal}<small data-i18n="unit_lot">${t('unit_lot')}</small>`;
+      $('#kpiOverdueFoot').textContent = '—';
+      $('#kpiPassrate').innerHTML = `${rs.total ? rs.passRate.toFixed(1) : '—'}<small>%</small>`;
+      if (pr !== null) { const d = rs.passRate - pr; $('#kpiPassrateFoot').textContent = (d >= 0 ? '↗ ' : '↘ ') + Math.abs(d).toFixed(1) + '%'; $('#kpiPassrateFoot').className = d >= 0 ? 'trend-up' : 'trend-down'; }
+      else { $('#kpiPassrateFoot').textContent = '—'; }
+      $('#kpiUrgent').innerHTML = `${urgentToday}<small data-i18n="unit_lot">${t('unit_lot')}</small>`;
+      $('#kpiUrgentFoot').textContent = today.length ? (urgentToday / today.length * 100).toFixed(1) + '%' : '0%';
+    }
+
+    function flowConic(f) {
+      const total = (f.pending + f.processing + f.done + f.overdue) || 1;
+      const p = f.pending / total * 100, pr = f.processing / total * 100, d = f.done / total * 100, o = f.overdue / total * 100;
+      return `conic-gradient(#3977ef 0 ${p}%, #14b39e ${p}% ${p + pr}%, #77a4f3 ${p + pr}% ${p + pr + d}%, #e55d68 ${p + pr + d}% 100%)`;
+    }
+    function setFlowRange(range) {
+      currentFlowRange = range;
+      const data = DASH.flow[range] || { pending: 0, processing: 0, done: 0, overdue: 0 };
+      const total = data.pending + data.processing + data.done + data.overdue;
+      $('#flowTotal').textContent = nf.format(total);
+      $('#flowPending').textContent = nf.format(data.pending);
+      $('#flowProcessing').textContent = nf.format(data.processing);
+      $('#flowDone').textContent = nf.format(data.done);
+      $('#flowOverdue').textContent = nf.format(data.overdue);
+      $('#flowDonut').style.background = flowConic(data);
+      const now = new Date(); const p = (n) => String(n).padStart(2, '0');
+      const timeStr = `${p(now.getHours())}:${p(now.getMinutes())}`;
+      $('.donut-caption').textContent = (locale === 'th' ? 'ส่งตรวจสะสม · ถึง ' : locale === 'en' ? 'Cumulative intake · as of ' : '累计送检 · 截止 ') + timeStr;
+      $$('[data-range]').forEach((b) => b.classList.toggle('active', b.dataset.range === range));
+    }
+
+    function renderTrend() {
+      const days = []; for (let i = 6; i >= 0; i--) days.push(daysAgoStr(i));
+      const pts = days.map((d) => {
+        const recs = DASH.byDate[d] || [];
+        const rs = computeResultStats(recs);
+        return { d, passRate: rs.total ? rs.passRate : null, lots: recs.length };
+      });
+      const valid = pts.filter((p) => p.passRate !== null);
+      const avg = valid.length ? valid.reduce((a, b) => a + b.passRate, 0) / valid.length : 0;
+      $('#trendNumber').textContent = (avg ? avg.toFixed(1) : '—') + '%';
+      const L = 30, R = 685, T = 20, B = 125;
+      const max = 100;
+      let min = valid.length ? Math.floor(Math.min(...valid.map((p) => p.passRate)) - 2) : 88;
+      if (max - min < 4) min = max - 4;
+      if (min < 0) min = 0;
+      const xFor = (i) => L + (i / 6) * (R - L);
+      const yFor = (v) => T + (1 - (v - min) / (max - min)) * (B - T);
+      const linePts = pts.map((p, i) => ({ x: xFor(i), y: p.passRate !== null ? yFor(p.passRate) : null }));
+      const pts2 = linePts.filter((c) => c.y !== null);
+      let lineD = '', areaD = '';
+      if (pts2.length) {
+        lineD = pts2.map((c, i) => `${i ? 'L' : 'M'}${c.x.toFixed(1)} ${c.y.toFixed(1)}`).join(' ');
+        areaD = `M${pts2[0].x.toFixed(1)} ${B} L` + pts2.map((c) => `${c.x.toFixed(1)} ${c.y.toFixed(1)}`).join(' L ') + ` L${pts2[pts2.length - 1].x.toFixed(1)} ${B} Z`;
+      }
+      const circles = pts2.map((c) => `<circle class="point" cx="${c.x.toFixed(1)}" cy="${c.y.toFixed(1)}" r="3.5"/>`).join('');
+      const gridVals = [max, max - (max - min) / 3, max - 2 * (max - min) / 3, min];
+      const grid = gridVals.map((v) => `<line class="grid" x1="${L}" y1="${yFor(v).toFixed(1)}" x2="${R}" y2="${yFor(v).toFixed(1)}"/>`).join('');
+      const labels = gridVals.map((v) => `<text class="axis-label" x="0" y="${(yFor(v) + 3).toFixed(1)}">${v.toFixed(0)}%</text>`).join('');
+      $('#iqcTrendChart').innerHTML = `${grid}${labels}<path class="area" d="${areaD}"/><path class="line" d="${lineD}"/>${circles}`;
+      $('#iqcTrendFoot').innerHTML = days.map((d) => `<span>${d.slice(5)}</span>`).join('');
+      const note = $('#trendNote span');
+      if (note) {
+        if (valid.length >= 2) note.textContent = locale === 'th' ? `มีข้อมูล ${valid.length} วัน · เฉลี่ย ${avg.toFixed(1)}%` : locale === 'en' ? `${valid.length} days with data · avg ${avg.toFixed(1)}%` : `近 7 日 ${valid.length} 天有数据 · 均值 ${avg.toFixed(1)}%`;
+        else if (valid.length === 1) note.textContent = locale === 'th' ? `มีข้อมูลเฉพาะ ${valid[0].d.slice(5)} · ${valid[0].passRate.toFixed(1)}%` : locale === 'en' ? `Only ${valid[0].d.slice(5)} · ${valid[0].passRate.toFixed(1)}%` : `仅 ${valid[0].d.slice(5)} 有数据 · ${valid[0].passRate.toFixed(1)}%`;
+        else note.textContent = locale === 'th' ? 'ไม่มีข้อมูลในช่วง 7 วัน' : locale === 'en' ? 'No data in the last 7 days' : '近 7 日暂无送检数据';
+      }
+    }
+
+    function renderResultStats() {
+      const rs = DASH.resultStats;
+      $('#resultTotal').textContent = nf.format(rs.total);
+      const total = rs.total || 1;
+      const p = rs.pass / total * 100, s = rs.special / total * 100, f = rs.fail / total * 100;
+      $('#resultDonut').style.background = `conic-gradient(var(--green) 0 ${p}%, var(--amber) ${p}% ${p + s}%, var(--red) ${p + s}% 100%)`;
+      $('#resultLegend').innerHTML = `
+        <div class="result-row"><i class="result-mark green"></i><span data-i18n="result_pass">${t('result_pass')}</span><strong>${nf.format(rs.pass)}</strong><small>${(p).toFixed(1)}%</small></div>
+        <div class="result-row"><i class="result-mark amber"></i><span data-i18n="result_special">${t('result_special')}</span><strong>${nf.format(rs.special)}</strong><small>${(s).toFixed(1)}%</small></div>
+        <div class="result-row"><i class="result-mark red"></i><span data-i18n="result_fail">${t('result_fail')}</span><strong>${nf.format(rs.fail)}</strong><small>${(f).toFixed(1)}%</small></div>`;
+      $('#resultPassRate').textContent = (rs.total ? rs.passRate.toFixed(1) : '—') + '%';
+    }
+
+    function renderInspectors() {
+      const list = DASH.inspectors;
+      $('#inspectorTotal').textContent = nf.format(list.reduce((a, b) => a + b.count, 0));
+      if (!list.length) { $('#inspectorColumns').innerHTML = '<div style="color:var(--muted);font-size:11px;align-self:center">暂无待检任务</div>'; $('#capacityValue').textContent = '0%'; return; }
+      const max = list[0].count || 1;
+      $('#inspectorColumns').innerHTML = list.map((e, i) => `<div class="inspector-column"><strong>${e.count}</strong><i style="--h:${Math.max(14, e.count / max * 93)}%"></i><span>${escHtml(e.name)}</span></div>`).join('');
+      $('#capacityValue').textContent = (list.reduce((a, b) => a + b.count, 0) / (list.length * max) * 100).toFixed(1) + '%';
+    }
+
+    function renderSupplierSummary() {
+      const list = DASH.suppliers;
+      $('#supplierTotal').textContent = nf.format(list.length);
+      const avg = list.length ? list.reduce((a, b) => a + b.raw, 0) / list.length : 0;
+      $('#supplierAvg').innerHTML = `${avg.toFixed(1)}<small>%</small>`;
+      const risk = list.filter((s) => s.raw < 93).length;
+      $('#supplierRisk').innerHTML = `${risk}<small data-i18n="supplier_unit_company">${t('supplier_unit_company')}</small>`;
+      $('#supplierLots').innerHTML = `${nf.format(DASH.resultStats.total)}<small data-i18n="unit_lot">${t('unit_lot')}</small>`;
+    }
+
+    function renderSupplierRankings() {
+      let supplierMode = 'top';
+      const list = supplierMode === 'top' ? DASH.suppliers.slice(0, 12) : [...DASH.suppliers].slice(-12).reverse();
+      if (!list.length) { $('#rankList').innerHTML = '<div class="rank-row" style="color:var(--muted)">暂无数据</div>'; $('#supplierColumnChart').innerHTML = ''; return; }
+      $('#rankList').innerHTML = list.map((item, index) => `<div class="rank-row ${supplierMode === 'bottom' ? 'is-bottom' : ''}">
+        <span class="rank-no">${String(index + 1).padStart(2, '0')}</span>
+        <span class="rank-supplier" title="${escHtml(item.name)}">${escHtml(item.name)}</span>
+        <strong class="rank-score">${item.score}</strong>
+        <span class="rank-batches">${nf.format(item.batches)}</span></div>`).join('');
+      $('#supplierColumnChart').innerHTML = list.map((item, index) => {
+        const height = Math.max(24, (item.raw - 88) * 6);
+        return `<div class="supplier-bar-item" title="${escHtml(item.name)} · ${item.score}"><strong>${item.score}</strong><i style="--bar-height:${Math.min(92, height)}%"></i><span>${String(index + 1).padStart(2, '0')} · ${escHtml(item.name)}</span></div>`;
+      }).join('');
+      $('#supplierChartMetric').textContent = list[0].score;
+      $('#rankFooterLabel').textContent = t('top_risk');
+      $('#rankFooterValue').textContent = `${list[0].name} · ${list[0].score}`;
+    }
+
+    function renderSupplierDetail() {
+      const list = DASH.suppliers;
+      $('#supplierDetailBody').innerHTML = list.map((s) => {
+        const defect = s.total ? (s.fail / s.total * 100) : 0;
+        const state = s.raw >= 97 ? 'stable' : s.raw >= 93 ? 'watch' : 'risk';
+        const stateKey = state === 'stable' ? 'supplier_status_stable' : state === 'watch' ? 'supplier_status_watch' : 'supplier_status_risk';
+        const passCls = s.raw >= 97 ? 'metric-good' : s.raw >= 93 ? 'metric-watch' : 'metric-risk';
+        const defectCls = defect <= 2 ? 'metric-good' : defect <= 6 ? 'metric-watch' : 'metric-risk';
+        return `<tr><td class="supplier-detail-name">${escHtml(s.name)}</td><td class="supplier-detail-code">${escHtml(s.code)}</td><td>${nf.format(s.batches)}</td><td class="${passCls}">${s.raw.toFixed(1)}%</td><td class="${defectCls}">${defect.toFixed(1)}%</td><td class="supplier-trend up">↑ ${s.raw.toFixed(1)}%</td><td><span class="supplier-state ${state}" data-i18n="${stateKey}">${t(stateKey)}</span></td></tr>`;
+      }).join('');
+    }
+
+    function renderAlerts() {
+      const list = DASH.alerts;
+      if (!list.length) { $('#alertList').innerHTML = '<div class="alert-item"><span class="alert-icon"><svg width="14" height="14"><use href="#icon-check"/></svg></span><div><div class="alert-main"><span class="alert-title">暂无异常</span></div></div></div>'; return; }
+      $('#alertList').innerHTML = list.map((a) => {
+        const icon = a.type === 'danger' ? 'icon-alert' : a.type === 'info' ? 'icon-info' : 'icon-clock';
+        return `<div class="alert-item ${a.type === 'danger' ? 'danger' : a.type === 'info' ? 'info' : ''}"><span class="alert-icon"><svg width="14" height="14"><use href="#${icon}"/></svg></span><div><div class="alert-main"><span class="alert-title" data-i18n="${a.titleKey}">${t(a.titleKey)}</span><span class="alert-time"></span></div><div class="alert-copy">${escHtml(a.copy)}</div></div></div>`;
+      }).join('');
+      $('#alertCount').textContent = `${list.length} ${locale === 'th' ? 'รายการ' : locale === 'en' ? 'items' : '条需关注'}`;
+    }
+
+    function updateDatePill() {
+      const now = new Date();
+      const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+      const zh = `${now.getFullYear()}年${pad2(now.getMonth() + 1)}月${pad2(now.getDate())}日 · 周${weekdays[now.getDay()]}`;
+      $$('.date-pill span[data-i18n="date_today"]').forEach((el) => { el.textContent = zh; });
+      const rs = $('#resultSubtitle');
+      if (rs) rs.textContent = t('result_subtitle') + ' · ' + monthPrefix(0).replace('-', '.');
+    }
+
+    function setSyncState(loading, error) {
+      const dot = $('.sync-head .live-dot'), live = $('.sync-live'), copy = $('.sync-copy');
+      if (loading) { dot.style.background = '#e5a43b'; live.textContent = 'SYNC'; live.style.color = '#b27b1d'; live.style.background = '#fff5de'; copy.textContent = '正在同步 QMS 数据…'; }
+      else if (error) { dot.style.background = '#e55d68'; live.textContent = 'ERR'; live.style.color = '#cf3f50'; live.style.background = '#ffedef'; copy.textContent = 'QMS 连接异常，请检查账号或网络。'; }
+      else { dot.style.background = '#46d7ad'; live.textContent = 'LIVE'; live.style.color = '#238e70'; live.style.background = '#e8f7f1'; copy.textContent = '已连接 QMS 数据源 · 每 5 分钟自动同步'; }
+    }
+
+    async function loadDashboardData(silent = false) {
+      if (qmsLoading) return;
+      qmsLoading = true;
+      setSyncState(true);
+      try {
+        await qmsLogin();
+        const today = todayStr();
+        const [active, recent] = await Promise.all([
+          qmsSelectAll({ factoryCode: QMS_CONFIG.factoryCode, inspectionStatus: '0' }),
+          qmsSelectAll({ factoryCode: QMS_CONFIG.factoryCode, createDateStart: daysAgoStr(60), createDateEnd: today })
+        ]);
+        const map = new Map();
+        [...recent, ...active].forEach((r) => { if (r.orderNumber) map.set(r.orderNumber, r); });
+        DASH.records = Array.from(map.values()).sort((a, b) => (b.createDate || '').localeCompare(a.createDate || ''));
+        const mp = monthPrefix(0), pmp = monthPrefix(-1);
+        DASH.today = DASH.records.filter((r) => r.createDate === today);
+        DASH.week = DASH.records.filter((r) => (r.createDate || '') >= daysAgoStr(6));
+        DASH.month = DASH.records.filter((r) => (r.createDate || '').startsWith(mp));
+        DASH.prevMonth = DASH.records.filter((r) => (r.createDate || '').startsWith(pmp));
+        DASH.byDate = {};
+        DASH.records.forEach((r) => { const k = r.createDate; (DASH.byDate[k] = DASH.byDate[k] || []).push(r); });
+        DASH.flow.today = computeFlow(DASH.today);
+        DASH.flow.week = computeFlow(DASH.week);
+        DASH.flow.month = computeFlow(DASH.month);
+        DASH.resultStats = computeResultStats(DASH.month);
+        const prevRs = computeResultStats(DASH.prevMonth);
+        DASH.prevPassRate = prevRs.total > 0 ? prevRs.passRate : null;
+        DASH.suppliers = computeSuppliers(DASH.month);
+        DASH.inspectors = computeInspectors(active);
+        DASH.alerts = computeAlerts();
+        DASH.pendingTotal = active.length;
+        DASH.overdueTotal = await qmsCount({ factoryCode: QMS_CONFIG.factoryCode, inspectionStatus: '2' });
+
+        renderKpis();
+        setFlowRange(currentFlowRange);
+        renderTrend();
+        renderResultStats();
+        renderInspectors();
+        renderSupplierSummary();
+        renderSupplierRankings();
+        renderSupplierDetail();
+        renderAlerts();
+        renderTableRows();
+        applyFilters();
+        updateDatePill();
+        $('#lastRefresh').textContent = currentTimeString();
+        setSyncState(false);
+      } catch (err) {
+        console.error(err);
+        setSyncState(false, err);
+        if (!silent) showToast('数据加载失败：' + (err.message || err));
+      } finally { qmsLoading = false; }
+    }
+
+    /* ===================== 原有 UI 逻辑 ===================== */
+    function t(key) {
+      if (locale === 'mix') return `${I18N.zh[key] || key} · ${I18N.th[key] || key}`;
+      return I18N[locale][key] || I18N.zh[key] || key;
+    }
+    function updatePageUi() {
+      document.body.dataset.page = currentPage;
+      const breadcrumbKey = currentPage === 'tasks' ? 'breadcrumb_tasks' : currentPage === 'suppliers' ? 'breadcrumb_suppliers' : 'breadcrumb_overview';
+      const breadcrumb = $('#breadcrumbCurrent');
+      if (breadcrumb) breadcrumb.textContent = t(breadcrumbKey);
+      $$('.nav-item[data-page]').forEach((item) => {
+        const active = item.dataset.page === currentPage;
+        item.classList.toggle('active', active);
+        if (active) item.setAttribute('aria-current', 'page'); else item.removeAttribute('aria-current');
+      });
+    }
+    function setPage(page, updateHash = true) {
+      currentPage = validPages.includes(page) ? page : 'overview';
+      updatePageUi();
+      if (updateHash && window.location.hash !== `#${currentPage}`) history.pushState(null, '', `#${currentPage}`);
+    }
+    function updateSidebarUi() {
+      const shell = $('.app-shell'), button = $('#sidebarToggle');
+      shell.classList.toggle('sidebar-hidden', sidebarHidden);
+      button.setAttribute('aria-pressed', sidebarHidden ? 'true' : 'false');
+      button.setAttribute('aria-label', t(sidebarHidden ? 'sidebar_show' : 'sidebar_hide'));
+      button.title = t(sidebarHidden ? 'sidebar_show' : 'sidebar_hide');
+    }
+    function updateWallboardUi() {
+      const button = $('#wallboardToggle'), label = $('#wallboardToggleText');
+      const supplierButton = $('#supplierWallboardToggle'), supplierEntry = $('#supplierWallboardEntry');
+      const actionKey = wallboardMode ? 'exit_wallboard' : 'enter_wallboard';
+      button.setAttribute('aria-pressed', wallboardMode ? 'true' : 'false');
+      button.title = t(actionKey); label.textContent = t(actionKey);
+      supplierButton.setAttribute('aria-pressed', supplierWallboardMode ? 'true' : 'false');
+      supplierButton.title = t(supplierWallboardMode ? 'exit_supplier_wallboard' : 'supplier_wallboard_entry');
+      $('#supplierWallboardToggleText').textContent = t(supplierWallboardMode ? 'exit_supplier_wallboard' : 'supplier_wallboard_entry');
+      supplierEntry.setAttribute('aria-pressed', supplierWallboardMode ? 'true' : 'false');
+      supplierEntry.title = t(supplierWallboardMode ? 'exit_supplier_wallboard' : 'supplier_wallboard_entry');
+      supplierEntry.querySelector('span').textContent = t(supplierWallboardMode ? 'exit_supplier_wallboard' : 'supplier_wallboard_entry');
+      $('#wallboardModeLabel').textContent = t(supplierWallboardMode ? 'supplier_wallboard_live' : 'wallboard_live');
+      $('#wallboardExitText').textContent = t(supplierWallboardMode ? 'exit_supplier_wallboard' : 'exit_wallboard');
+    }
+    function syncWallboardClasses() {
+      document.body.classList.toggle('wallboard-mode', wallboardMode);
+      document.body.classList.toggle('supplier-wallboard-mode', supplierWallboardMode);
+      const supplierBoard = $('#suppliers');
+      if (supplierBoard) {
+        if (wallboardMode) supplierBoard.style.setProperty('display', 'flex', 'important');
+        else if (supplierWallboardMode) supplierBoard.style.setProperty('display', 'block', 'important');
+        else supplierBoard.style.removeProperty('display');
+      }
+    }
+    function setWallboardMode(enabled, useFullscreen = true) {
+      if (enabled) supplierWallboardMode = false;
+      wallboardMode = Boolean(enabled);
+      syncWallboardClasses(); updateWallboardUi();
+      if (wallboardMode && useFullscreen && document.documentElement.requestFullscreen && !document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
+      if (!wallboardMode && document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
+    }
+    function setSupplierWallboardMode(enabled, useFullscreen = true) {
+      if (enabled) wallboardMode = false;
+      supplierWallboardMode = Boolean(enabled);
+      syncWallboardClasses(); updateWallboardUi();
+      if (supplierWallboardMode && useFullscreen && document.documentElement.requestFullscreen && !document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
+      if (!supplierWallboardMode && document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
+    }
+    function updateWallboardClock() {
+      const now = new Date(); const pad = (v) => String(v).padStart(2, '0');
+      $('#wallboardClock').textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    }
+    function applyLocale() {
+      document.documentElement.lang = locale === 'th' ? 'th' : locale === 'en' ? 'en' : 'zh-CN';
+      $$('[data-i18n]').forEach((node) => { node.textContent = t(node.dataset.i18n); });
+      $$('[data-i18n-placeholder]').forEach((node) => { node.placeholder = t(node.dataset.i18nPlaceholder); });
+      $$('[data-locale]').forEach((button) => { button.classList.toggle('active', button.dataset.locale === locale); button.setAttribute('aria-pressed', button.dataset.locale === locale ? 'true' : 'false'); });
+      setFlowRange(currentFlowRange);
+      updateSidebarUi(); updatePageUi(); updateWallboardUi();
+      if (DASH.records.length) { renderKpis(); renderTrend(); renderResultStats(); renderInspectors(); renderSupplierSummary(); renderSupplierRankings(); renderSupplierDetail(); renderAlerts(); renderTableRows(); applyFilters(); }
+      updateDatePill();
+    }
+    function showToast(message) {
+      $('#toastText').textContent = message;
+      $('#toast').classList.add('show');
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => $('#toast').classList.remove('show'), 2600);
+    }
+    function currentTimeString() {
+      const now = new Date(); const pad = (v) => String(v).padStart(2, '0');
+      return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    }
+    function openDetail(row) {
+      const id = row.dataset.id;
+      const rec = DASH.records.find((r) => r.orderNumber === id) || {};
+      const c = row.cells;
+      $('#detailTitle').textContent = id;
+      $('#detailPart').textContent = rec.materialNumber != null ? rec.materialNumber : c[1].textContent.trim();
+      $('#detailMaterial').textContent = rec.materialName != null ? rec.materialName : c[2].textContent.trim();
+      $('#detailCategory').textContent = rec.materialCategory != null ? rec.materialCategory : c[3].textContent.trim();
+      $('#detailSupplier').textContent = `${cleanSupplierName(rec.supplierName || '')} / ${rec.supplierCode || ''}`;
+      $('#detailQuantity').textContent = rec.qty != null ? fmtQty(rec.qty) : c[6].textContent.trim();
+      $('#detailInspector').textContent = rec.inspectorName || c[9].textContent.trim();
+      $('#detailDate').textContent = rec.createDate || c[8].textContent.trim();
+      $('#detailStatus').innerHTML = c[11].innerHTML;
+      $('#detailSla').textContent = rec.totalTime ? rec.totalTime : (row.dataset.status === 'overdue' ? (locale === 'th' ? 'เกินเวลา' : '已超时') : (locale === 'th' ? 'อยู่ใน SLA' : 'SLA 内'));
+      const done = (rec.inspectionStatus === '1' || rec.inspectionStatus === '3');
+      $$('.timeline-step').forEach((step, i) => { step.classList.toggle('current', done ? i === 3 : i === 2); step.classList.toggle('done', done ? i < 4 : i < 2); });
+      $('#detailBackdrop').classList.add('open');
+    }
+    function closeDetail() { $('#detailBackdrop').classList.remove('open'); }
+    function downloadCsv() {
+      const visibleRows = getTableRows().filter((row) => row.style.display !== 'none');
+      const headers = ['单号', '料号', '物料名称', '物料类别', '收料工厂', '供应商', '供应商编码', '来料数量', '是否加急', '送检日期', '检验员', '流程节点', '时效状态', '检验结果'];
+      const values = visibleRows.map((row) => {
+        const c = row.cells;
+        return [row.dataset.id, c[1].textContent.trim(), c[2].textContent.trim(), c[3].textContent.trim(), c[4].textContent.trim(), c[5].querySelector('strong').textContent.trim(), c[5].querySelector('small').textContent.trim(), c[6].textContent.trim(), c[7].textContent.trim(), c[8].textContent.trim(), c[9].textContent.trim(), c[10].textContent.trim(), c[11].textContent.trim(), c[12].textContent.trim()];
+      });
+      const csv = [headers, ...values].map((line) => line.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(',')).join('\n');
+      const blob = new Blob([`\ufeff${csv}`], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url; link.download = `iqc-inspection-${todayStr()}.csv`; link.click();
+      URL.revokeObjectURL(url);
+      showToast(t('export_done'));
+    }
+    function applyFilters() {
+      const query = $('#globalSearch').value.trim().toLowerCase();
+      const status = $('#statusFilter').value;
+      let visible = 0;
+      getTableRows().forEach((row) => {
+        const matchQuery = !query || `${row.dataset.search} ${row.textContent}`.toLowerCase().includes(query);
+        const matchStatus = status === 'all' || row.dataset.status === status;
+        const matchUrgent = !urgentOnly || row.dataset.urgent === '1';
+        const show = matchQuery && matchStatus && matchUrgent;
+        row.style.display = show ? '' : 'none';
+        if (show) visible += 1;
+      });
+      $('#visibleCount').textContent = visible;
+      $('#emptyRow').style.display = visible ? 'none' : 'table-row';
+    }
+    function enableSorting() {
+      $$('th[data-sort]').forEach((header) => {
+        let direction = 1;
+        header.addEventListener('click', () => {
+          const type = header.dataset.sort;
+          const rows = [...getTableRows()].sort((a, b) => {
+            let av = '', bv = '';
+            if (type === 'id') { av = a.dataset.id; bv = b.dataset.id; }
+            if (type === 'part') { av = a.cells[1].textContent; bv = b.cells[1].textContent; }
+            if (type === 'qty') { av = Number(a.cells[6].textContent.replaceAll(',', '')); bv = Number(b.cells[6].textContent.replaceAll(',', '')); }
+            if (type === 'date') { av = a.cells[8].textContent; bv = b.cells[8].textContent; }
+            return (av > bv ? 1 : av < bv ? -1 : 0) * direction;
+          });
+          direction *= -1;
+          const body = $('#iqcTableBody');
+          rows.forEach((row) => body.appendChild(row));
+          body.appendChild($('#emptyRow'));
+          applyFilters();
+        });
+      });
+    }
+    function bindEvents() {
+      $$('[data-locale]').forEach((button) => button.addEventListener('click', () => { locale = button.dataset.locale; applyLocale(); }));
+      $$('.nav-item[data-page]').forEach((item) => item.addEventListener('click', (event) => { event.preventDefault(); setPage(item.dataset.page); }));
+      window.addEventListener('hashchange', () => setPage(window.location.hash.slice(1), false));
+      window.addEventListener('popstate', () => setPage(window.location.hash.slice(1), false));
+      $('#sidebarToggle').addEventListener('click', () => { sidebarHidden = !sidebarHidden; updateSidebarUi(); });
+      $('#wallboardToggle').addEventListener('click', () => setWallboardMode(!wallboardMode));
+      $('#supplierWallboardToggle').addEventListener('click', () => setSupplierWallboardMode(!supplierWallboardMode));
+      $('#supplierWallboardEntry').addEventListener('click', () => setSupplierWallboardMode(!supplierWallboardMode));
+      $('#wallboardExit').addEventListener('click', () => supplierWallboardMode ? setSupplierWallboardMode(false) : setWallboardMode(false));
+      document.addEventListener('fullscreenchange', () => {
+        if (!document.fullscreenElement && wallboardMode) setWallboardMode(false, false);
+        if (!document.fullscreenElement && supplierWallboardMode) setSupplierWallboardMode(false, false);
+      });
+      updateWallboardClock(); setInterval(updateWallboardClock, 1000);
+      $$('[data-range]').forEach((button) => button.addEventListener('click', () => setFlowRange(button.dataset.range)));
+      $$('[data-supplier-mode]').forEach((button) => button.addEventListener('click', () => { supplierMode = button.dataset.supplierMode; renderSupplierRankings(); }));
+      const searchInput = $('#globalSearch'), statusFilter = $('#statusFilter'), rangeFilter = $('#rangeFilter');
+      [searchInput, statusFilter].forEach((control) => control.addEventListener('input', applyFilters));
+      rangeFilter.addEventListener('change', () => { if (DASH.records.length) { renderTableRows(); applyFilters(); } });
+      urgentFilter = $('#urgentFilter');
+      urgentFilter.addEventListener('click', () => { urgentOnly = !urgentOnly; urgentFilter.classList.toggle('active', urgentOnly); applyFilters(); });
+      $('#refreshBtn').addEventListener('click', () => {
+        const button = $('#refreshBtn'); button.classList.add('is-loading');
+        loadDashboardData().then(() => { button.classList.remove('is-loading'); });
+      });
+      $('#exportBtn').addEventListener('click', downloadCsv);
+      $('#notificationBtn').addEventListener('click', () => showToast(t('alert_done')));
+      $('#alertLink').addEventListener('click', () => showToast(t('alert_done')));
+      document.addEventListener('click', (event) => {
+        const btn = event.target.closest('.detail-btn');
+        if (btn) { event.stopPropagation(); openDetail(btn.closest('tr')); }
+      });
+      document.addEventListener('dblclick', (event) => {
+        const row = event.target.closest('tr[data-status]');
+        if (row) openDetail(row);
+      });
+      $('#modalClose').addEventListener('click', closeDetail);
+      $('#modalCloseSecondary').addEventListener('click', closeDetail);
+      $('#detailBackdrop').addEventListener('click', (event) => { if (event.target === $('#detailBackdrop')) closeDetail(); });
+      $('#openQms').addEventListener('click', () => window.open('https://qms.sharetronic.com/qms-front/iqc/iqcDocuments', '_blank'));
+      document.addEventListener('keydown', (event) => { if (event.key === 'Escape') closeDetail(); });
+      enableSorting();
+    }
+
+    let supplierMode = 'top';
+    let urgentOnly = false;
+    let urgentFilter = null;
+
+    applyLocale();
+    bindEvents();
+    applyFilters();
+    loadDashboardData();
+    setInterval(() => { if (!qmsLoading) loadDashboardData(true); }, 5 * 60 * 1000);
+  </script>
+</body>
+</html>
