@@ -548,7 +548,15 @@
     .supplier-chart-panel { min-width: 0; }
     .supplier-chart-topline { display: flex; justify-content: space-between; color: var(--muted); font-size: 9px; }
     .supplier-chart-topline strong { color: var(--ink); font-family: var(--font-mono); font-size: 10px; }
-    .supplier-column-chart { display: flex; align-items: end; gap: 14px; height: 247px; margin-top: 8px; padding: 18px 10px 0; overflow-x: auto; border-bottom: 1px solid var(--line); }
+    .supplier-column-chart { height: 247px; margin-top: 8px; border-bottom: 1px solid var(--line); }
+    .supplier-line-chart { display: block; width: 100%; height: 100%; overflow: visible; }
+    .supplier-line-chart .grid { stroke: #edf1f6; stroke-width: 1; }
+    .supplier-line-chart .axis-label { fill: #a1acbb; font-family: var(--font-sans); font-size: 9px; }
+    .supplier-line-chart .area { fill: #eef4ff; }
+    .supplier-line-chart .line { fill: none; stroke: var(--blue); stroke-linecap: round; stroke-linejoin: round; stroke-width: 2.5; }
+    .supplier-line-chart .point { fill: #fff; stroke: var(--blue); stroke-width: 2.5; }
+    .supplier-line-chart .point-low { fill: #fff; stroke: var(--red); stroke-width: 2.5; }
+    .supplier-line-chart .supplier-score-label { fill: var(--navy); font-family: var(--font-mono); font-size: 9.5px; font-weight: 700; }
     .supplier-bar-item { flex: 0 0 40px; display: flex; flex-direction: column; align-items: center; justify-content: end; gap: 7px; height: 100%; }
     .supplier-bar-item strong { color: var(--navy); font-family: var(--font-mono); font-size: 10px; font-weight: 800; }
     .supplier-bar-item i { width: 20px; height: var(--bar-height); min-height: 22px; border-radius: 10px 10px 2px 2px; background: var(--green); box-shadow: 0 7px 13px rgba(44,155,118,.16); }
@@ -1568,6 +1576,38 @@
       $('#supplierLots').innerHTML = `${nf.format(DASH.resultStats.total)}<small data-i18n="unit_lot">${t('unit_lot')}</small>`;
     }
 
+    function renderSupplierLineChart(list) {
+      const el = $('#supplierColumnChart');
+      if (!el) return;
+      const n = list.length;
+      if (!n) { el.innerHTML = ''; return; }
+      const W = 700, H = 260, L = 44, R = 14, T = 26, B = 36;
+      const scores = list.map((c) => c.raw);
+      const rawMin = Math.min(...scores), rawMax = Math.max(...scores);
+      let min = Math.floor(rawMin - 2);
+      let max = Math.ceil(rawMax + 1);
+      if (max > 100) max = 100;
+      if (min < 0) min = 0;
+      if (max - min < 4) { min = Math.max(0, Math.floor(rawMin - 2)); max = Math.min(100, min + 4); }
+      const span = (max - min) || 1;
+      const innerW = W - L - R;
+      const xFor = (i) => n === 1 ? L + innerW / 2 : L + (i / (n - 1)) * innerW;
+      const yFor = (v) => T + (1 - (v - min) / span) * (H - T - B);
+      const gridVals = [max, min + (max - min) * 2 / 3, min + (max - min) / 3, min];
+      const grid = gridVals.map((v) => `<line class="grid" x1="${L}" y1="${yFor(v).toFixed(1)}" x2="${W - R}" y2="${yFor(v).toFixed(1)}"/>`).join('');
+      const yLabels = gridVals.map((v) => `<text class="axis-label" x="0" y="${(yFor(v) + 3).toFixed(1)}">${v.toFixed(0)}%</text>`).join('');
+      const pts = list.map((c, i) => ({ x: xFor(i), y: yFor(c.raw), c }));
+      const lineD = pts.map((p, i) => `${i ? 'L' : 'M'}${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
+      const areaD = `M${pts[0].x.toFixed(1)} ${H - B} L` + pts.map((p) => `${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' L ') + ` L${pts[n - 1].x.toFixed(1)} ${H - B} Z`;
+      const dots = pts.map((p) => {
+        const low = p.c.raw < 93;
+        return `<circle class="${low ? 'point-low' : 'point'}" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3.5"><title>${escHtml(p.c.name)} · ${p.c.score}</title></circle>`;
+      }).join('');
+      const scoreLabels = pts.map((p) => `<text class="supplier-score-label" x="${p.x.toFixed(1)}" y="${(p.y - 9).toFixed(1)}" text-anchor="middle">${p.c.score}</text>`).join('');
+      const xLabels = pts.map((p, i) => `<text class="axis-label" x="${p.x.toFixed(1)}" y="${H - 13}" text-anchor="middle">${String(i + 1).padStart(2, '0')}</text>`).join('');
+      el.innerHTML = `<svg class="supplier-line-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">${grid}${yLabels}<path class="area" d="${areaD}"/><path class="line" d="${lineD}"/>${dots}${scoreLabels}${xLabels}</svg>`;
+    }
+
     function renderSupplierRankings() {
       const list = supplierMode === 'top' ? DASH.suppliers : [...DASH.suppliers].reverse();
       if (!list.length) { $('#rankList').innerHTML = '<div class="rank-row" style="color:var(--muted)">暂无数据</div>'; $('#supplierColumnChart').innerHTML = ''; return; }
@@ -1577,10 +1617,7 @@
         <strong class="rank-score">${item.score}</strong>
         <span class="rank-batches">${nf.format(item.batches)}</span></div>`).join('');
       const chartList = list.slice(0, 15);
-      $('#supplierColumnChart').innerHTML = chartList.map((item, index) => {
-        const height = Math.max(24, (item.raw - 88) * 6);
-        return `<div class="supplier-bar-item" title="${escHtml(item.name)} · ${item.score}"><strong>${item.score}</strong><i style="--bar-height:${Math.min(92, height)}%"></i><span>${String(index + 1).padStart(2, '0')} · ${escHtml(item.name)}</span></div>`;
-      }).join('');
+      renderSupplierLineChart(chartList);
       $('#supplierChartMetric').textContent = list[0].score;
       $('#rankFooterLabel').textContent = t('top_risk');
       $('#rankFooterValue').textContent = `${list[0].name} · ${list[0].score}`;
