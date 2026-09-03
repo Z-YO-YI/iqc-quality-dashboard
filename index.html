@@ -1666,6 +1666,21 @@
       $('#wallboardModeLabel').textContent = t(supplierWallboardMode ? 'supplier_wallboard_live' : 'wallboard_live');
       $('#wallboardExitText').textContent = t(supplierWallboardMode ? 'exit_supplier_wallboard' : 'exit_wallboard');
     }
+    let tableAutoScrollTimer = null;
+    function stopTableAutoScroll() {
+      if (tableAutoScrollTimer) { clearInterval(tableAutoScrollTimer); tableAutoScrollTimer = null; }
+    }
+    function startTableAutoScroll() {
+      stopTableAutoScroll();
+      const wrap = $('.table-card .table-wrap');
+      if (!wrap) return;
+      tableAutoScrollTimer = setInterval(() => {
+        if (wrap.matches(':hover')) return;
+        const max = wrap.scrollHeight - wrap.clientHeight;
+        if (max <= 0) return;
+        wrap.scrollTop = wrap.scrollTop >= max - 1 ? 0 : wrap.scrollTop + 1;
+      }, 40);
+    }
     function syncWallboardClasses() {
       document.body.classList.toggle('wallboard-mode', wallboardMode);
       document.body.classList.toggle('supplier-wallboard-mode', supplierWallboardMode);
@@ -1675,6 +1690,8 @@
         else if (supplierWallboardMode) supplierBoard.style.setProperty('display', 'block', 'important');
         else supplierBoard.style.removeProperty('display');
       }
+      if (wallboardMode) startTableAutoScroll();
+      else stopTableAutoScroll();
     }
     function setWallboardMode(enabled, useFullscreen = true) {
       if (enabled) supplierWallboardMode = false;
