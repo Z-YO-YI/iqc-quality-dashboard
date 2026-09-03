@@ -1675,6 +1675,7 @@
       const wrap = $('.table-card .table-wrap');
       if (!wrap) return;
       let last = performance.now();
+      let acc = 0;
       const speed = 40; // 像素/秒
       const step = (now) => {
         const dt = Math.min((now - last) / 1000, 0.1);
@@ -1682,8 +1683,12 @@
         if (!wrap.matches(':hover')) {
           const max = wrap.scrollHeight - wrap.clientHeight;
           if (max > 0) {
-            const next = wrap.scrollTop + speed * dt;
-            wrap.scrollTop = next >= max - 1 ? 0 : next;
+            acc += speed * dt;
+            const stepPx = Math.floor(acc);
+            if (stepPx > 0) {
+              acc -= stepPx;
+              wrap.scrollTop = wrap.scrollTop >= max - 1 ? 0 : wrap.scrollTop + stepPx;
+            }
           }
         }
         tableAutoScrollTimer = requestAnimationFrame(step);
