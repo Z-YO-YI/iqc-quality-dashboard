@@ -1622,22 +1622,6 @@
       $('#alertsModalBackdrop').classList.add('open');
     }
     function closeAlertsModal() { $('#alertsModalBackdrop').classList.remove('open'); }
-    function openUserModal() {
-      try {
-        if (qmsToken) {
-          const payload = JSON.parse(atob(qmsToken.split('.')[1]));
-          const p = payload.user_name && payload.user_name.principal;
-          if (p) {
-            $('#userModalName').textContent = p.name || '张有义';
-            $('#userModalLogin').textContent = p.loginName || 'zhangyouyi';
-            $('#userModalPhone').textContent = p.telephoneNumber || '—';
-          }
-        }
-      } catch (e) {}
-      $('#userModalBackdrop').classList.add('open');
-    }
-    function closeUserModal() { $('#userModalBackdrop').classList.remove('open'); }
-
     function updateDatePill() {
       const now = new Date();
       const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
@@ -1983,9 +1967,6 @@
       $('#alertLink').addEventListener('click', openAlertsModal);
       $('#alertsModalClose').addEventListener('click', closeAlertsModal);
       $('#alertsModalBackdrop').addEventListener('click', (event) => { if (event.target === $('#alertsModalBackdrop')) closeAlertsModal(); });
-      $('#userModalClose').addEventListener('click', closeUserModal);
-      $('#userModalBackdrop').addEventListener('click', (event) => { if (event.target === $('#userModalBackdrop')) closeUserModal(); });
-      $$('.avatar, .user-chip').forEach((el) => { el.style.cursor = 'pointer'; el.addEventListener('click', openUserModal); });
       document.addEventListener('click', (event) => {
         const btn = event.target.closest('.detail-btn');
         if (btn) { event.stopPropagation(); openDetail(btn.closest('tr')); }
@@ -1998,7 +1979,7 @@
       $('#modalCloseSecondary').addEventListener('click', closeDetail);
       $('#detailBackdrop').addEventListener('click', (event) => { if (event.target === $('#detailBackdrop')) closeDetail(); });
       $('#openQms').addEventListener('click', () => window.open('https://qms.sharetronic.com/qms-front/iqc/iqcDocuments', '_blank'));
-      document.addEventListener('keydown', (event) => { if (event.key === 'Escape') { closeDetail(); closeAlertsModal(); closeUserModal(); } });
+      document.addEventListener('keydown', (event) => { if (event.key === 'Escape') { closeDetail(); closeAlertsModal(); } });
       enableSorting();
     }
 
