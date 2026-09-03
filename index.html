@@ -429,6 +429,7 @@
     .alert-copy { margin-top: 3px; overflow: hidden; color: var(--muted); font-size: 9px; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
     .alert-link { display: inline-flex; align-items: center; gap: 5px; margin-top: 9px; border: 0; color: var(--blue); background: transparent; font-size: 10px; font-weight: 750; }
     .alert-link:hover { color: var(--navy); }
+    .alerts-modal-list { max-height: 58vh; overflow-y: auto; padding: 2px 0; }
 
     /* Table */
     .table-card { overflow: hidden; margin-bottom: 15px; }
@@ -995,7 +996,8 @@
             <div><h2 class="card-title" data-i18n="table_title">来料检验任务</h2><p class="card-subtitle" data-i18n="table_subtitle">接入 QMS 的最新检验任务 · 支持按状态、加急与关键字快速定位</p></div>
             <div class="filters">
               <label class="search-box"><svg width="14" height="14"><use href="#icon-search"/></svg><input id="globalSearch" type="search" data-i18n-placeholder="search_placeholder" placeholder="搜索单号 / 料号 / 供应商" /></label>
-              <select class="filter-select" id="rangeFilter" aria-label="Date range"><option value="today" data-i18n="range_today">今日</option><option value="week" data-i18n="range_week">本周</option><option value="month" data-i18n="range_month">本月</option></select>
+              <select class="filter-select" id="rangeFilter" aria-label="Date range"><option value="today" data-i18n="range_today">今日</option><option value="week" data-i18n="range_week">本周</option><option value="month" data-i18n="range_month">本月</option><option value="custom">自定义日期</option></select>
+              <input type="date" class="filter-select" id="dateStart" hidden><span id="dateSep" hidden>~</span><input type="date" class="filter-select" id="dateEnd" hidden>
               <select class="filter-select" id="statusFilter" aria-label="Status"><option value="all" data-i18n="all_status">全部状态</option><option value="pending" data-i18n="status_pending">待检</option><option value="processing" data-i18n="status_processing">检验中</option><option value="overdue" data-i18n="status_overdue">超时未完成</option><option value="done" data-i18n="status_done">已完成</option></select>
               <button class="btn filter-toggle" id="urgentFilter"><svg width="14" height="14"><use href="#icon-filter"/></svg><span data-i18n="urgent_only">仅看加急</span></button>
             </div>
@@ -1132,6 +1134,24 @@
         <h3 class="detail-section-title" data-i18n="detail_timeline">流程轨迹</h3>
         <div class="timeline"><div class="timeline-step done" data-i18n="timeline_received">收料登记</div><div class="timeline-step done" data-i18n="timeline_submitted">送检申请</div><div class="timeline-step current" data-i18n="timeline_inspecting">IQC 检验</div><div class="timeline-step" data-i18n="timeline_closed">结果关闭</div></div>
         <div class="modal-foot"><button class="btn" id="modalCloseSecondary" data-i18n="close">关闭</button><button class="btn primary" id="openQms"><svg width="13" height="13"><use href="#icon-external"/></svg><span data-i18n="open_qms">打开 QMS 检验单</span></button></div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop" id="alertsModalBackdrop" role="dialog" aria-modal="true">
+    <div class="detail-modal" style="max-width: 560px;">
+      <div class="modal-head"><div><div class="modal-kicker" data-i18n="alert_title">异常与预警</div><h2 class="modal-title" data-i18n="view_all_alerts">查看全部预警</h2></div><button class="modal-close" id="alertsModalClose"><svg width="16" height="16"><use href="#icon-close"/></svg></button></div>
+      <div class="modal-body"><div class="alerts-modal-list" id="alertsModalList"></div></div>
+    </div>
+  </div>
+  <div class="modal-backdrop" id="userModalBackdrop" role="dialog" aria-modal="true">
+    <div class="detail-modal" style="max-width: 440px;">
+      <div class="modal-head"><div><div class="modal-kicker" data-i18n="role_label">质量管理员</div><h2 class="modal-title" id="userModalName">张有义</h2></div><button class="modal-close" id="userModalClose"><svg width="16" height="16"><use href="#icon-close"/></svg></button></div>
+      <div class="modal-body">
+        <div class="detail-grid">
+          <div class="detail-item"><label>登录账号</label><div id="userModalLogin">zhangyouyi</div></div>
+          <div class="detail-item"><label data-i18n="col_factory">收料工厂</label><div id="userModalFactory">SHARETRONIC DATA TECHNOLOGY (THAILAND)CO.,LTD.</div></div>
+          <div class="detail-item"><label>手机号</label><div id="userModalPhone">19273767397</div></div>
+        </div>
       </div>
     </div>
   </div>
@@ -1302,10 +1322,21 @@
       return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     }
     function fmtQty(n) { return nf.format(Math.round(Number(n) || 0)); }
+    function parseTotalHours(tt) {
+      if (!tt) return null;
+      const m = String(tt).match(/(\d+)天(?:(\d+)时)?(?:(\d+)分)?/);
+      if (!m) return null;
+      return (parseInt(m[1]) || 0) * 24 + (parseInt(m[2]) || 0) + (parseInt(m[3]) || 0) / 60;
+    }
     function mapStatus(r) {
       const s = r.inspectionStatus;
       if (s === '2') return { key: 'overdue', i18n: 'status_overdue', label: t('status_overdue') };
       if (s === '0') {
+        // 24 小时时效：进行中但已超 24 小时 -> 超时未完成
+        const h = parseTotalHours(r.totalTime);
+        if ((h !== null && h >= 24) || (r.createDate && r.createDate < daysAgoStr(1))) {
+          return { key: 'overdue', i18n: 'status_overdue', label: t('status_overdue') };
+        }
         if (['组长确认', '配置模板'].includes(r.taskName)) return { key: 'pending', i18n: 'status_pending', label: t('status_pending') };
         return { key: 'processing', i18n: 'status_processing', label: t('status_processing') };
       }
@@ -1365,14 +1396,15 @@
     }
     function computeAlerts() {
       const alerts = [];
-      DASH.records.filter((r) => r.inspectionStatus === '2').slice(0, 2).forEach((r) => {
+      DASH.records.filter((r) => mapStatus(r).key === 'overdue').forEach((r) => {
         alerts.push({ type: 'danger', titleKey: 'alert_overdue', copy: `${r.orderNumber} · ${cleanSupplierName(r.supplierName)} · ${r.totalTime || '超时'}` });
       });
       const urgentPending = DASH.records.filter((r) => r.expeditedFlagName === '是' && r.inspectionStatus === '0' && ['组长确认', '配置模板'].includes(r.taskName));
       if (urgentPending.length) alerts.push({ type: 'warn', titleKey: 'alert_urgent', copy: `${urgentPending.length} ${t('unit_lot_full')}等待检验员接单` });
-      const failRec = DASH.month.find((r) => r.syncInspectionResultName === '退货');
-      if (failRec) alerts.push({ type: 'info', titleKey: 'alert_fail', copy: `${cleanSupplierName(failRec.supplierName)} · ${failRec.materialNumber} · ${t('result_fail')}` });
-      return alerts.slice(0, 3);
+      DASH.month.filter((r) => r.syncInspectionResultName === '退货').forEach((r) => {
+        alerts.push({ type: 'info', titleKey: 'alert_fail', copy: `${cleanSupplierName(r.supplierName)} · ${r.materialNumber} · ${t('result_fail')}` });
+      });
+      return alerts;
     }
 
     /* ===================== 渲染 ===================== */
@@ -1409,7 +1441,26 @@
       const today = todayStr();
       if (range === 'week') return records.filter((r) => (r.createDate || '') >= daysAgoStr(6));
       if (range === 'month') return records.filter((r) => (r.createDate || '').startsWith(monthPrefix(0)));
+      if (range === 'custom') {
+        const s = $('#dateStart').value, e = $('#dateEnd').value;
+        return records.filter((r) => {
+          const d = r.createDate || '';
+          if (s && d < s) return false;
+          if (e && d > e) return false;
+          return true;
+        });
+      }
       return records.filter((r) => r.createDate === today);
+    }
+    async function loadDateRange(start, end) {
+      if (!start && !end) return;
+      const sp = { factoryCode: QMS_CONFIG.factoryCode };
+      if (start) sp.createDateStart = start;
+      if (end) sp.createDateEnd = end;
+      const fetched = await qmsSelectAll(sp);
+      const map = new Map(DASH.records.map((r) => [r.orderNumber, r]));
+      fetched.forEach((r) => { if (r.orderNumber) map.set(r.orderNumber, r); });
+      DASH.records = Array.from(map.values()).sort((a, b) => (b.createDate || '').localeCompare(a.createDate || ''));
     }
 
     function renderKpis() {
@@ -1560,14 +1611,44 @@
     }
 
     function renderAlerts() {
-      const list = DASH.alerts;
-      if (!list.length) { $('#alertList').innerHTML = '<div class="alert-item"><span class="alert-icon"><svg width="14" height="14"><use href="#icon-check"/></svg></span><div><div class="alert-main"><span class="alert-title">暂无异常</span></div></div></div>'; return; }
+      const all = DASH.alerts;
+      if (!all.length) { $('#alertList').innerHTML = '<div class="alert-item"><span class="alert-icon"><svg width="14" height="14"><use href="#icon-check"/></svg></span><div><div class="alert-main"><span class="alert-title">暂无异常</span></div></div></div>'; $('#alertCount').textContent = '0 条需关注'; return; }
+      const list = all.slice(0, 3);
       $('#alertList').innerHTML = list.map((a) => {
         const icon = a.type === 'danger' ? 'icon-alert' : a.type === 'info' ? 'icon-info' : 'icon-clock';
         return `<div class="alert-item ${a.type === 'danger' ? 'danger' : a.type === 'info' ? 'info' : ''}"><span class="alert-icon"><svg width="14" height="14"><use href="#${icon}"/></svg></span><div><div class="alert-main"><span class="alert-title" data-i18n="${a.titleKey}">${t(a.titleKey)}</span><span class="alert-time"></span></div><div class="alert-copy">${escHtml(a.copy)}</div></div></div>`;
       }).join('');
-      $('#alertCount').textContent = `${list.length} ${locale === 'th' ? 'รายการ' : locale === 'en' ? 'items' : '条需关注'}`;
+      $('#alertCount').textContent = `${all.length} ${locale === 'th' ? 'รายการ' : locale === 'en' ? 'items' : '条需关注'}`;
     }
+    function openAlertsModal() {
+      const all = DASH.alerts;
+      const body = $('#alertsModalList');
+      if (!body) return;
+      if (!all.length) { body.innerHTML = '<div class="alert-item"><span class="alert-icon"><svg width="14" height="14"><use href="#icon-check"/></svg></span><div><div class="alert-main"><span class="alert-title">暂无异常</span></div></div></div>'; }
+      else {
+        body.innerHTML = all.map((a) => {
+          const icon = a.type === 'danger' ? 'icon-alert' : a.type === 'info' ? 'icon-info' : 'icon-clock';
+          return `<div class="alert-item ${a.type === 'danger' ? 'danger' : a.type === 'info' ? 'info' : ''}"><span class="alert-icon"><svg width="14" height="14"><use href="#${icon}"/></svg></span><div><div class="alert-main"><span class="alert-title" data-i18n="${a.titleKey}">${t(a.titleKey)}</span></div><div class="alert-copy">${escHtml(a.copy)}</div></div></div>`;
+        }).join('');
+      }
+      $('#alertsModalBackdrop').classList.add('open');
+    }
+    function closeAlertsModal() { $('#alertsModalBackdrop').classList.remove('open'); }
+    function openUserModal() {
+      try {
+        if (qmsToken) {
+          const payload = JSON.parse(atob(qmsToken.split('.')[1]));
+          const p = payload.user_name && payload.user_name.principal;
+          if (p) {
+            $('#userModalName').textContent = p.name || '张有义';
+            $('#userModalLogin').textContent = p.loginName || 'zhangyouyi';
+            $('#userModalPhone').textContent = p.telephoneNumber || '—';
+          }
+        }
+      } catch (e) {}
+      $('#userModalBackdrop').classList.add('open');
+    }
+    function closeUserModal() { $('#userModalBackdrop').classList.remove('open'); }
 
     function updateDatePill() {
       const now = new Date();
@@ -1890,7 +1971,19 @@
       $$('[data-supplier-mode]').forEach((button) => button.addEventListener('click', () => { supplierMode = button.dataset.supplierMode; renderSupplierRankings(); }));
       const searchInput = $('#globalSearch'), statusFilter = $('#statusFilter'), rangeFilter = $('#rangeFilter');
       [searchInput, statusFilter].forEach((control) => control.addEventListener('input', applyFilters));
-      rangeFilter.addEventListener('change', () => { if (DASH.records.length) { renderTableRows(); applyFilters(); } });
+      rangeFilter.addEventListener('change', () => {
+        const isCustom = rangeFilter.value === 'custom';
+        $('#dateStart').hidden = !isCustom;
+        $('#dateEnd').hidden = !isCustom;
+        $('#dateSep').hidden = !isCustom;
+        if (DASH.records.length) { renderTableRows(); applyFilters(); }
+      });
+      const onCustomDate = async () => {
+        await loadDateRange($('#dateStart').value, $('#dateEnd').value);
+        renderTableRows(); applyFilters();
+      };
+      $('#dateStart').addEventListener('change', onCustomDate);
+      $('#dateEnd').addEventListener('change', onCustomDate);
       urgentFilter = $('#urgentFilter');
       urgentFilter.addEventListener('click', () => { urgentOnly = !urgentOnly; urgentFilter.classList.toggle('active', urgentOnly); applyFilters(); });
       $('#refreshBtn').addEventListener('click', () => {
@@ -1898,8 +1991,13 @@
         loadDashboardData().then(() => { button.classList.remove('is-loading'); });
       });
       $('#exportBtn').addEventListener('click', downloadCsv);
-      $('#notificationBtn').addEventListener('click', () => showToast(t('alert_done')));
-      $('#alertLink').addEventListener('click', () => showToast(t('alert_done')));
+      $('#notificationBtn').addEventListener('click', openAlertsModal);
+      $('#alertLink').addEventListener('click', openAlertsModal);
+      $('#alertsModalClose').addEventListener('click', closeAlertsModal);
+      $('#alertsModalBackdrop').addEventListener('click', (event) => { if (event.target === $('#alertsModalBackdrop')) closeAlertsModal(); });
+      $('#userModalClose').addEventListener('click', closeUserModal);
+      $('#userModalBackdrop').addEventListener('click', (event) => { if (event.target === $('#userModalBackdrop')) closeUserModal(); });
+      $$('.avatar, .user-chip').forEach((el) => { el.style.cursor = 'pointer'; el.addEventListener('click', openUserModal); });
       document.addEventListener('click', (event) => {
         const btn = event.target.closest('.detail-btn');
         if (btn) { event.stopPropagation(); openDetail(btn.closest('tr')); }
@@ -1912,7 +2010,7 @@
       $('#modalCloseSecondary').addEventListener('click', closeDetail);
       $('#detailBackdrop').addEventListener('click', (event) => { if (event.target === $('#detailBackdrop')) closeDetail(); });
       $('#openQms').addEventListener('click', () => window.open('https://qms.sharetronic.com/qms-front/iqc/iqcDocuments', '_blank'));
-      document.addEventListener('keydown', (event) => { if (event.key === 'Escape') closeDetail(); });
+      document.addEventListener('keydown', (event) => { if (event.key === 'Escape') { closeDetail(); closeAlertsModal(); closeUserModal(); } });
       enableSorting();
     }
 
