@@ -455,6 +455,7 @@
     .filter-toggle { height: 34px; padding: 0 10px; }
     .filter-toggle.active { color: var(--red); border-color: #f1b5bb; background: var(--red-soft); }
     .table-meta { display: flex; align-items: center; justify-content: space-between; padding: 0 21px 12px; color: var(--muted); font-size: 9px; }
+    .table-meta .page-range { margin-left: 4px; color: var(--subtle); }
     .table-meta-left { display: flex; align-items: center; gap: 7px; }
     .table-meta-left .live-dot { width: 5px; height: 5px; box-shadow: 0 0 0 3px rgba(70,215,173,.1); }
     .table-wrap { width: 100%; overflow-x: auto; border-top: 1px solid var(--line); }
@@ -1047,7 +1048,7 @@
               <button class="btn filter-toggle" id="urgentFilter"><svg width="14" height="14"><use href="#icon-filter"/></svg><span data-i18n="urgent_only">仅看加急</span></button>
             </div>
           </div>
-          <div class="table-meta"><div class="table-meta-left"><span class="live-dot"></span><span data-i18n="live_data">QMS 实时同步</span><span>·</span><span data-i18n="refresh_every">每 5 分钟刷新</span></div><div><strong id="visibleCount">8</strong> <span data-i18n="unit_task">条任务</span></div></div>
+          <div class="table-meta"><div class="table-meta-left"><span class="live-dot"></span><span data-i18n="live_data">QMS 实时同步</span><span>·</span><span data-i18n="refresh_every">每 5 分钟刷新</span></div><div>共 <strong id="visibleCount">0</strong> <span data-i18n="unit_task">条任务</span><span id="pageRange" class="page-range"></span></div></div>
           <div class="table-wrap">
             <table id="iqcTable">
               <colgroup><col style="width:155px"><col style="width:92px"><col style="width:207px"><col style="width:83px"><col style="width:98px"><col style="width:141px"><col style="width:90px"><col style="width:66px"><col style="width:107px"><col style="width:78px"><col style="width:84px"><col style="width:100px"><col style="width:100px"><col style="width:58px"></colgroup>
@@ -1611,6 +1612,16 @@
       const badge = $('#tasksBadge');
       if (badge) badge.textContent = total;
       $('#visibleCount').textContent = total;
+      const pageRange = $('#pageRange');
+      if (pageRange) {
+        if (!wallboardMode && total > 0) {
+          const start = (tablePage - 1) * TABLE_PAGE_SIZE + 1;
+          const end = Math.min(tablePage * TABLE_PAGE_SIZE, total);
+          pageRange.textContent = ` · 当前 ${start}-${end} 条`;
+        } else {
+          pageRange.textContent = '';
+        }
+      }
       $('#emptyRow').style.display = rows.length ? 'none' : 'table-row';
       const pag = $('#tablePagination');
       if (pag) {
