@@ -1186,39 +1186,6 @@
 
         </section>
 
-        <section class="supplier-page-header">
-          <div>
-            <div class="kicker"><span class="live-dot"></span><span data-i18n="supplier_page_kicker">供应商质量运营</span></div>
-            <h1 data-i18n="supplier_page_title">供应商质量分析</h1>
-            <p class="hero-copy" data-i18n="supplier_page_subtitle">按工厂、月份与 QMS 检验结果全面追踪供应商质量表现。</p>
-            <div class="factory-context"><svg width="14" height="14"><use href="#icon-package"/></svg><span data-i18n="factory_label">当前工厂</span><strong class="factory-name">泰国协创</strong></div>
-          </div>
-          <div class="hero-actions"><div class="date-pill"><svg width="15" height="15"><use href="#icon-calendar"/></svg><span data-i18n="date_today">2026年09月01日 · 周二</span></div></div>
-        </section>
-
-        <section class="supplier-page-summary">
-          <article class="card supplier-summary-card">
-            <div class="kpi-top"><span class="supplier-summary-label" data-i18n="supplier_kpi_total">供应商总数</span><span class="kpi-icon blue"><svg width="16" height="16"><use href="#icon-truck"/></svg></span></div>
-            <div class="supplier-summary-value" id="supplierTotal">—<small data-i18n="supplier_unit_company">家</small></div>
-            <div class="supplier-summary-note" data-i18n="supplier_kpi_total_note">已纳入本月质量评价</div>
-          </article>
-          <article class="card supplier-summary-card good">
-            <div class="kpi-top"><span class="supplier-summary-label" data-i18n="supplier_kpi_average">平均批次合格率</span><span class="kpi-icon teal"><svg width="16" height="16"><use href="#icon-check"/></svg></span></div>
-            <div class="supplier-summary-value" id="supplierAvg">—<small>%</small></div>
-            <div class="supplier-summary-note" data-i18n="supplier_kpi_average_note">按供应商加权计算 · 较上月提升</div>
-          </article>
-          <article class="card supplier-summary-card risk">
-            <div class="kpi-top"><span class="supplier-summary-label" data-i18n="supplier_kpi_risk">风险供应商</span><span class="kpi-icon red"><svg width="16" height="16"><use href="#icon-alert"/></svg></span></div>
-            <div class="supplier-summary-value" id="supplierRisk">—<small data-i18n="supplier_unit_company">家</small></div>
-            <div class="supplier-summary-note" data-i18n="supplier_kpi_risk_note">需要重点跟进与改善</div>
-          </article>
-          <article class="card supplier-summary-card teal">
-            <div class="kpi-top"><span class="supplier-summary-label" data-i18n="supplier_kpi_lots">本月检验批次</span><span class="kpi-icon purple"><svg width="16" height="16"><use href="#icon-inbox"/></svg></span></div>
-            <div class="supplier-summary-value" id="supplierLots">—<small data-i18n="unit_lot">批</small></div>
-            <div class="supplier-summary-note" data-i18n="supplier_kpi_lots_note">QMS 已完成及在检批次</div>
-          </article>
-        </section>
-
         <section class="sb-page" id="suppliers">
       <div class="sb-topbar">
         <div class="sb-title">
@@ -1433,6 +1400,7 @@
     /* ===================== QMS 数据层 ===================== */
     let qmsToken = null;
     let qmsLoading = false;
+    let loadSeq = 0;
     let FACTORIES = [];
     let currentFactory = { code: 'STTH', name: '泰国协创' };
     const DASH = {
@@ -2205,6 +2173,9 @@
     }
 
     function initSupplierBoard() {
+      // 初始化月份标签 + 下月按钮禁用（当前月为最新）
+      const lbl = $('#sbMonthLabel'); if (lbl) { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + supplierMonthOffset); lbl.textContent = `${d.getFullYear()}年${d.getMonth() + 1}月`; }
+      const nextBtn = $('#sbNextMonth'); if (nextBtn) nextBtn.disabled = supplierMonthOffset >= 0;
       // 周期切换
       $$('#sbPeriodSeg button').forEach((b) => b.addEventListener('click', () => {
         sbPeriod = b.dataset.period;
@@ -2230,13 +2201,14 @@
     async function setSbMonth(offset) {
       if (offset > 0) return;
       supplierMonthOffset = offset;
-      let records;
-      if (offset === 0) records = DASH.month;
-      else { const r = monthRange(offset); try { records = await qmsSelectAll({ factoryCode: QMS_CONFIG.factoryCode, createDateStart: r.start, createDateEnd: r.end }); } catch (e) { records = []; } }
-      sbSuppliersData = computeSbSuppliers(records);
-      renderSbBoard();
+      // 立即更新月份标签与下月按钮，避免等待数据时显示旧状态
       const lbl = $('#sbMonthLabel'); if (lbl) { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + offset); lbl.textContent = `${d.getFullYear()}年${d.getMonth() + 1}月`; }
       const next = $('#sbNextMonth'); if (next) next.disabled = offset >= 0;
+      let records;
+      if (offset === 0) records = DASH.month;
+      else { const r = monthRange(offset); try { records = await qmsSelectAll({ factoryCode: QMS_CONFIG.factoryCode, createDateStart: r.start, createDateEnd: r.end }, 5000); } catch (e) { records = []; } }
+      sbSuppliersData = computeSbSuppliers(records);
+      renderSbBoard();
     }
 
     function openSupplierDetail(code) {
@@ -2437,13 +2409,14 @@
       } catch (e) {}
     }
     async function loadDashboardData(silent = false) {
-      if (qmsLoading) return;
+      const mySeq = ++loadSeq;
       qmsLoading = true;
       // 先用本地缓存立即渲染，打开即见上次数据
       const fromCache = loadCachedDash();
       if (!fromCache) setSyncState(true);
       try {
         await qmsLogin();
+        if (mySeq !== loadSeq) return;
         const today = todayStr();
         const monthStart = monthPrefix(0) + '-01';
         const prevRange = monthRange(-1);
@@ -2454,6 +2427,7 @@
           qmsSelectAll({ factoryCode: QMS_CONFIG.factoryCode, createDateStart: monthStart, createDateEnd: today }, 5000),
           qmsSelectAll({ factoryCode: QMS_CONFIG.factoryCode, createDateStart: prevRange.start, createDateEnd: prevRange.end }, 5000)
         ]);
+        if (mySeq !== loadSeq) return;
         const map = new Map();
         [...month, ...overdue, ...active].forEach((r) => { if (r.orderNumber) map.set(r.orderNumber, r); });
         const records = Array.from(map.values()).sort((a, b) => (b.createDate || '').localeCompare(a.createDate || ''));
@@ -2467,10 +2441,11 @@
         setSyncState(false);
         fetchSbTrend().then(() => renderSbBoard());
       } catch (err) {
+        if (mySeq !== loadSeq) return;
         console.error(err);
         if (fromCache) { setSyncState(false, null, 'cached'); }
         else { setSyncState(false, err); if (!silent) showToast('数据加载失败：' + (err.message || err)); }
-      } finally { qmsLoading = false; }
+      } finally { if (mySeq === loadSeq) qmsLoading = false; }
     }
 
     /* ===================== 原有 UI 逻辑 ===================== */
