@@ -2193,8 +2193,18 @@
       window.addEventListener('resize', () => { Object.values(sbCharts).forEach((c) => { try { c.resize(); } catch (e) {} }); });
     }
 
-    function rebuildSbSuppliers() {
-      sbSuppliersData = computeSbSuppliers(sbPeriodRecords());
+    async function rebuildSbSuppliers() {
+      let records;
+      if (sbPeriod === 'month') {
+        records = DASH.month;
+      } else {
+        // 季/年需拉取对应范围明细（异步），大分页减少请求次数
+        const months = sbPeriod === 'quarter' ? 3 : 12;
+        const from = monthRange(-(months - 1)).start;
+        showToast(sbPeriod === 'quarter' ? '正在加载季度数据…' : '正在加载年度数据…');
+        try { records = await qmsSelectAll({ factoryCode: QMS_CONFIG.factoryCode, createDateStart: from, createDateEnd: todayStr() }, 50000); } catch (e) { records = []; }
+      }
+      sbSuppliersData = computeSbSuppliers(records);
       renderSbBoard();
     }
 
@@ -2206,7 +2216,12 @@
       const next = $('#sbNextMonth'); if (next) next.disabled = offset >= 0;
       let records;
       if (offset === 0) records = DASH.month;
-      else { const r = monthRange(offset); try { records = await qmsSelectAll({ factoryCode: QMS_CONFIG.factoryCode, createDateStart: r.start, createDateEnd: r.end }, 5000); } catch (e) { records = []; } }
+      else {
+        // 切历史月份时环比无对应上月数据，清空避免显示错误的 0.0pp
+        sbPrevMap = new Map();
+        const r = monthRange(offset);
+        try { records = await qmsSelectAll({ factoryCode: QMS_CONFIG.factoryCode, createDateStart: r.start, createDateEnd: r.end }, 5000); } catch (e) { records = []; }
+      }
       sbSuppliersData = computeSbSuppliers(records);
       renderSbBoard();
     }
