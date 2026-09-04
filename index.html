@@ -2534,6 +2534,32 @@
       };
       tableAutoScrollTimer = requestAnimationFrame(step);
     }
+    let sbAutoScrollTimer = null;
+    function stopSbAutoScroll() {
+      if (sbAutoScrollTimer) { cancelAnimationFrame(sbAutoScrollTimer); sbAutoScrollTimer = null; }
+    }
+    function startSbAutoScroll() {
+      stopSbAutoScroll();
+      const wrap = $('.sb-risk-table-wrap');
+      if (!wrap) return;
+      let last = performance.now();
+      let acc = 0;
+      const speed = 22; // 像素/秒，慢速轮播
+      const step = (now) => {
+        const dt = Math.min((now - last) / 1000, 0.1);
+        last = now;
+        if (!wrap.matches(':hover')) {
+          const max = wrap.scrollHeight - wrap.clientHeight;
+          if (max > 0) {
+            acc += speed * dt;
+            const stepPx = Math.floor(acc);
+            if (stepPx > 0) { acc -= stepPx; wrap.scrollTop = wrap.scrollTop >= max - 1 ? 0 : wrap.scrollTop + stepPx; }
+          }
+        }
+        sbAutoScrollTimer = requestAnimationFrame(step);
+      };
+      sbAutoScrollTimer = requestAnimationFrame(step);
+    }
     function syncWallboardClasses() {
       document.body.classList.toggle('wallboard-mode', wallboardMode);
       document.body.classList.toggle('supplier-wallboard-mode', supplierWallboardMode);
@@ -2544,6 +2570,8 @@
       }
       if (wallboardMode) startTableAutoScroll();
       else stopTableAutoScroll();
+      if (supplierWallboardMode) startSbAutoScroll();
+      else stopSbAutoScroll();
     }
     function setWallboardMode(enabled, useFullscreen = true) {
       if (enabled) supplierWallboardMode = false;
