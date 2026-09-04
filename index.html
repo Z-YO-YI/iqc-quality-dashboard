@@ -1408,7 +1408,8 @@
       byDate: {}, suppliers: [], inspectors: [], alerts: [],
       flow: { today: { pending: 0, processing: 0, done: 0, overdue: 0 }, week: { pending: 0, processing: 0, done: 0, overdue: 0 }, month: { pending: 0, processing: 0, done: 0, overdue: 0 } },
       pendingTotal: 0, overdueTotal: 0,
-      resultStats: { pass: 0, special: 0, fail: 0, total: 0, passRate: 0 }, prevPassRate: null
+      resultStats: { pass: 0, special: 0, fail: 0, total: 0, passRate: 0 }, prevPassRate: null,
+      prevResultStats: { pass: 0, special: 0, fail: 0, total: 0, passRate: 0 }, prevSupplierCount: 0
     };
 
     function pad2(n) { return String(n).padStart(2, '0'); }
@@ -1994,15 +1995,29 @@
       const passRate = decided > 0 ? (totalPass / decided * 100) : null;
       const failRate = decided > 0 ? (totalFail / decided * 100) : null;
       const risks = list.filter((s) => { const r = sbRiskInfo(s); return r.level === 'high' || r.level === 'mid'; });
+      const prev = DASH.prevResultStats || { pass: 0, special: 0, fail: 0, total: 0, passRate: 0 };
+      const prevCount = DASH.prevSupplierCount || 0;
       const set = (id, val, subEl, subText, subCls) => {
         const el = $('#' + id); if (el) el.innerHTML = val;
         const sub = $('#' + subEl); if (sub) { sub.textContent = subText || '—'; sub.className = 'sb-kpi-sub' + (subCls ? ' ' + subCls : ''); }
       };
-      set('sbKpiSuppliers', `${nf.format(list.length)}<small>家</small>`, 'sbKpiSuppliersSub', '本月检验供应商');
-      set('sbKpiLots', `${nf.format(totalLots)}<small>批</small>`, 'sbKpiLotsSub', '本月来料检验批次');
-      set('sbKpiPassrate', passRate === null ? '无数据' : `${passRate.toFixed(1)}<small>%</small>`, 'sbKpiPassrateSub', `目标：${SB_TARGET}%`, passRate !== null && passRate >= SB_TARGET ? 'up' : 'down');
-      set('sbKpiFailrate', failRate === null ? '无数据' : `${failRate.toFixed(1)}<small>%</small>`, 'sbKpiFailrateSub', '不合格批次 / 总批次');
-      set('sbKpiSpecial', `${nf.format(totalSpecial)}<small>批</small>`, 'sbKpiSpecialSub', '本月特采批次');
+      const sign = (v) => (v >= 0 ? '+' : '') + v;
+      // 供应商数环比
+      const supDelta = prevCount ? (list.length - prevCount) : null;
+      set('sbKpiSuppliers', `${nf.format(list.length)}<small>家</small>`, 'sbKpiSuppliersSub', supDelta === null ? '本月检验供应商' : `环比 ${sign(supDelta)} 家`, supDelta === null ? '' : (supDelta >= 0 ? 'up' : 'down'));
+      // 批次环比
+      const lotDelta = prev.total ? ((totalLots - prev.total) / prev.total * 100) : null;
+      set('sbKpiLots', `${nf.format(totalLots)}<small>批</small>`, 'sbKpiLotsSub', lotDelta === null ? '本月来料检验批次' : `环比 ${sign(lotDelta.toFixed(1))}%`, lotDelta === null ? '' : (lotDelta >= 0 ? 'up' : 'down'));
+      // 合格率（环比用 pp）
+      const passDelta = (passRate !== null && prev.total > 0) ? (passRate - prev.passRate) : null;
+      set('sbKpiPassrate', passRate === null ? '无数据' : `${passRate.toFixed(1)}<small>%</small>`, 'sbKpiPassrateSub', passDelta === null ? `目标：${SB_TARGET}%` : `目标：${SB_TARGET}% · 环比 ${sign(passDelta.toFixed(1))}pp`, passDelta !== null && passDelta >= 0 ? 'up' : 'down');
+      // 不合格批次率（越低越好，环比用 pp）
+      const prevFailRate = prev.total > 0 ? (prev.fail / prev.total * 100) : null;
+      const failDelta = (failRate !== null && prevFailRate !== null) ? (failRate - prevFailRate) : null;
+      set('sbKpiFailrate', failRate === null ? '无数据' : `${failRate.toFixed(1)}<small>%</small>`, 'sbKpiFailrateSub', failDelta === null ? '不合格批次 / 总批次' : `环比 ${sign(failDelta.toFixed(1))}pp`, failDelta !== null && failDelta <= 0 ? 'up' : 'down');
+      // 特采批次（越多越需关注）
+      const spDelta = prev.total ? (totalSpecial - prev.special) : null;
+      set('sbKpiSpecial', `${nf.format(totalSpecial)}<small>批</small>`, 'sbKpiSpecialSub', spDelta === null ? '本月特采批次' : `环比 ${sign(spDelta)} 批`, spDelta === null ? '' : (spDelta <= 0 ? 'up' : 'down'));
       set('sbKpiRisk', `${nf.format(risks.length)}<small>家</small>`, 'sbKpiRiskSub', '重点关注');
     }
 
@@ -2448,6 +2463,9 @@
         const records = Array.from(map.values()).sort((a, b) => (b.createDate || '').localeCompare(a.createDate || ''));
         const overdueTotal = overdue.length;
         computeDerived(records, active, overdueTotal);
+        // 上月汇总（KPI 环比用）
+        DASH.prevResultStats = computeResultStats(prevMonth);
+        DASH.prevSupplierCount = new Set(prevMonth.map((r) => r.supplierName || r.supplierCode || '')).size;
         sbPrevMap = new Map();
         computeSuppliers(prevMonth).forEach((s) => sbPrevMap.set(s.code, s.raw));
         sbSuppliersData = computeSbSuppliers(DASH.month);
