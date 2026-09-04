@@ -458,6 +458,11 @@
     .table-meta-left { display: flex; align-items: center; gap: 7px; }
     .table-meta-left .live-dot { width: 5px; height: 5px; box-shadow: 0 0 0 3px rgba(70,215,173,.1); }
     .table-wrap { width: 100%; overflow-x: auto; border-top: 1px solid var(--line); }
+    .table-pagination { display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding: 10px 21px 13px; border-top: 1px solid var(--line); }
+    .table-pagination .page-btn { width: 28px; height: 28px; display: grid; place-items: center; padding: 0; border: 1px solid var(--line); border-radius: 7px; color: var(--ink); background: #fff; cursor: pointer; transition: border-color .15s, color .15s; }
+    .table-pagination .page-btn:hover:not(:disabled) { border-color: var(--blue); color: var(--blue); }
+    .table-pagination .page-btn:disabled { opacity: .35; cursor: default; }
+    .table-pagination .page-info { color: var(--muted); font-size: 10px; font-weight: 650; font-variant-numeric: tabular-nums; }
     table { width: 100%; min-width: 1430px; border-collapse: collapse; table-layout: fixed; }
     th, td { border-bottom: 1px solid #eef1f5; text-align: left; }
     th { height: 40px; padding: 0 10px; color: #8996a8; background: #f8fafc; font-size: 9px; font-weight: 750; white-space: nowrap; }
@@ -852,6 +857,7 @@
     <symbol id="icon-settings" viewBox="0 0 24 24"><path d="M12 8.6a3.4 3.4 0 1 0 0 6.8 3.4 3.4 0 0 0 0-6.8Z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m19.1 13.6 1.4 1.1-1.9 3.2-1.6-.7a7.7 7.7 0 0 1-1.9 1.1l-.2 1.8h-3.8l-.2-1.8a7.8 7.8 0 0 1-1.9-1.1l-1.6.7-1.9-3.2 1.4-1.1a7.6 7.6 0 0 1 0-2.2L5.5 10l1.9-3.2L9 7.5a7.7 7.7 0 0 1 1.9-1.1l.2-1.8h3.8l.2 1.8A7.7 7.7 0 0 1 17 7.5l1.6-.7 1.9 3.2-1.4 1.1a7.6 7.6 0 0 1 0 2.5Z" fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="1.4"/></symbol>
     <symbol id="icon-chevron" viewBox="0 0 24 24"><path d="m7 9 5 5 5-5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></symbol>
     <symbol id="icon-chevron-right" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></symbol>
+    <symbol id="icon-chevron-left" viewBox="0 0 24 24"><path d="m15 5-7 7 7 7" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></symbol>
     <symbol id="icon-calendar" viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 3.5v4M16 3.5v4M4 10h16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.8"/></symbol>
     <symbol id="icon-refresh" viewBox="0 0 24 24"><path d="M19.5 8.6A8 8 0 0 0 5.4 6.3L4 8M4 4v4h4M4.5 15.4a8 8 0 0 0 14.1 2.3l1.4-1.7M20 20v-4h-4" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"/></symbol>
     <symbol id="icon-download" viewBox="0 0 24 24"><path d="M12 3.5v11M7.8 10.7 12 15l4.2-4.3M4.5 19.5h15" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"/></symbol>
@@ -880,7 +886,7 @@
         <p class="nav-label" data-i18n="navigation">导航菜单</p>
         <div class="nav-list">
           <a class="nav-item active" href="#overview" data-page="overview"><svg width="17" height="17"><use href="#icon-grid"/></svg><span data-i18n="menu_overview">质量总览</span></a>
-          <a class="nav-item" href="#tasks" data-page="tasks"><svg width="17" height="17"><use href="#icon-inbox"/></svg><span data-i18n="menu_tasks">检验任务</span><span class="nav-badge">24</span></a>
+          <a class="nav-item" href="#tasks" data-page="tasks"><svg width="17" height="17"><use href="#icon-inbox"/></svg><span data-i18n="menu_tasks">检验任务</span><span class="nav-badge" id="tasksBadge">0</span></a>
           <a class="nav-item" href="#suppliers" data-page="suppliers"><svg width="17" height="17"><use href="#icon-truck"/></svg><span data-i18n="menu_supplier">供应商质量</span></a>
           <a class="nav-item" href="#settings" id="settingsNav"><svg width="17" height="17"><use href="#icon-settings"/></svg><span data-i18n="menu_settings">系统设置</span></a>
         </div>
@@ -1046,6 +1052,11 @@
                 <tr class="empty-row" id="emptyRow"><td colspan="14"><span data-i18n="empty_state">没有符合当前筛选条件的任务</span></td></tr>
               </tbody>
             </table>
+          </div>
+          <div class="table-pagination" id="tablePagination">
+            <button class="page-btn" id="prevPageBtn" aria-label="上一页"><svg width="14" height="14"><use href="#icon-chevron-left"/></svg></button>
+            <span class="page-info" id="pageInfo">1 / 1</span>
+            <button class="page-btn" id="nextPageBtn" aria-label="下一页"><svg width="14" height="14"><use href="#icon-chevron-right"/></svg></button>
           </div>
         </section>
 
@@ -1499,36 +1510,88 @@
     }
 
     /* ===================== 渲染 ===================== */
-    function renderTableRows() {
-      const body = $('#iqcTableBody');
+    function computeTableRows() {
+      const range = $('#rangeFilter').value;
+      const status = $('#statusFilter').value;
+      const query = $('#globalSearch').value.trim().toLowerCase();
       // 检验任务表只显示未完成（待检/检验中/超时未完成），已完成不展示
-      const rows = applyRangeFilter(DASH.records, $('#rangeFilter').value)
+      let rows = applyRangeFilter(DASH.records, range)
         .filter((r) => r.inspectionStatus === '0' || r.inspectionStatus === '2');
-      const html = rows.map((r) => {
-        const st = mapStatus(r), res = mapResult(r);
-        const urgent = r.expeditedFlagName === '是' ? '1' : '0';
-        const name = r.materialName || '';
-        const supplier = cleanSupplierName(r.supplierName), code = r.supplierCode || '';
-        const factory = QMS_CONFIG.factoryName;
-        const search = [r.orderNumber, r.materialNumber, name, r.materialCategory, factory, r.supplierName, code].join(' ');
-        return `<tr data-status="${st.key}" data-urgent="${urgent}" data-id="${escHtml(r.orderNumber)}" data-search="${escHtml(search)}">
-          <td><span class="id-link mono">${escHtml(r.orderNumber)}</span></td>
-          <td class="mono">${escHtml(r.materialNumber)}</td>
-          <td title="${escHtml(name)}"><span class="material-name">${escHtml(name)}</span></td>
-          <td>${escHtml(r.materialCategory || '')}</td>
-          <td><span class="factory-cell" title="${escHtml(factory)}">${escHtml(factory)}</span></td>
-          <td class="supplier-cell"><strong>${escHtml(supplier)}</strong><small>${escHtml(code)}</small></td>
-          <td class="qty">${fmtQty(r.qty)}</td>
-          <td><span class="tag ${urgent === '1' ? 'yes' : 'no'}" data-i18n="${urgent === '1' ? 'yes' : 'no'}">${urgent === '1' ? t('yes') : t('no')}</span></td>
-          <td class="mono">${escHtml(r.createDate || '')}</td>
-          <td>${escHtml(r.inspectorName || '—')}</td>
-          <td>${escHtml(r.taskName || '')}</td>
-          <td><span class="status-pill ${st.key}" data-i18n="${st.i18n}">${st.label}</span></td>
-          <td><span class="status-pill ${res.key}" data-i18n="${res.i18n}">${res.label}</span></td>
-          <td><button class="action-btn detail-btn" title="View"><svg width="13" height="13"><use href="#icon-external"/></svg></button></td>
-        </tr>`;
-      }).join('');
-      body.innerHTML = html + `<tr class="empty-row" id="emptyRow"><td colspan="14"><span data-i18n="empty_state">${t('empty_state')}</span></td></tr>`;
+      if (status !== 'all') rows = rows.filter((r) => mapStatus(r).key === status);
+      if (urgentOnly) rows = rows.filter((r) => r.expeditedFlagName === '是');
+      if (query) {
+        rows = rows.filter((r) => {
+          const name = r.materialName || '';
+          const s = [r.orderNumber, r.materialNumber, name, r.materialCategory, QMS_CONFIG.factoryName, r.supplierName, r.supplierCode].join(' ').toLowerCase();
+          return s.includes(query);
+        });
+      }
+      if (tableSort) {
+        const { type, direction } = tableSort;
+        rows.sort((a, b) => {
+          let av = '', bv = '';
+          if (type === 'id') { av = a.orderNumber || ''; bv = b.orderNumber || ''; }
+          if (type === 'part') { av = a.materialNumber || ''; bv = b.materialNumber || ''; }
+          if (type === 'qty') { av = Number(a.qty) || 0; bv = Number(b.qty) || 0; }
+          if (type === 'date') { av = a.createDate || ''; bv = b.createDate || ''; }
+          return (av > bv ? 1 : av < bv ? -1 : 0) * direction;
+        });
+      }
+      return rows;
+    }
+    function rowHtml(r) {
+      const st = mapStatus(r), res = mapResult(r);
+      const urgent = r.expeditedFlagName === '是' ? '1' : '0';
+      const name = r.materialName || '';
+      const supplier = cleanSupplierName(r.supplierName), code = r.supplierCode || '';
+      const factory = QMS_CONFIG.factoryName;
+      const search = [r.orderNumber, r.materialNumber, name, r.materialCategory, factory, r.supplierName, code].join(' ');
+      return `<tr data-status="${st.key}" data-urgent="${urgent}" data-id="${escHtml(r.orderNumber)}" data-search="${escHtml(search)}">
+        <td><span class="id-link mono">${escHtml(r.orderNumber)}</span></td>
+        <td class="mono">${escHtml(r.materialNumber)}</td>
+        <td title="${escHtml(name)}"><span class="material-name">${escHtml(name)}</span></td>
+        <td>${escHtml(r.materialCategory || '')}</td>
+        <td><span class="factory-cell" title="${escHtml(factory)}">${escHtml(factory)}</span></td>
+        <td class="supplier-cell"><strong>${escHtml(supplier)}</strong><small>${escHtml(code)}</small></td>
+        <td class="qty">${fmtQty(r.qty)}</td>
+        <td><span class="tag ${urgent === '1' ? 'yes' : 'no'}" data-i18n="${urgent === '1' ? 'yes' : 'no'}">${urgent === '1' ? t('yes') : t('no')}</span></td>
+        <td class="mono">${escHtml(r.createDate || '')}</td>
+        <td>${escHtml(r.inspectorName || '—')}</td>
+        <td>${escHtml(r.taskName || '')}</td>
+        <td><span class="status-pill ${st.key}" data-i18n="${st.i18n}">${st.label}</span></td>
+        <td><span class="status-pill ${res.key}" data-i18n="${res.i18n}">${res.label}</span></td>
+        <td><button class="action-btn detail-btn" title="View"><svg width="13" height="13"><use href="#icon-external"/></svg></button></td>
+      </tr>`;
+    }
+    function renderTableRows() {
+      tableRows = computeTableRows();
+      const total = tableRows.length;
+      const totalPages = Math.max(1, Math.ceil(total / TABLE_PAGE_SIZE));
+      // 看板模式不分页（自动滚动显示全部）；普通模式每页 20 条
+      if (wallboardMode) { tablePage = 1; }
+      else { if (tablePage > totalPages) tablePage = totalPages; if (tablePage < 1) tablePage = 1; }
+      const rows = wallboardMode ? tableRows : tableRows.slice((tablePage - 1) * TABLE_PAGE_SIZE, tablePage * TABLE_PAGE_SIZE);
+      const body = $('#iqcTableBody');
+      body.innerHTML = rows.map(rowHtml).join('') + `<tr class="empty-row" id="emptyRow"><td colspan="14"><span data-i18n="empty_state">${t('empty_state')}</span></td></tr>`;
+      // 侧边栏徽章 = 待办任务总数
+      const badge = $('#tasksBadge');
+      if (badge) badge.textContent = total;
+      $('#visibleCount').textContent = total;
+      $('#emptyRow').style.display = rows.length ? 'none' : 'table-row';
+      const pag = $('#tablePagination');
+      if (pag) {
+        if (wallboardMode) { pag.style.display = 'none'; }
+        else {
+          pag.style.display = 'flex';
+          $('#pageInfo').textContent = `${tablePage} / ${totalPages}`;
+          $('#prevPageBtn').disabled = tablePage <= 1;
+          $('#nextPageBtn').disabled = tablePage >= totalPages;
+        }
+      }
+    }
+    function gotoPage(p) {
+      tablePage = p;
+      renderTableRows();
     }
     function applyRangeFilter(records, range) {
       const today = todayStr();
@@ -1794,7 +1857,6 @@
       renderSupplierDetail();
       renderAlerts();
       renderTableRows();
-      applyFilters();
       updateDatePill();
       $('#lastRefresh').textContent = currentTimeString();
     }
@@ -1958,6 +2020,7 @@
       if (enabled) supplierWallboardMode = false;
       wallboardMode = Boolean(enabled);
       syncWallboardClasses(); updateWallboardUi();
+      renderTableRows();
       if (wallboardMode && useFullscreen && document.documentElement.requestFullscreen && !document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
       if (!wallboardMode && document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
     }
@@ -2012,11 +2075,10 @@
     }
     function closeDetail() { $('#detailBackdrop').classList.remove('open'); }
     function downloadCsv() {
-      const visibleRows = getTableRows().filter((row) => row.style.display !== 'none');
       const headers = ['单号', '料号', '物料名称', '物料类别', '收料工厂', '供应商', '供应商编码', '来料数量', '是否加急', '送检日期', '检验员', '流程节点', '时效状态', '检验结果'];
-      const values = visibleRows.map((row) => {
-        const c = row.cells;
-        return [row.dataset.id, c[1].textContent.trim(), c[2].textContent.trim(), c[3].textContent.trim(), c[4].textContent.trim(), c[5].querySelector('strong').textContent.trim(), c[5].querySelector('small').textContent.trim(), c[6].textContent.trim(), c[7].textContent.trim(), c[8].textContent.trim(), c[9].textContent.trim(), c[10].textContent.trim(), c[11].textContent.trim(), c[12].textContent.trim()];
+      const values = tableRows.map((r) => {
+        const st = mapStatus(r), res = mapResult(r);
+        return [r.orderNumber, r.materialNumber, r.materialName || '', r.materialCategory || '', QMS_CONFIG.factoryName, cleanSupplierName(r.supplierName), r.supplierCode || '', r.qty != null ? r.qty : '', r.expeditedFlagName === '是' ? t('yes') : t('no'), r.createDate || '', r.inspectorName || '', r.taskName || '', st.label, res.label];
       });
       const csv = [headers, ...values].map((line) => line.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(',')).join('\n');
       const blob = new Blob([`\ufeff${csv}`], { type: 'text/csv;charset=utf-8;' });
@@ -2027,38 +2089,17 @@
       showToast(t('export_done'));
     }
     function applyFilters() {
-      const query = $('#globalSearch').value.trim().toLowerCase();
-      const status = $('#statusFilter').value;
-      let visible = 0;
-      getTableRows().forEach((row) => {
-        const matchQuery = !query || `${row.dataset.search} ${row.textContent}`.toLowerCase().includes(query);
-        const matchStatus = status === 'all' || row.dataset.status === status;
-        const matchUrgent = !urgentOnly || row.dataset.urgent === '1';
-        const show = matchQuery && matchStatus && matchUrgent;
-        row.style.display = show ? '' : 'none';
-        if (show) visible += 1;
-      });
-      $('#visibleCount').textContent = visible;
-      $('#emptyRow').style.display = visible ? 'none' : 'table-row';
+      tablePage = 1;
+      renderTableRows();
     }
     function enableSorting() {
       $$('th[data-sort]').forEach((header) => {
-        let direction = 1;
         header.addEventListener('click', () => {
           const type = header.dataset.sort;
-          const rows = [...getTableRows()].sort((a, b) => {
-            let av = '', bv = '';
-            if (type === 'id') { av = a.dataset.id; bv = b.dataset.id; }
-            if (type === 'part') { av = a.cells[1].textContent; bv = b.cells[1].textContent; }
-            if (type === 'qty') { av = Number(a.cells[6].textContent.replaceAll(',', '')); bv = Number(b.cells[6].textContent.replaceAll(',', '')); }
-            if (type === 'date') { av = a.cells[8].textContent; bv = b.cells[8].textContent; }
-            return (av > bv ? 1 : av < bv ? -1 : 0) * direction;
-          });
-          direction *= -1;
-          const body = $('#iqcTableBody');
-          rows.forEach((row) => body.appendChild(row));
-          body.appendChild($('#emptyRow'));
-          applyFilters();
+          if (tableSort && tableSort.type === type) tableSort.direction *= -1;
+          else tableSort = { type, direction: -1 };
+          tablePage = 1;
+          renderTableRows();
         });
       });
     }
@@ -2086,11 +2127,11 @@
         $('#dateStart').hidden = !isCustom;
         $('#dateEnd').hidden = !isCustom;
         $('#dateSep').hidden = !isCustom;
-        if (DASH.records.length) { renderTableRows(); applyFilters(); }
+        if (DASH.records.length) { tablePage = 1; renderTableRows(); }
       });
       const onCustomDate = async () => {
         await loadDateRange($('#dateStart').value, $('#dateEnd').value);
-        renderTableRows(); applyFilters();
+        tablePage = 1; renderTableRows();
       };
       $('#dateStart').addEventListener('change', onCustomDate);
       $('#dateEnd').addEventListener('change', onCustomDate);
@@ -2101,6 +2142,8 @@
         loadDashboardData().then(() => { button.classList.remove('is-loading'); });
       });
       $('#exportBtn').addEventListener('click', downloadCsv);
+      $('#prevPageBtn').addEventListener('click', () => { if (tablePage > 1) gotoPage(tablePage - 1); });
+      $('#nextPageBtn').addEventListener('click', () => { if (tablePage < Math.ceil(tableRows.length / TABLE_PAGE_SIZE)) gotoPage(tablePage + 1); });
       $('#notificationBtn').addEventListener('click', openAlertsModal);
       $('#alertLink').addEventListener('click', openAlertsModal);
       $('#alertsModalClose').addEventListener('click', closeAlertsModal);
@@ -2133,6 +2176,10 @@
     let supplierMode = 'top';
     let urgentOnly = false;
     let urgentFilter = null;
+    let tablePage = 1;
+    let tableRows = [];
+    let tableSort = null;
+    const TABLE_PAGE_SIZE = 20;
 
     applyLocale();
     loadSavedFactory();
