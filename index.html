@@ -1015,9 +1015,9 @@
             <div><h2 class="card-title" data-i18n="table_title">来料检验任务</h2><p class="card-subtitle" data-i18n="table_subtitle">接入 QMS 的最新检验任务 · 支持按状态、加急与关键字快速定位</p></div>
             <div class="filters">
               <label class="search-box"><svg width="14" height="14"><use href="#icon-search"/></svg><input id="globalSearch" type="search" data-i18n-placeholder="search_placeholder" placeholder="搜索单号 / 料号 / 供应商" /></label>
-              <select class="filter-select" id="rangeFilter" aria-label="Date range"><option value="today" data-i18n="range_today">今日</option><option value="week" data-i18n="range_week">本周</option><option value="month" data-i18n="range_month">本月</option><option value="custom">自定义日期</option></select>
+              <select class="filter-select" id="rangeFilter" aria-label="Date range"><option value="todo" data-i18n="range_todo">待办任务</option><option value="today" data-i18n="range_today">今日</option><option value="week" data-i18n="range_week">本周</option><option value="month" data-i18n="range_month">本月</option><option value="custom">自定义日期</option></select>
               <input type="date" class="filter-select" id="dateStart" hidden><span id="dateSep" hidden>~</span><input type="date" class="filter-select" id="dateEnd" hidden>
-              <select class="filter-select" id="statusFilter" aria-label="Status"><option value="all" data-i18n="all_status">全部状态</option><option value="pending" data-i18n="status_pending">待检</option><option value="processing" data-i18n="status_processing">检验中</option><option value="overdue" data-i18n="status_overdue">超时未完成</option><option value="done" data-i18n="status_done">已完成</option></select>
+              <select class="filter-select" id="statusFilter" aria-label="Status"><option value="all" data-i18n="all_status">全部状态</option><option value="pending" data-i18n="status_pending">待检</option><option value="processing" data-i18n="status_processing">检验中</option><option value="overdue" data-i18n="status_overdue">超时未完成</option></select>
               <button class="btn filter-toggle" id="urgentFilter"><svg width="14" height="14"><use href="#icon-filter"/></svg><span data-i18n="urgent_only">仅看加急</span></button>
             </div>
           </div>
@@ -1230,6 +1230,9 @@
     Object.assign(I18N.zh, { supplier_wallboard_entry: '供应商看板', supplier_wallboard_live: '供应商质量看板 · 实时', exit_supplier_wallboard: '退出供应商看板' });
     Object.assign(I18N.th, { supplier_wallboard_entry: 'แดชบอร์ดซัพพลายเออร์', supplier_wallboard_live: 'แดชบอร์ดคุณภาพซัพพลายเออร์ · เรียลไทม์', exit_supplier_wallboard: 'ออกจากแดชบอร์ดซัพพลายเออร์' });
     Object.assign(I18N.en, { supplier_wallboard_entry: 'Supplier board', supplier_wallboard_live: 'Supplier quality board · Live', exit_supplier_wallboard: 'Exit supplier board' });
+    Object.assign(I18N.zh, { range_todo: '待办任务' });
+    Object.assign(I18N.th, { range_todo: 'งานที่ต้องทำ' });
+    Object.assign(I18N.en, { range_todo: 'To-do tasks' });
     Object.assign(I18N.zh, {
       breadcrumb_overview: 'IQC 来料检验', breadcrumb_tasks: '检验任务', breadcrumb_suppliers: '供应商质量', supplier_page_kicker: '供应商质量运营', supplier_page_title: '供应商质量管理', supplier_page_subtitle: '按工厂、月份与 QMS 检验结果全面追踪供应商质量表现。', supplier_kpi_total: '供应商总数', supplier_unit_company: '家', supplier_kpi_total_note: '已纳入本月质量评价', supplier_kpi_average: '平均一次合格率', supplier_kpi_average_note: '按供应商加权计算 · 较上月提升', supplier_kpi_risk: '风险供应商', supplier_kpi_risk_note: '需要重点跟进与改善', supplier_kpi_lots: '本月检验批次', supplier_kpi_lots_note: 'QMS 已完成及在检批次', supplier_detail_title: '供应商质量明细', supplier_detail_subtitle: '按供应商汇总本月来料质量、缺陷率、批次与改进状态', supplier_col_name: '供应商', supplier_col_code: '供应商编码', supplier_col_lots: '检验批次', supplier_col_passrate: '一次合格率', supplier_col_defect: '缺陷率', supplier_col_trend: '月度趋势', supplier_col_status: '质量状态', supplier_status_stable: '稳定', supplier_status_watch: '关注', supplier_status_risk: '高风险', supplier_board_subtitle: '供应商质量排名 · 柱状图可横向滚动，排名列表可纵向滚动'
     });
@@ -1497,7 +1500,9 @@
     /* ===================== 渲染 ===================== */
     function renderTableRows() {
       const body = $('#iqcTableBody');
-      const rows = applyRangeFilter(DASH.records, $('#rangeFilter').value);
+      // 检验任务表只显示未完成（待检/检验中/超时未完成），已完成不展示
+      const rows = applyRangeFilter(DASH.records, $('#rangeFilter').value)
+        .filter((r) => r.inspectionStatus === '0' || r.inspectionStatus === '2');
       const html = rows.map((r) => {
         const st = mapStatus(r), res = mapResult(r);
         const urgent = r.expeditedFlagName === '是' ? '1' : '0';
@@ -1526,6 +1531,7 @@
     }
     function applyRangeFilter(records, range) {
       const today = todayStr();
+      if (range === 'todo') return records.filter((r) => r.inspectionStatus === '0' || r.inspectionStatus === '2');
       if (range === 'week') return records.filter((r) => (r.createDate || '') >= daysAgoStr(6));
       if (range === 'month') return records.filter((r) => (r.createDate || '').startsWith(monthPrefix(0)));
       if (range === 'custom') {
@@ -1841,14 +1847,17 @@
       try {
         await qmsLogin();
         const today = todayStr();
-        const [active, recent] = await Promise.all([
+        const monthStart = monthPrefix(0) + '-01';
+        // 只抓「待办任务」+「本月统计」：待办 = 进行中(0) + 超时未完成(2)，本月 = 用于合格率/结果/供应商统计
+        const [active, overdue, month] = await Promise.all([
           qmsSelectAll({ factoryCode: QMS_CONFIG.factoryCode, inspectionStatus: '0' }),
-          qmsSelectAll({ factoryCode: QMS_CONFIG.factoryCode, createDateStart: daysAgoStr(60), createDateEnd: today })
+          qmsSelectAll({ factoryCode: QMS_CONFIG.factoryCode, inspectionStatus: '2' }),
+          qmsSelectAll({ factoryCode: QMS_CONFIG.factoryCode, createDateStart: monthStart, createDateEnd: today })
         ]);
         const map = new Map();
-        [...recent, ...active].forEach((r) => { if (r.orderNumber) map.set(r.orderNumber, r); });
+        [...month, ...overdue, ...active].forEach((r) => { if (r.orderNumber) map.set(r.orderNumber, r); });
         const records = Array.from(map.values()).sort((a, b) => (b.createDate || '').localeCompare(a.createDate || ''));
-        const overdueTotal = await qmsCount({ factoryCode: QMS_CONFIG.factoryCode, inspectionStatus: '2' });
+        const overdueTotal = overdue.length;
         computeDerived(records, active, overdueTotal);
         renderAll();
         saveDashCache();
