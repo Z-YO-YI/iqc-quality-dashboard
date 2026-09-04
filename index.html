@@ -2036,7 +2036,7 @@
       const batches = sbTrend12.map((d) => d.batches);
       const rates = sbTrend12.map((d) => d.passRate === null ? null : Number(d.passRate.toFixed(1)));
       c.setOption({
-        tooltip: { trigger: 'axis', axisPointer: { type: 'cross' } },
+        tooltip: { trigger: 'axis', axisPointer: { type: 'cross' }, formatter: (params) => { const i = params && params[0] ? params[0].dataIndex : -1; const d = sbTrend12[i]; if (!d) return ''; const prevD = sbTrend12[i - 1]; const momTxt = (d.passRate !== null && prevD && prevD.passRate !== null) ? ((d.passRate - prevD.passRate >= 0 ? '+' : '') + (d.passRate - prevD.passRate).toFixed(1) + 'pp') : '—'; const rateTxt = d.passRate === null ? '无数据' : d.passRate.toFixed(1) + '%'; return `<strong>${d.month}</strong><br/>合格率：${rateTxt}<br/>检验批次：${nf.format(d.batches)}<br/>不合格批次：${nf.format(d.nonconforming)}<br/>环比：${momTxt}`; } },
         legend: { data: ['检验批次', '批次合格率'], top: 0, textStyle: { color: '#64748B', fontSize: 12 } },
         grid: { left: 50, right: 50, top: 34, bottom: 28 },
         xAxis: { type: 'category', data: months, axisLabel: { color: '#64748B', fontSize: 11 }, axisLine: { lineStyle: { color: '#E5E7EB' } } },
@@ -2074,7 +2074,7 @@
         grid: { left: 50, right: 20, top: 34, bottom: 32 },
         xAxis: { type: 'value', name: '检验批次', splitLine: { lineStyle: { color: '#F1F5F9' } }, axisLabel: { color: '#64748B', fontSize: 11 } },
         yAxis: { type: 'value', name: '合格率%', min: 0, max: 100, splitLine: { lineStyle: { color: '#F1F5F9' } }, axisLabel: { color: '#64748B', fontSize: 11 } },
-        series: series.concat([{ name: '目标线', type: 'line', data: [], markLine: { silent: true, symbol: 'none', label: { show: true, formatter: '目标 ' + SB_TARGET + '%', color: '#F59E0B', fontSize: 11 }, lineStyle: { color: '#F59E0B', type: 'dashed' }, data: [{ yAxis: SB_TARGET }] } }])
+        series: series.concat([{ name: '参考线', type: 'line', data: [], markLine: { silent: true, symbol: 'none', label: { show: true, fontSize: 11, color: '#94A3B8' }, lineStyle: { color: '#94A3B8', type: 'dashed' }, data: [{ yAxis: SB_TARGET, label: { formatter: '目标 ' + SB_TARGET + '%', color: '#F59E0B', position: 'insideEndTop' } }, { xAxis: SB_MIN_SAMPLE, label: { formatter: '样本 ' + SB_MIN_SAMPLE + ' 批', color: '#94A3B8', position: 'insideEndBottom' } }] } }])
       });
       c.off('click'); c.on('click', (p) => { if (p.data && p.data.code) selectSbSupplier(p.data.code); });
     }
@@ -2089,7 +2089,7 @@
       const names = list.map((s) => s.name);
       const rates = list.map((s) => s.rate === null ? 0 : Number(s.rate.toFixed(1)));
       c.setOption({
-        tooltip: { formatter: (p) => { const s = list[p.dataIndex]; return `${s.name}<br/>合格率：${s.score}<br/>合格批次：${s.pass}/${s.total}<br/>${s.insufficient ? '样本不足（<5批）' : ''}`; } },
+        tooltip: { formatter: (p) => { const s = list[p.dataIndex]; const deltaTxt = s.delta === null ? (sbPrevMap.has(s.code) ? '0.0pp' : '新增') : (s.delta >= 0 ? '+' : '') + s.delta.toFixed(1) + 'pp'; return `${s.name}<br/>合格率：${s.score}<br/>合格批次：${s.pass}/${s.total}<br/>环比：${deltaTxt}<br/>${s.insufficient ? '样本不足（<5批）' : ''}`; } },
         grid: { left: 90, right: 40, top: 10, bottom: 24 },
         xAxis: { type: 'value', min: 0, max: 100, axisLabel: { color: '#64748B', fontSize: 11 }, splitLine: { lineStyle: { color: '#F1F5F9' } } },
         yAxis: { type: 'category', data: names, axisLabel: { color: '#334155', fontSize: 12 }, axisLine: { lineStyle: { color: '#E5E7EB' } } },
