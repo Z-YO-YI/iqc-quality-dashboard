@@ -569,6 +569,7 @@
     .supplier-line-chart .point { fill: #fff; stroke: var(--blue); stroke-width: 2.5; }
     .supplier-line-chart .point-low { fill: #fff; stroke: var(--red); stroke-width: 2.5; }
     .supplier-line-chart .supplier-score-label { fill: var(--navy); font-family: var(--font-mono); font-size: 9.5px; font-weight: 700; }
+    .supplier-line-chart .supplier-name-label { fill: var(--ink); font-family: var(--font-sans); font-size: 9px; font-weight: 650; }
     .supplier-bar-item { flex: 0 0 40px; display: flex; flex-direction: column; align-items: center; justify-content: end; gap: 7px; height: 100%; }
     .supplier-bar-item strong { color: var(--navy); font-family: var(--font-mono); font-size: 10px; font-weight: 800; }
     .supplier-bar-item i { width: 20px; height: var(--bar-height); min-height: 22px; border-radius: 10px 10px 2px 2px; background: var(--green); box-shadow: 0 7px 13px rgba(44,155,118,.16); }
@@ -1788,7 +1789,7 @@
       if (!el) return;
       const n = list.length;
       if (!n) { el.innerHTML = ''; return; }
-      const W = 700, H = 260, L = 44, R = 14, T = 26, B = 36;
+      const W = 700, H = 260, L = 44, R = 14, T = 34, B = 36;
       const scores = list.map((c) => c.raw);
       const rawMin = Math.min(...scores), rawMax = Math.max(...scores);
       let min = Math.floor(rawMin - 2);
@@ -1810,9 +1811,10 @@
         const low = p.c.raw < 93;
         return `<circle class="${low ? 'point-low' : 'point'}" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3.5"><title>${escHtml(p.c.name)} · ${p.c.score}</title></circle>`;
       }).join('');
-      const scoreLabels = pts.map((p) => `<text class="supplier-score-label" x="${p.x.toFixed(1)}" y="${(p.y - 9).toFixed(1)}" text-anchor="middle">${p.c.score}</text>`).join('');
+      const nameLabels = pts.map((p) => `<text class="supplier-name-label" x="${p.x.toFixed(1)}" y="${(p.y - 9).toFixed(1)}" text-anchor="middle">${escHtml(p.c.name)}</text>`).join('');
+      const scoreLabels = pts.map((p) => `<text class="supplier-score-label" x="${p.x.toFixed(1)}" y="${(p.y - 20).toFixed(1)}" text-anchor="middle">${p.c.score}</text>`).join('');
       const xLabels = pts.map((p, i) => `<text class="axis-label" x="${p.x.toFixed(1)}" y="${H - 13}" text-anchor="middle">${String(i + 1).padStart(2, '0')}</text>`).join('');
-      el.innerHTML = `<svg class="supplier-line-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">${grid}${yLabels}<path class="area" d="${areaD}"/><path class="line" d="${lineD}"/>${dots}${scoreLabels}${xLabels}</svg>`;
+      el.innerHTML = `<svg class="supplier-line-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">${grid}${yLabels}<path class="area" d="${areaD}"/><path class="line" d="${lineD}"/>${dots}${scoreLabels}${nameLabels}${xLabels}</svg>`;
     }
 
     function supplierMonthLabel() {
