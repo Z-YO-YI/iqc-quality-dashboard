@@ -832,6 +832,19 @@
     .factory-item.active .factory-item-check { display: block; }
     .plant-switch { cursor: pointer; }
     .plant-switch:hover .plant-name { color: #b32e3f; }
+    .supplier-modal-stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+    .supplier-modal-stats .sms-item { padding: 12px 14px; border: 1px solid var(--line); border-radius: 11px; background: var(--card-soft); }
+    .supplier-modal-stats .sms-item label { display: block; margin-bottom: 4px; color: var(--subtle); font-size: 9px; }
+    .supplier-modal-stats .sms-item strong { color: var(--ink); font-size: 15px; font-weight: 750; font-variant-numeric: tabular-nums; }
+    .supplier-modal-stats .sms-item.good strong { color: var(--green); }
+    .supplier-modal-stats .sms-item.bad strong { color: var(--red); }
+    .supplier-modal-records { max-height: 320px; overflow-y: auto; border: 1px solid var(--line); border-radius: 11px; }
+    .supplier-modal-records table { min-width: 100%; }
+    .supplier-modal-records th { position: sticky; top: 0; z-index: 2; background: #f8fafc; }
+    .supplier-modal-records td { font-size: 10px; }
+    .supplier-modal-records .empty { padding: 18px; color: var(--muted); font-size: 11px; text-align: center; }
+    .rank-row[data-code], #supplierDetailBody tr[data-code] { cursor: pointer; }
+    .rank-row[data-code]:hover .rank-supplier, #supplierDetailBody tr[data-code]:hover .supplier-detail-name { color: var(--blue); }
     .toast { position: fixed; right: 28px; bottom: 28px; z-index: 30; display: flex; align-items: center; gap: 8px; padding: 11px 13px; border: 1px solid rgba(204,216,230,.9); border-radius: 10px; color: var(--ink); background: #fff; box-shadow: var(--shadow-strong); font-size: 10px; font-weight: 650; opacity: 0; transform: translateY(10px); pointer-events: none; transition: .2s ease; }
     .toast.show { opacity: 1; transform: translateY(0); }
     .toast svg { color: var(--green); }
@@ -1179,6 +1192,16 @@
       <div class="modal-body">
         <p class="settings-hint">选择要查看的收料工厂，切换后看板数据将重新加载。</p>
         <div class="factory-list" id="factoryList"></div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop" id="supplierDetailModalBackdrop" role="dialog" aria-modal="true">
+    <div class="detail-modal" style="max-width: 780px;">
+      <div class="modal-head"><div><div class="modal-kicker">供应商质量分析</div><h2 class="modal-title" id="supplierDetailModalName">—</h2></div><button class="modal-close" id="supplierDetailModalClose"><svg width="16" height="16"><use href="#icon-close"/></svg></button></div>
+      <div class="modal-body">
+        <div class="supplier-modal-stats" id="supplierDetailModalStats"></div>
+        <h3 class="detail-section-title" style="margin-top:16px">近期检验记录</h3>
+        <div class="supplier-modal-records" id="supplierDetailModalRecords"></div>
       </div>
     </div>
   </div>
@@ -1810,7 +1833,7 @@
     function renderSupplierRankings() {
       const list = supplierMode === 'top' ? supplierRankings : [...supplierRankings].reverse();
       if (!list.length) { $('#rankList').innerHTML = '<div class="rank-row" style="color:var(--muted)">暂无数据</div>'; $('#supplierColumnChart').innerHTML = ''; return; }
-      $('#rankList').innerHTML = list.map((item, index) => `<div class="rank-row ${supplierMode === 'bottom' ? 'is-bottom' : ''}">
+      $('#rankList').innerHTML = list.map((item, index) => `<div class="rank-row ${supplierMode === 'bottom' ? 'is-bottom' : ''}" data-code="${escHtml(item.code)}" role="button" tabindex="0">
         <span class="rank-no">${String(index + 1).padStart(2, '0')}</span>
         <span class="rank-supplier" title="${escHtml(item.name)}">${escHtml(item.name)}</span>
         <strong class="rank-score">${item.score}</strong>
@@ -1830,9 +1853,36 @@
         const stateKey = state === 'stable' ? 'supplier_status_stable' : state === 'watch' ? 'supplier_status_watch' : 'supplier_status_risk';
         const passCls = s.raw >= 97 ? 'metric-good' : s.raw >= 93 ? 'metric-watch' : 'metric-risk';
         const defectCls = defect <= 2 ? 'metric-good' : defect <= 6 ? 'metric-watch' : 'metric-risk';
-        return `<tr><td class="supplier-detail-name">${escHtml(s.name)}</td><td class="supplier-detail-code">${escHtml(s.code)}</td><td>${nf.format(s.batches)}</td><td class="${passCls}">${s.raw.toFixed(1)}%</td><td class="${defectCls}">${defect.toFixed(1)}%</td><td class="supplier-trend up">↑ ${s.raw.toFixed(1)}%</td><td><span class="supplier-state ${state}" data-i18n="${stateKey}">${t(stateKey)}</span></td></tr>`;
+        return `<tr data-code="${escHtml(s.code)}" role="button" tabindex="0"><td class="supplier-detail-name">${escHtml(s.name)}</td><td class="supplier-detail-code">${escHtml(s.code)}</td><td>${nf.format(s.batches)}</td><td class="${passCls}">${s.raw.toFixed(1)}%</td><td class="${defectCls}">${defect.toFixed(1)}%</td><td class="supplier-trend up">↑ ${s.raw.toFixed(1)}%</td><td><span class="supplier-state ${state}" data-i18n="${stateKey}">${t(stateKey)}</span></td></tr>`;
       }).join('');
     }
+
+    function openSupplierDetail(code) {
+      const s = supplierRankings.find((x) => x.code === code);
+      if (!s) return;
+      $('#supplierDetailModalName').textContent = `${s.name} · ${s.code}`;
+      const defect = s.total ? (s.fail / s.total * 100) : 0;
+      $('#supplierDetailModalStats').innerHTML = `
+        <div class="sms-item"><label>检验批次</label><strong>${nf.format(s.batches)}</strong></div>
+        <div class="sms-item"><label>合格</label><strong>${nf.format(s.pass)}</strong></div>
+        <div class="sms-item"><label>特采</label><strong>${nf.format(s.special)}</strong></div>
+        <div class="sms-item bad"><label>不合格</label><strong>${nf.format(s.fail)}</strong></div>
+        <div class="sms-item good"><label>综合合格率</label><strong>${s.raw.toFixed(1)}%</strong></div>`;
+      const recs = DASH.records
+        .filter((r) => (r.supplierCode || '') === code)
+        .sort((a, b) => (b.createDate || '').localeCompare(a.createDate || ''))
+        .slice(0, 50);
+      if (!recs.length) {
+        $('#supplierDetailModalRecords').innerHTML = '<div class="empty">当前筛选范围内暂无该供应商的检验记录</div>';
+      } else {
+        $('#supplierDetailModalRecords').innerHTML = `<table><thead><tr><th>单号</th><th>料号</th><th>送检日期</th><th>数量</th><th>检验员</th><th>检验结果</th></tr></thead><tbody>${recs.map((r) => {
+          const res = mapResult(r);
+          return `<tr><td class="mono">${escHtml(r.orderNumber)}</td><td class="mono">${escHtml(r.materialNumber)}</td><td class="mono">${escHtml(r.createDate || '')}</td><td>${fmtQty(r.qty)}</td><td>${escHtml(r.inspectorName || '—')}</td><td><span class="status-pill ${res.key}">${res.label}</span></td></tr>`;
+        }).join('')}</tbody></table>`;
+      }
+      $('#supplierDetailModalBackdrop').classList.add('open');
+    }
+    function closeSupplierDetail() { $('#supplierDetailModalBackdrop').classList.remove('open'); }
 
     function renderAlerts() {
       const all = DASH.alerts;
@@ -2208,6 +2258,16 @@
         const item = event.target.closest('.factory-item');
         if (item) selectFactory(item.dataset.code);
       });
+      $('#rankList').addEventListener('click', (event) => {
+        const row = event.target.closest('.rank-row[data-code]');
+        if (row) openSupplierDetail(row.dataset.code);
+      });
+      $('#supplierDetailBody').addEventListener('click', (event) => {
+        const tr = event.target.closest('tr[data-code]');
+        if (tr) openSupplierDetail(tr.dataset.code);
+      });
+      $('#supplierDetailModalClose').addEventListener('click', closeSupplierDetail);
+      $('#supplierDetailModalBackdrop').addEventListener('click', (event) => { if (event.target === $('#supplierDetailModalBackdrop')) closeSupplierDetail(); });
       document.addEventListener('click', (event) => {
         const btn = event.target.closest('.detail-btn');
         if (btn) { event.stopPropagation(); openDetail(btn.closest('tr')); }
@@ -2220,7 +2280,7 @@
       $('#modalCloseSecondary').addEventListener('click', closeDetail);
       $('#detailBackdrop').addEventListener('click', (event) => { if (event.target === $('#detailBackdrop')) closeDetail(); });
       $('#openQms').addEventListener('click', () => window.open('https://qms.sharetronic.com/qms-front/iqc/iqcDocuments', '_blank'));
-      document.addEventListener('keydown', (event) => { if (event.key === 'Escape') { closeDetail(); closeAlertsModal(); } });
+      document.addEventListener('keydown', (event) => { if (event.key === 'Escape') { closeDetail(); closeAlertsModal(); closeSupplierDetail(); } });
       enableSorting();
     }
 
