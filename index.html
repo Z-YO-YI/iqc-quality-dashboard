@@ -549,6 +549,11 @@
     .supplier-dashboard { margin-top: 15px; padding: 22px 23px 19px; }
     .supplier-dashboard .card-head { align-items: center; }
     .supplier-head-actions { display: flex; align-items: center; gap: 8px; }
+    .supplier-month-switch { display: flex; align-items: center; gap: 6px; padding: 3px; border: 1px solid var(--line); border-radius: 8px; background: var(--card-soft); }
+    .supplier-month-switch .month-btn { width: 24px; height: 24px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 5px; color: var(--muted); background: transparent; cursor: pointer; }
+    .supplier-month-switch .month-btn:hover:not(:disabled) { color: var(--blue); background: #fff; }
+    .supplier-month-switch .month-btn:disabled { opacity: .35; cursor: default; }
+    .supplier-month-switch .supplier-month-label { min-width: 72px; color: var(--navy); font-size: 11px; font-weight: 700; text-align: center; font-variant-numeric: tabular-nums; }
     .supplier-wallboard-button, .supplier-wallboard-entry { height: 30px; padding: 0 9px; font-size: 9px; }
     .supplier-board-body { display: grid; grid-template-columns: minmax(470px, 1.35fr) minmax(360px, .9fr); gap: 25px; margin-top: 18px; }
     .supplier-chart-panel { min-width: 0; }
@@ -1106,7 +1111,7 @@
             <div class="supplier-summary-note" data-i18n="supplier_kpi_total_note">已纳入本月质量评价</div>
           </article>
           <article class="card supplier-summary-card good">
-            <div class="kpi-top"><span class="supplier-summary-label" data-i18n="supplier_kpi_average">平均一次合格率</span><span class="kpi-icon teal"><svg width="16" height="16"><use href="#icon-check"/></svg></span></div>
+            <div class="kpi-top"><span class="supplier-summary-label" data-i18n="supplier_kpi_average">平均综合合格率</span><span class="kpi-icon teal"><svg width="16" height="16"><use href="#icon-check"/></svg></span></div>
             <div class="supplier-summary-value" id="supplierAvg">—<small>%</small></div>
             <div class="supplier-summary-note" data-i18n="supplier_kpi_average_note">按供应商加权计算 · 较上月提升</div>
           </article>
@@ -1123,9 +1128,9 @@
         </section>
 
         <section class="card supplier-dashboard" id="suppliers">
-          <div class="card-head"><div><h2 class="card-title" data-i18n="supplier_title">供应商质量排名</h2><p class="card-subtitle" data-i18n="supplier_board_subtitle">独立供应商质量看板 · 柱状图可横向滚动，排名列表可纵向滚动</p></div><div class="supplier-head-actions"><button class="btn supplier-wallboard-entry" id="supplierWallboardEntry"><svg width="13" height="13"><use href="#icon-grid"/></svg><span data-i18n="supplier_wallboard_entry">供应商看板</span></button><div class="rank-tabs"><button class="active" data-supplier-mode="top" data-i18n="top_rank">正向排名</button><button data-supplier-mode="bottom" data-i18n="bottom_rank">倒数排名</button></div></div></div>
+          <div class="card-head"><div><h2 class="card-title" data-i18n="supplier_title">供应商质量排名</h2><p class="card-subtitle" data-i18n="supplier_board_subtitle">独立供应商质量看板 · 柱状图可横向滚动，排名列表可纵向滚动</p></div><div class="supplier-head-actions"><div class="supplier-month-switch"><button class="month-btn" id="supplierPrevMonth" aria-label="上个月"><svg width="14" height="14"><use href="#icon-chevron-left"/></svg></button><span class="supplier-month-label" id="supplierMonthLabel">2026年9月</span><button class="month-btn" id="supplierNextMonth" aria-label="下个月"><svg width="14" height="14"><use href="#icon-chevron-right"/></svg></button></div><button class="btn supplier-wallboard-entry" id="supplierWallboardEntry"><svg width="13" height="13"><use href="#icon-grid"/></svg><span data-i18n="supplier_wallboard_entry">供应商看板</span></button><div class="rank-tabs"><button class="active" data-supplier-mode="top" data-i18n="top_rank">正向排名</button><button data-supplier-mode="bottom" data-i18n="bottom_rank">倒数排名</button></div></div></div>
           <div class="supplier-board-body">
-            <div class="supplier-chart-panel"><div class="supplier-chart-topline"><span data-i18n="supplier_chart_hint">一次合格率 · 供应商 Top 15</span><strong id="supplierChartMetric">99.8%</strong></div><div class="supplier-column-chart" id="supplierColumnChart"></div></div>
+            <div class="supplier-chart-panel"><div class="supplier-chart-topline"><span data-i18n="supplier_chart_hint">综合合格率 · 供应商 Top 15</span><strong id="supplierChartMetric">99.8%</strong></div><div class="supplier-column-chart" id="supplierColumnChart"></div></div>
             <div class="supplier-board-list"><div class="supplier-list-head"><span>#</span><span data-i18n="col_supplier">供应商 / 编码</span><span data-i18n="score">合格率</span><span data-i18n="supplier_batches">批次</span></div><div class="supplier-list-scroll"><div class="rank-list" id="rankList"></div></div></div>
           </div>
           <div class="rank-footer"><span id="rankFooterLabel" data-i18n="bottom_risk">倒数第一供应商</span><strong id="rankFooterValue">鑫实达 · 89.4%</strong></div>
@@ -1136,7 +1141,7 @@
           <div class="supplier-detail-table-wrap">
             <table class="supplier-detail-table">
               <colgroup><col style="width:20%"><col style="width:13%"><col style="width:12%"><col style="width:15%"><col style="width:13%"><col style="width:13%"><col style="width:14%"></colgroup>
-              <thead><tr><th data-i18n="supplier_col_name">供应商</th><th data-i18n="supplier_col_code">供应商编码</th><th data-i18n="supplier_col_lots">检验批次</th><th data-i18n="supplier_col_passrate">一次合格率</th><th data-i18n="supplier_col_defect">缺陷率</th><th data-i18n="supplier_col_trend">月度趋势</th><th data-i18n="supplier_col_status">质量状态</th></tr></thead>
+              <thead><tr><th data-i18n="supplier_col_name">供应商</th><th data-i18n="supplier_col_code">供应商编码</th><th data-i18n="supplier_col_lots">检验批次</th><th data-i18n="supplier_col_passrate">综合合格率</th><th data-i18n="supplier_col_defect">缺陷率</th><th data-i18n="supplier_col_trend">月度趋势</th><th data-i18n="supplier_col_status">质量状态</th></tr></thead>
               <tbody id="supplierDetailBody"></tbody>
             </table>
           </div>
@@ -1231,13 +1236,13 @@
     };
 
     Object.assign(I18N.zh, {
-      factory_label: '当前工厂', factory_sub: '泰国 · 工厂 01 · IQC', supplier_board_subtitle: '独立供应商质量看板 · 柱状图可横向滚动，排名列表可纵向滚动', supplier_chart_hint: '一次合格率 · 供应商 Top 15', score: '合格率', enter_wallboard: '看板模式', exit_wallboard: '退出看板', wallboard_live: '看板模式 · 实时', sidebar_hide: '收起导航', sidebar_show: '展开导航', top_risk: '正向第一供应商'
+      factory_label: '当前工厂', factory_sub: '泰国 · 工厂 01 · IQC', supplier_board_subtitle: '独立供应商质量看板 · 柱状图可横向滚动，排名列表可纵向滚动', supplier_chart_hint: '综合合格率 · 供应商 Top 15', score: '合格率', enter_wallboard: '看板模式', exit_wallboard: '退出看板', wallboard_live: '看板模式 · 实时', sidebar_hide: '收起导航', sidebar_show: '展开导航', top_risk: '正向第一供应商'
     });
     Object.assign(I18N.th, {
-      factory_label: 'โรงงานปัจจุบัน', factory_sub: 'ประเทศไทย · โรงงาน 01 · IQC', supplier_board_subtitle: 'แดชบอร์ดคุณภาพซัพพลายเออร์แยกต่างหาก · เลื่อนกราฟแนวนอนและรายการแนวตั้งได้', supplier_chart_hint: 'อัตราผ่านครั้งแรก · ซัพพลายเออร์ Top 15', score: 'อัตราผ่าน', enter_wallboard: 'โหมดแดชบอร์ด', exit_wallboard: 'ออกจากโหมดแดชบอร์ด', wallboard_live: 'โหมดแดชบอร์ด · เรียลไทม์', sidebar_hide: 'ซ่อนเมนูนำทาง', sidebar_show: 'แสดงเมนูนำทาง', top_risk: 'ซัพพลายเออร์อันดับหนึ่ง'
+      factory_label: 'โรงงานปัจจุบัน', factory_sub: 'ประเทศไทย · โรงงาน 01 · IQC', supplier_board_subtitle: 'แดชบอร์ดคุณภาพซัพพลายเออร์แยกต่างหาก · เลื่อนกราฟแนวนอนและรายการแนวตั้งได้', supplier_chart_hint: 'อัตราผ่านรวม · ซัพพลายเออร์ Top 15', score: 'อัตราผ่าน', enter_wallboard: 'โหมดแดชบอร์ด', exit_wallboard: 'ออกจากโหมดแดชบอร์ด', wallboard_live: 'โหมดแดชบอร์ด · เรียลไทม์', sidebar_hide: 'ซ่อนเมนูนำทาง', sidebar_show: 'แสดงเมนูนำทาง', top_risk: 'ซัพพลายเออร์อันดับหนึ่ง'
     });
     I18N.en = {
-      current_plant: 'Current plant', factory_sub: 'Thailand · Plant 01 · IQC', navigation: 'Navigation', menu_overview: 'Quality overview', menu_tasks: 'Inspection tasks', menu_supplier: 'Supplier quality', menu_reports: 'Reports center', menu_settings: 'System settings', sync_copy: 'QMS connected · auto-sync every 5 min.', role_label: 'Quality administrator', breadcrumb_parent: 'Quality operations', breadcrumb_current: 'IQC incoming inspection', hero_kicker: 'Incoming quality operations', hero_title: 'SHARETRONIC.IQC IQC Incoming Inspection', hero_subtitle: 'A real-time quality cockpit connected to QMS for quickly identifying pending, overdue, and supplier risks.', date_today: 'Sep 1, 2026 · Tue', refresh: 'Refresh data', export: 'Export dashboard', kpi_incoming: 'Today’s inspection lots', kpi_pending: 'Pending lots', kpi_overdue: 'Overdue / incomplete', kpi_passrate: 'Monthly first-pass yield', kpi_urgent: 'Urgent lots', unit_lot: 'lots', unit_urgent: 'urgent', vs_yesterday: 'vs yesterday', need_assignment: 'Needs assignment', vs_last_week: 'vs last week', vs_last_month: 'vs last month', of_today_incoming: 'of today’s intake', flow_title: 'Inspection flow overview', flow_subtitle: 'Real-time distribution by inspection status', range_today_short: 'Today', range_week_short: 'This week', range_month_short: 'This month', unit_lot_full: 'inspection lots', flow_caption: 'Today’s cumulative intake · as of 09:42', status_pending: 'Pending', status_processing: 'In inspection', status_done: 'Completed', status_overdue: 'Overdue / incomplete', trend_title: 'First-pass yield trend', trend_subtitle: 'Incoming quality change over the last 7 days', legend_passrate: 'First-pass yield', legend_lots: 'Inspection lots', trend_note: 'Computed from the last 7 days of inspection data', alert_title: 'Exceptions & alerts', alert_subtitle: 'Items requiring quality team attention', alert_count: '3 need attention', alert_overdue: 'SLA exceeded', alert_urgent: 'Urgent task awaiting assignment', alert_fail: 'Supplier lot failed', view_all_alerts: 'View all alerts', table_title: 'Incoming inspection tasks', table_subtitle: 'Latest QMS inspection tasks · filter quickly by status, urgency, or keyword', search_placeholder: 'Search no. / material / supplier', range_today: 'Today', range_week: 'This week', range_month: 'This month', all_status: 'All statuses', urgent_only: 'Urgent only', live_data: 'QMS live sync', refresh_every: 'Refreshes every 5 min', unit_task: 'tasks', col_id: 'Inspection no.', col_part: 'Material no.', col_name: 'Material name', col_category: 'Category', col_factory: 'Receiving factory', col_supplier: 'Supplier / code', col_qty: 'Received qty.', col_urgent: 'Urgent', col_date: 'Submitted at', col_inspector: 'Inspector', col_node: 'Process node', col_sla: 'SLA status', col_result: 'Inspection result', col_action: 'Action', yes: 'Yes', no: 'No', result_processing: 'In progress', result_pending: 'Not started', result_pass: 'Pass', empty_state: 'No tasks match the current filters', inspector_title: 'Pending lots by inspector', inspector_subtitle: 'Current pending tasks · sorted by count', unit_waiting_lot: 'pending lots', capacity_label: 'Team capacity utilization', result_title: 'Inspection result statistics', result_subtitle: 'Month to date', total_inspections: 'Total inspected lots', result_special: 'Special acceptance', result_fail: 'Fail', result_note: 'First-pass yield', supplier_title: 'Supplier quality ranking', supplier_subtitle: 'By monthly first-pass yield', supplier_board_subtitle: 'Standalone supplier quality board · horizontal chart and vertical list scrolling', supplier_chart_hint: 'First-pass yield · Supplier Top 15', score: 'Pass rate', top_rank: 'Top ranking', bottom_rank: 'Bottom ranking', bottom_risk: 'Lowest-ranked supplier', supplier_batches: 'lots', close: 'Close', detail_kicker: 'QMS INSPECTION RECORD', detail_part: 'Material no.', detail_material: 'Material name', detail_category: 'Category', detail_supplier: 'Supplier', detail_quantity: 'Received quantity', detail_inspector: 'Inspector', detail_date: 'Submitted at', detail_status: 'Current status', detail_sla: 'SLA limit', detail_timeline: 'Process timeline', timeline_received: 'Goods received', timeline_submitted: 'Inspection request', timeline_inspecting: 'IQC inspection', timeline_closed: 'Result closed', open_qms: 'Open QMS inspection', last_refresh: 'Last updated', refresh_done: 'Data refreshed', export_done: 'Current filtered tasks exported', alert_done: 'No more alerts', qms_demo: 'Demo mode: enable the real API in QMS_CONFIG.', flow_week_caption: 'Week-to-date intake · as of 09:42', flow_month_caption: 'Month-to-date intake · as of 09:42', factory_label: 'Current factory', enter_wallboard: 'Wallboard mode', exit_wallboard: 'Exit wallboard', wallboard_live: 'Wallboard live', sidebar_hide: 'Hide navigation', sidebar_show: 'Show navigation', top_risk: 'Top-ranked supplier'
+      current_plant: 'Current plant', factory_sub: 'Thailand · Plant 01 · IQC', navigation: 'Navigation', menu_overview: 'Quality overview', menu_tasks: 'Inspection tasks', menu_supplier: 'Supplier quality', menu_reports: 'Reports center', menu_settings: 'System settings', sync_copy: 'QMS connected · auto-sync every 5 min.', role_label: 'Quality administrator', breadcrumb_parent: 'Quality operations', breadcrumb_current: 'IQC incoming inspection', hero_kicker: 'Incoming quality operations', hero_title: 'SHARETRONIC.IQC IQC Incoming Inspection', hero_subtitle: 'A real-time quality cockpit connected to QMS for quickly identifying pending, overdue, and supplier risks.', date_today: 'Sep 1, 2026 · Tue', refresh: 'Refresh data', export: 'Export dashboard', kpi_incoming: 'Today’s inspection lots', kpi_pending: 'Pending lots', kpi_overdue: 'Overdue / incomplete', kpi_passrate: 'Monthly first-pass yield', kpi_urgent: 'Urgent lots', unit_lot: 'lots', unit_urgent: 'urgent', vs_yesterday: 'vs yesterday', need_assignment: 'Needs assignment', vs_last_week: 'vs last week', vs_last_month: 'vs last month', of_today_incoming: 'of today’s intake', flow_title: 'Inspection flow overview', flow_subtitle: 'Real-time distribution by inspection status', range_today_short: 'Today', range_week_short: 'This week', range_month_short: 'This month', unit_lot_full: 'inspection lots', flow_caption: 'Today’s cumulative intake · as of 09:42', status_pending: 'Pending', status_processing: 'In inspection', status_done: 'Completed', status_overdue: 'Overdue / incomplete', trend_title: 'First-pass yield trend', trend_subtitle: 'Incoming quality change over the last 7 days', legend_passrate: 'First-pass yield', legend_lots: 'Inspection lots', trend_note: 'Computed from the last 7 days of inspection data', alert_title: 'Exceptions & alerts', alert_subtitle: 'Items requiring quality team attention', alert_count: '3 need attention', alert_overdue: 'SLA exceeded', alert_urgent: 'Urgent task awaiting assignment', alert_fail: 'Supplier lot failed', view_all_alerts: 'View all alerts', table_title: 'Incoming inspection tasks', table_subtitle: 'Latest QMS inspection tasks · filter quickly by status, urgency, or keyword', search_placeholder: 'Search no. / material / supplier', range_today: 'Today', range_week: 'This week', range_month: 'This month', all_status: 'All statuses', urgent_only: 'Urgent only', live_data: 'QMS live sync', refresh_every: 'Refreshes every 5 min', unit_task: 'tasks', col_id: 'Inspection no.', col_part: 'Material no.', col_name: 'Material name', col_category: 'Category', col_factory: 'Receiving factory', col_supplier: 'Supplier / code', col_qty: 'Received qty.', col_urgent: 'Urgent', col_date: 'Submitted at', col_inspector: 'Inspector', col_node: 'Process node', col_sla: 'SLA status', col_result: 'Inspection result', col_action: 'Action', yes: 'Yes', no: 'No', result_processing: 'In progress', result_pending: 'Not started', result_pass: 'Pass', empty_state: 'No tasks match the current filters', inspector_title: 'Pending lots by inspector', inspector_subtitle: 'Current pending tasks · sorted by count', unit_waiting_lot: 'pending lots', capacity_label: 'Team capacity utilization', result_title: 'Inspection result statistics', result_subtitle: 'Month to date', total_inspections: 'Total inspected lots', result_special: 'Special acceptance', result_fail: 'Fail', result_note: 'First-pass yield', supplier_title: 'Supplier quality ranking', supplier_subtitle: 'By monthly first-pass yield', supplier_board_subtitle: 'Standalone supplier quality board · horizontal chart and vertical list scrolling', supplier_chart_hint: 'Overall pass rate · Supplier Top 15', score: 'Pass rate', top_rank: 'Top ranking', bottom_rank: 'Bottom ranking', bottom_risk: 'Lowest-ranked supplier', supplier_batches: 'lots', close: 'Close', detail_kicker: 'QMS INSPECTION RECORD', detail_part: 'Material no.', detail_material: 'Material name', detail_category: 'Category', detail_supplier: 'Supplier', detail_quantity: 'Received quantity', detail_inspector: 'Inspector', detail_date: 'Submitted at', detail_status: 'Current status', detail_sla: 'SLA limit', detail_timeline: 'Process timeline', timeline_received: 'Goods received', timeline_submitted: 'Inspection request', timeline_inspecting: 'IQC inspection', timeline_closed: 'Result closed', open_qms: 'Open QMS inspection', last_refresh: 'Last updated', refresh_done: 'Data refreshed', export_done: 'Current filtered tasks exported', alert_done: 'No more alerts', qms_demo: 'Demo mode: enable the real API in QMS_CONFIG.', flow_week_caption: 'Week-to-date intake · as of 09:42', flow_month_caption: 'Month-to-date intake · as of 09:42', factory_label: 'Current factory', enter_wallboard: 'Wallboard mode', exit_wallboard: 'Exit wallboard', wallboard_live: 'Wallboard live', sidebar_hide: 'Hide navigation', sidebar_show: 'Show navigation', top_risk: 'Top-ranked supplier'
     };
     Object.assign(I18N.zh, { supplier_wallboard_entry: '供应商看板', supplier_wallboard_live: '供应商质量看板 · 实时', exit_supplier_wallboard: '退出供应商看板' });
     Object.assign(I18N.th, { supplier_wallboard_entry: 'แดชบอร์ดซัพพลายเออร์', supplier_wallboard_live: 'แดชบอร์ดคุณภาพซัพพลายเออร์ · เรียลไทม์', exit_supplier_wallboard: 'ออกจากแดชบอร์ดซัพพลายเออร์' });
@@ -1246,13 +1251,13 @@
     Object.assign(I18N.th, { range_todo: 'งานที่ต้องทำ' });
     Object.assign(I18N.en, { range_todo: 'To-do tasks' });
     Object.assign(I18N.zh, {
-      breadcrumb_overview: 'IQC 来料检验', breadcrumb_tasks: '检验任务', breadcrumb_suppliers: '供应商质量', supplier_page_kicker: '供应商质量运营', supplier_page_title: '供应商质量管理', supplier_page_subtitle: '按工厂、月份与 QMS 检验结果全面追踪供应商质量表现。', supplier_kpi_total: '供应商总数', supplier_unit_company: '家', supplier_kpi_total_note: '已纳入本月质量评价', supplier_kpi_average: '平均一次合格率', supplier_kpi_average_note: '按供应商加权计算 · 较上月提升', supplier_kpi_risk: '风险供应商', supplier_kpi_risk_note: '需要重点跟进与改善', supplier_kpi_lots: '本月检验批次', supplier_kpi_lots_note: 'QMS 已完成及在检批次', supplier_detail_title: '供应商质量明细', supplier_detail_subtitle: '按供应商汇总本月来料质量、缺陷率、批次与改进状态', supplier_col_name: '供应商', supplier_col_code: '供应商编码', supplier_col_lots: '检验批次', supplier_col_passrate: '一次合格率', supplier_col_defect: '缺陷率', supplier_col_trend: '月度趋势', supplier_col_status: '质量状态', supplier_status_stable: '稳定', supplier_status_watch: '关注', supplier_status_risk: '高风险', supplier_board_subtitle: '供应商质量排名 · 柱状图可横向滚动，排名列表可纵向滚动'
+      breadcrumb_overview: 'IQC 来料检验', breadcrumb_tasks: '检验任务', breadcrumb_suppliers: '供应商质量', supplier_page_kicker: '供应商质量运营', supplier_page_title: '供应商质量管理', supplier_page_subtitle: '按工厂、月份与 QMS 检验结果全面追踪供应商质量表现。', supplier_kpi_total: '供应商总数', supplier_unit_company: '家', supplier_kpi_total_note: '已纳入本月质量评价', supplier_kpi_average: '平均综合合格率', supplier_kpi_average_note: '按供应商加权计算 · 较上月提升', supplier_kpi_risk: '风险供应商', supplier_kpi_risk_note: '需要重点跟进与改善', supplier_kpi_lots: '本月检验批次', supplier_kpi_lots_note: 'QMS 已完成及在检批次', supplier_detail_title: '供应商质量明细', supplier_detail_subtitle: '按供应商汇总本月来料质量、缺陷率、批次与改进状态', supplier_col_name: '供应商', supplier_col_code: '供应商编码', supplier_col_lots: '检验批次', supplier_col_passrate: '综合合格率', supplier_col_defect: '缺陷率', supplier_col_trend: '月度趋势', supplier_col_status: '质量状态', supplier_status_stable: '稳定', supplier_status_watch: '关注', supplier_status_risk: '高风险', supplier_board_subtitle: '供应商质量排名 · 柱状图可横向滚动，排名列表可纵向滚动'
     });
     Object.assign(I18N.th, {
-      breadcrumb_overview: 'ตรวจรับเข้า IQC', breadcrumb_tasks: 'งานตรวจรับเข้า', breadcrumb_suppliers: 'คุณภาพซัพพลายเออร์', supplier_page_kicker: 'การดำเนินงานคุณภาพซัพพลายเออร์', supplier_page_title: 'การจัดการคุณภาพซัพพลายเออร์', supplier_page_subtitle: 'ติดตามผลคุณภาพซัพพลายเออร์อย่างครบถ้วนตามโรงงาน เดือน และผลการตรวจจาก QMS', supplier_kpi_total: 'จำนวนซัพพลายเออร์', supplier_unit_company: 'ราย', supplier_kpi_total_note: 'รวมในการประเมินคุณภาพเดือนนี้', supplier_kpi_average: 'อัตราผ่านครั้งแรกเฉลี่ย', supplier_kpi_average_note: 'คำนวณแบบถ่วงน้ำหนัก · ดีขึ้นจากเดือนก่อน', supplier_kpi_risk: 'ซัพพลายเออร์ความเสี่ยง', supplier_kpi_risk_note: 'ต้องติดตามและปรับปรุงเป็นพิเศษ', supplier_kpi_lots: 'ล็อตตรวจเดือนนี้', supplier_kpi_lots_note: 'ล็อตที่เสร็จแล้วและกำลังตรวจจาก QMS', supplier_detail_title: 'รายละเอียดคุณภาพซัพพลายเออร์', supplier_detail_subtitle: 'สรุปคุณภาพขาเข้า อัตราข้อบกพร่อง จำนวนล็อต และสถานะการปรับปรุงรายซัพพลายเออร์', supplier_col_name: 'ซัพพลายเออร์', supplier_col_code: 'รหัสซัพพลายเออร์', supplier_col_lots: 'ล็อตตรวจ', supplier_col_passrate: 'อัตราผ่านครั้งแรก', supplier_col_defect: 'อัตราข้อบกพร่อง', supplier_col_trend: 'แนวโน้มรายเดือน', supplier_col_status: 'สถานะคุณภาพ', supplier_status_stable: 'คงที่', supplier_status_watch: 'ต้องติดตาม', supplier_status_risk: 'ความเสี่ยงสูง', supplier_board_subtitle: 'อันดับคุณภาพซัพพลายเออร์ · เลื่อนกราฟแนวนอนและรายการแนวตั้งได้'
+      breadcrumb_overview: 'ตรวจรับเข้า IQC', breadcrumb_tasks: 'งานตรวจรับเข้า', breadcrumb_suppliers: 'คุณภาพซัพพลายเออร์', supplier_page_kicker: 'การดำเนินงานคุณภาพซัพพลายเออร์', supplier_page_title: 'การจัดการคุณภาพซัพพลายเออร์', supplier_page_subtitle: 'ติดตามผลคุณภาพซัพพลายเออร์อย่างครบถ้วนตามโรงงาน เดือน และผลการตรวจจาก QMS', supplier_kpi_total: 'จำนวนซัพพลายเออร์', supplier_unit_company: 'ราย', supplier_kpi_total_note: 'รวมในการประเมินคุณภาพเดือนนี้', supplier_kpi_average: 'อัตราผ่านรวมเฉลี่ย', supplier_kpi_average_note: 'คำนวณแบบถ่วงน้ำหนัก · ดีขึ้นจากเดือนก่อน', supplier_kpi_risk: 'ซัพพลายเออร์ความเสี่ยง', supplier_kpi_risk_note: 'ต้องติดตามและปรับปรุงเป็นพิเศษ', supplier_kpi_lots: 'ล็อตตรวจเดือนนี้', supplier_kpi_lots_note: 'ล็อตที่เสร็จแล้วและกำลังตรวจจาก QMS', supplier_detail_title: 'รายละเอียดคุณภาพซัพพลายเออร์', supplier_detail_subtitle: 'สรุปคุณภาพขาเข้า อัตราข้อบกพร่อง จำนวนล็อต และสถานะการปรับปรุงรายซัพพลายเออร์', supplier_col_name: 'ซัพพลายเออร์', supplier_col_code: 'รหัสซัพพลายเออร์', supplier_col_lots: 'ล็อตตรวจ', supplier_col_passrate: 'อัตราผ่านรวม', supplier_col_defect: 'อัตราข้อบกพร่อง', supplier_col_trend: 'แนวโน้มรายเดือน', supplier_col_status: 'สถานะคุณภาพ', supplier_status_stable: 'คงที่', supplier_status_watch: 'ต้องติดตาม', supplier_status_risk: 'ความเสี่ยงสูง', supplier_board_subtitle: 'อันดับคุณภาพซัพพลายเออร์ · เลื่อนกราฟแนวนอนและรายการแนวตั้งได้'
     });
     Object.assign(I18N.en, {
-      breadcrumb_overview: 'IQC incoming inspection', breadcrumb_tasks: 'Inspection tasks', breadcrumb_suppliers: 'Supplier quality', supplier_page_kicker: 'Supplier quality operations', supplier_page_title: 'Supplier quality management', supplier_page_subtitle: 'Track supplier quality performance comprehensively by plant, month, and QMS inspection results.', supplier_kpi_total: 'Total suppliers', supplier_unit_company: 'suppliers', supplier_kpi_total_note: 'Included in this month’s evaluation', supplier_kpi_average: 'Average first-pass yield', supplier_kpi_average_note: 'Weighted by supplier · improved vs last month', supplier_kpi_risk: 'Risk suppliers', supplier_kpi_risk_note: 'Require focused follow-up and improvement', supplier_kpi_lots: 'Inspection lots this month', supplier_kpi_lots_note: 'Completed and in-progress lots from QMS', supplier_detail_title: 'Supplier quality details', supplier_detail_subtitle: 'Monthly incoming quality, defect rate, lots, and improvement status by supplier', supplier_col_name: 'Supplier', supplier_col_code: 'Supplier code', supplier_col_lots: 'Inspection lots', supplier_col_passrate: 'First-pass yield', supplier_col_defect: 'Defect rate', supplier_col_trend: 'Monthly trend', supplier_col_status: 'Quality status', supplier_status_stable: 'Stable', supplier_status_watch: 'Watch', supplier_status_risk: 'High risk', supplier_board_subtitle: 'Supplier quality ranking · horizontal chart and vertical list scrolling'
+      breadcrumb_overview: 'IQC incoming inspection', breadcrumb_tasks: 'Inspection tasks', breadcrumb_suppliers: 'Supplier quality', supplier_page_kicker: 'Supplier quality operations', supplier_page_title: 'Supplier quality management', supplier_page_subtitle: 'Track supplier quality performance comprehensively by plant, month, and QMS inspection results.', supplier_kpi_total: 'Total suppliers', supplier_unit_company: 'suppliers', supplier_kpi_total_note: 'Included in this month’s evaluation', supplier_kpi_average: 'Average overall pass rate', supplier_kpi_average_note: 'Weighted by supplier · improved vs last month', supplier_kpi_risk: 'Risk suppliers', supplier_kpi_risk_note: 'Require focused follow-up and improvement', supplier_kpi_lots: 'Inspection lots this month', supplier_kpi_lots_note: 'Completed and in-progress lots from QMS', supplier_detail_title: 'Supplier quality details', supplier_detail_subtitle: 'Monthly incoming quality, defect rate, lots, and improvement status by supplier', supplier_col_name: 'Supplier', supplier_col_code: 'Supplier code', supplier_col_lots: 'Inspection lots', supplier_col_passrate: 'Overall pass rate', supplier_col_defect: 'Defect rate', supplier_col_trend: 'Monthly trend', supplier_col_status: 'Quality status', supplier_status_stable: 'Stable', supplier_status_watch: 'Watch', supplier_status_risk: 'High risk', supplier_board_subtitle: 'Supplier quality ranking · horizontal chart and vertical list scrolling'
     });
 
     let locale = 'zh';
@@ -1381,6 +1386,8 @@
       try { localStorage.setItem('qms_factory', JSON.stringify(currentFactory)); } catch (e) {}
       applyFactory();
       renderFactoryList();
+      supplierMonthOffset = 0;
+      initSupplierMonthUi();
       try { localStorage.removeItem('qms_dash_cache'); } catch (e) {}
       clearDash();
       renderAll();
@@ -1487,7 +1494,8 @@
       });
       return Array.from(map.values()).map((e) => {
         const total = e.pass + e.fail + e.special;
-        const rate = total > 0 ? (e.pass / total * 100) : 0;
+        // 综合合格率 = (合格 + 特采) / 总批次，特采（让步接收）计入合格
+        const rate = total > 0 ? ((e.pass + e.special) / total * 100) : 0;
         return { ...e, total, rate, score: rate.toFixed(1) + '%', raw: rate };
       }).sort((a, b) => b.rate - a.rate);
     }
@@ -1728,13 +1736,14 @@
     }
 
     function renderSupplierSummary() {
-      const list = DASH.suppliers;
+      const list = supplierRankings;
       $('#supplierTotal').textContent = nf.format(list.length);
       const avg = list.length ? list.reduce((a, b) => a + b.raw, 0) / list.length : 0;
       $('#supplierAvg').innerHTML = `${avg.toFixed(1)}<small>%</small>`;
       const risk = list.filter((s) => s.raw < 93).length;
       $('#supplierRisk').innerHTML = `${risk}<small data-i18n="supplier_unit_company">${t('supplier_unit_company')}</small>`;
-      $('#supplierLots').innerHTML = `${nf.format(DASH.resultStats.total)}<small data-i18n="unit_lot">${t('unit_lot')}</small>`;
+      const lots = list.reduce((a, b) => a + b.total, 0);
+      $('#supplierLots').innerHTML = `${nf.format(lots)}<small data-i18n="unit_lot">${t('unit_lot')}</small>`;
     }
 
     function renderSupplierLineChart(list) {
@@ -1769,8 +1778,43 @@
       el.innerHTML = `<svg class="supplier-line-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">${grid}${yLabels}<path class="area" d="${areaD}"/><path class="line" d="${lineD}"/>${dots}${scoreLabels}${xLabels}</svg>`;
     }
 
+    function supplierMonthLabel() {
+      const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + supplierMonthOffset);
+      return `${d.getFullYear()}年${d.getMonth() + 1}月`;
+    }
+    async function setSupplierMonth(offset) {
+      if (offset > 0) return;
+      supplierMonthOffset = offset;
+      let records;
+      if (offset === 0) {
+        records = DASH.month;
+      } else {
+        const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + offset);
+        const ym = `${d.getFullYear()}-${pad2(d.getMonth() + 1)}`;
+        const start = ym + '-01';
+        const end = ym + '-' + pad2(new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate());
+        try {
+          records = await qmsSelectAll({ factoryCode: QMS_CONFIG.factoryCode, createDateStart: start, createDateEnd: end });
+        } catch (e) { records = []; }
+      }
+      supplierRankings = computeSuppliers(records);
+      renderSupplierRankings();
+      renderSupplierDetail();
+      renderSupplierSummary();
+      const lbl = $('#supplierMonthLabel');
+      if (lbl) lbl.textContent = supplierMonthLabel();
+      const next = $('#supplierNextMonth');
+      if (next) next.disabled = supplierMonthOffset >= 0;
+    }
+    function initSupplierMonthUi() {
+      const lbl = $('#supplierMonthLabel');
+      if (lbl) lbl.textContent = supplierMonthLabel();
+      const next = $('#supplierNextMonth');
+      if (next) next.disabled = supplierMonthOffset >= 0;
+    }
+
     function renderSupplierRankings() {
-      const list = supplierMode === 'top' ? DASH.suppliers : [...DASH.suppliers].reverse();
+      const list = supplierMode === 'top' ? supplierRankings : [...supplierRankings].reverse();
       if (!list.length) { $('#rankList').innerHTML = '<div class="rank-row" style="color:var(--muted)">暂无数据</div>'; $('#supplierColumnChart').innerHTML = ''; return; }
       $('#rankList').innerHTML = list.map((item, index) => `<div class="rank-row ${supplierMode === 'bottom' ? 'is-bottom' : ''}">
         <span class="rank-no">${String(index + 1).padStart(2, '0')}</span>
@@ -1785,7 +1829,7 @@
     }
 
     function renderSupplierDetail() {
-      const list = DASH.suppliers;
+      const list = supplierRankings;
       $('#supplierDetailBody').innerHTML = list.map((s) => {
         const defect = s.total ? (s.fail / s.total * 100) : 0;
         const state = s.raw >= 97 ? 'stable' : s.raw >= 93 ? 'watch' : 'risk';
@@ -1877,6 +1921,7 @@
       const prevRs = computeResultStats(DASH.prevMonth);
       DASH.prevPassRate = prevRs.total > 0 ? prevRs.passRate : null;
       DASH.suppliers = computeSuppliers(DASH.month);
+      if (supplierMonthOffset === 0) supplierRankings = DASH.suppliers;
       const act = active || records.filter((r) => r.inspectionStatus === '0');
       DASH.inspectors = computeInspectors(act);
       DASH.alerts = computeAlerts();
@@ -2120,6 +2165,8 @@
       updateWallboardClock(); setInterval(updateWallboardClock, 1000);
       $$('[data-range]').forEach((button) => button.addEventListener('click', () => setFlowRange(button.dataset.range)));
       $$('[data-supplier-mode]').forEach((button) => button.addEventListener('click', () => { supplierMode = button.dataset.supplierMode; renderSupplierRankings(); }));
+      $('#supplierPrevMonth').addEventListener('click', () => setSupplierMonth(supplierMonthOffset - 1));
+      $('#supplierNextMonth').addEventListener('click', () => setSupplierMonth(supplierMonthOffset + 1));
       const searchInput = $('#globalSearch'), statusFilter = $('#statusFilter'), rangeFilter = $('#rangeFilter');
       [searchInput, statusFilter].forEach((control) => control.addEventListener('input', applyFilters));
       rangeFilter.addEventListener('change', () => {
@@ -2174,6 +2221,8 @@
     }
 
     let supplierMode = 'top';
+    let supplierMonthOffset = 0;
+    let supplierRankings = [];
     let urgentOnly = false;
     let urgentFilter = null;
     let tablePage = 1;
@@ -2186,6 +2235,7 @@
     applyFactory();
     loadFactories();
     bindEvents();
+    initSupplierMonthUi();
     applyFilters();
     loadDashboardData();
     setInterval(() => { if (!qmsLoading) loadDashboardData(true); }, 5 * 60 * 1000);
