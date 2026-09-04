@@ -1128,7 +1128,7 @@
         </section>
 
         <section class="card supplier-dashboard" id="suppliers">
-          <div class="card-head"><div><h2 class="card-title" data-i18n="supplier_title">供应商质量排名</h2><p class="card-subtitle" data-i18n="supplier_board_subtitle">独立供应商质量看板 · 柱状图可横向滚动，排名列表可纵向滚动</p></div><div class="supplier-head-actions"><div class="supplier-month-switch"><button class="month-btn" id="supplierPrevMonth" aria-label="上个月"><svg width="14" height="14"><use href="#icon-chevron-left"/></svg></button><span class="supplier-month-label" id="supplierMonthLabel">2026年9月</span><button class="month-btn" id="supplierNextMonth" aria-label="下个月"><svg width="14" height="14"><use href="#icon-chevron-right"/></svg></button></div><button class="btn supplier-wallboard-entry" id="supplierWallboardEntry"><svg width="13" height="13"><use href="#icon-grid"/></svg><span data-i18n="supplier_wallboard_entry">供应商看板</span></button><div class="rank-tabs"><button class="active" data-supplier-mode="top" data-i18n="top_rank">正向排名</button><button data-supplier-mode="bottom" data-i18n="bottom_rank">倒数排名</button></div></div></div>
+          <div class="card-head"><div><h2 class="card-title" data-i18n="supplier_title">供应商质量排名</h2><p class="card-subtitle" data-i18n="supplier_board_subtitle">独立供应商质量看板 · 柱状图可横向滚动，排名列表可纵向滚动</p></div><div class="supplier-head-actions"><div class="supplier-month-switch"><button class="month-btn" id="supplierPrevMonth" aria-label="上个月"><svg width="14" height="14"><use href="#icon-chevron-left"/></svg></button><span class="supplier-month-label" id="supplierMonthLabel">2026年9月</span><button class="month-btn" id="supplierNextMonth" aria-label="下个月"><svg width="14" height="14"><use href="#icon-chevron-right"/></svg></button></div><button class="btn supplier-wallboard-entry" id="supplierWallboardEntry"><svg width="13" height="13"><use href="#icon-grid"/></svg><span data-i18n="supplier_wallboard_entry">供应商看板</span></button><div class="rank-tabs"><button data-supplier-mode="top" data-i18n="top_rank">正向排名</button><button class="active" data-supplier-mode="bottom" data-i18n="bottom_rank">倒数排名</button></div></div></div>
           <div class="supplier-board-body">
             <div class="supplier-chart-panel"><div class="supplier-chart-topline"><span data-i18n="supplier_chart_hint">综合合格率 · 供应商 Top 15</span><strong id="supplierChartMetric">99.8%</strong></div><div class="supplier-column-chart" id="supplierColumnChart"></div></div>
             <div class="supplier-board-list"><div class="supplier-list-head"><span>#</span><span data-i18n="col_supplier">供应商 / 编码</span><span data-i18n="score">合格率</span><span data-i18n="supplier_batches">批次</span></div><div class="supplier-list-scroll"><div class="rank-list" id="rankList"></div></div></div>
@@ -1824,7 +1824,7 @@
       const chartList = list.slice(0, 15);
       renderSupplierLineChart(chartList);
       $('#supplierChartMetric').textContent = list[0].score;
-      $('#rankFooterLabel').textContent = t('top_risk');
+      $('#rankFooterLabel').textContent = t(supplierMode === 'bottom' ? 'bottom_risk' : 'top_risk');
       $('#rankFooterValue').textContent = `${list[0].name} · ${list[0].score}`;
     }
 
@@ -2220,7 +2220,7 @@
       enableSorting();
     }
 
-    let supplierMode = 'top';
+    let supplierMode = 'bottom';
     let supplierMonthOffset = 0;
     let supplierRankings = [];
     let urgentOnly = false;
