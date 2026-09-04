@@ -810,6 +810,17 @@
     .timeline-step.current { color: var(--blue); font-weight: 750; }
     .timeline-step.current::before { border-color: var(--blue); box-shadow: 0 0 0 4px var(--blue-soft); }
     .modal-foot { display: flex; justify-content: flex-end; gap: 8px; margin-top: 22px; }
+    .settings-hint { margin: 0 0 13px; color: var(--muted); font-size: 10px; line-height: 1.6; }
+    .factory-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .factory-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 13px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--card-soft); cursor: pointer; transition: border-color .15s, background .15s, box-shadow .15s; }
+    .factory-item:hover { border-color: var(--blue); background: #f4f8ff; }
+    .factory-item.active { border-color: var(--blue); background: #eef4ff; box-shadow: inset 0 0 0 1px var(--blue); }
+    .factory-item .factory-item-name { overflow: hidden; color: var(--ink); font-size: 12px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+    .factory-item .factory-item-code { flex: 0 0 auto; color: var(--muted); font-family: var(--font-mono); font-size: 9px; }
+    .factory-item .factory-item-check { flex: 0 0 auto; display: none; color: var(--blue); }
+    .factory-item.active .factory-item-check { display: block; }
+    .plant-switch { cursor: pointer; }
+    .plant-switch:hover .plant-name { color: #b32e3f; }
     .toast { position: fixed; right: 28px; bottom: 28px; z-index: 30; display: flex; align-items: center; gap: 8px; padding: 11px 13px; border: 1px solid rgba(204,216,230,.9); border-radius: 10px; color: var(--ink); background: #fff; box-shadow: var(--shadow-strong); font-size: 10px; font-weight: 650; opacity: 0; transform: translateY(10px); pointer-events: none; transition: .2s ease; }
     .toast.show { opacity: 1; transform: translateY(0); }
     .toast svg { color: var(--green); }
@@ -858,10 +869,10 @@
 
   <div class="app-shell">
     <aside class="sidebar">
-      <div class="plant-switch">
+      <div class="plant-switch" id="plantSwitch" role="button" tabindex="0" title="切换工厂">
         <span class="eyebrow" data-i18n="current_plant">当前工厂</span>
-        <div class="plant-name"><span>SHARETRONIC DATA TECHNOLOGY (THAILAND)CO.,LTD.</span><svg width="15" height="15"><use href="#icon-chevron"/></svg></div>
-        <span class="plant-sub" data-i18n="factory_sub">Thailand · Plant 01 · IQC</span>
+        <div class="plant-name"><span id="plantName">泰国协创</span><svg width="15" height="15"><use href="#icon-chevron"/></svg></div>
+        <span class="plant-sub" id="plantSub">STTH · 泰国协创</span>
       </div>
 
       <nav>
@@ -870,7 +881,7 @@
           <a class="nav-item active" href="#overview" data-page="overview"><svg width="17" height="17"><use href="#icon-grid"/></svg><span data-i18n="menu_overview">质量总览</span></a>
           <a class="nav-item" href="#tasks" data-page="tasks"><svg width="17" height="17"><use href="#icon-inbox"/></svg><span data-i18n="menu_tasks">检验任务</span><span class="nav-badge">24</span></a>
           <a class="nav-item" href="#suppliers" data-page="suppliers"><svg width="17" height="17"><use href="#icon-truck"/></svg><span data-i18n="menu_supplier">供应商质量</span></a>
-          <a class="nav-item" href="#settings"><svg width="17" height="17"><use href="#icon-settings"/></svg><span data-i18n="menu_settings">系统设置</span></a>
+          <a class="nav-item" href="#settings" id="settingsNav"><svg width="17" height="17"><use href="#icon-settings"/></svg><span data-i18n="menu_settings">系统设置</span></a>
         </div>
       </nav>
 
@@ -911,7 +922,7 @@
             <div class="kicker"><span class="live-dot"></span><span data-i18n="hero_kicker">来料质量运营</span></div>
             <h1 data-i18n="hero_title">SHARETRONIC.IQC 来料检验看板</h1>
             <p class="hero-copy" data-i18n="hero_subtitle">连接 QMS 的实时质量驾驶舱，快速识别待检、超时与供应商风险。</p>
-            <div class="factory-context"><svg width="14" height="14"><use href="#icon-package"/></svg><span data-i18n="factory_label">当前工厂</span><strong>SHARETRONIC DATA TECHNOLOGY (THAILAND)CO.,LTD.</strong></div>
+            <div class="factory-context"><svg width="14" height="14"><use href="#icon-package"/></svg><span data-i18n="factory_label">当前工厂</span><strong class="factory-name">泰国协创</strong></div>
           </div>
           <div class="hero-actions">
             <div class="date-pill"><svg width="15" height="15"><use href="#icon-calendar"/></svg><span data-i18n="date_today">2026年09月01日 · 周二</span></div>
@@ -1071,7 +1082,7 @@
             <div class="kicker"><span class="live-dot"></span><span data-i18n="supplier_page_kicker">供应商质量运营</span></div>
             <h1 data-i18n="supplier_page_title">供应商质量管理</h1>
             <p class="hero-copy" data-i18n="supplier_page_subtitle">按工厂、月份与 QMS 检验结果全面追踪供应商质量表现。</p>
-            <div class="factory-context"><svg width="14" height="14"><use href="#icon-package"/></svg><span data-i18n="factory_label">当前工厂</span><strong>SHARETRONIC DATA TECHNOLOGY (THAILAND)CO.,LTD.</strong></div>
+            <div class="factory-context"><svg width="14" height="14"><use href="#icon-package"/></svg><span data-i18n="factory_label">当前工厂</span><strong class="factory-name">泰国协创</strong></div>
           </div>
           <div class="hero-actions"><div class="date-pill"><svg width="15" height="15"><use href="#icon-calendar"/></svg><span data-i18n="date_today">2026年09月01日 · 周二</span></div></div>
         </section>
@@ -1149,6 +1160,15 @@
     <div class="detail-modal" style="max-width: 560px;">
       <div class="modal-head"><div><div class="modal-kicker" data-i18n="alert_title">异常与预警</div><h2 class="modal-title" data-i18n="view_all_alerts">查看全部预警</h2></div><button class="modal-close" id="alertsModalClose"><svg width="16" height="16"><use href="#icon-close"/></svg></button></div>
       <div class="modal-body"><div class="alerts-modal-list" id="alertsModalList"></div></div>
+    </div>
+  </div>
+  <div class="modal-backdrop" id="settingsModalBackdrop" role="dialog" aria-modal="true">
+    <div class="detail-modal" style="max-width: 540px;">
+      <div class="modal-head"><div><div class="modal-kicker" data-i18n="menu_settings">系统设置</div><h2 class="modal-title">工厂选择</h2></div><button class="modal-close" id="settingsModalClose"><svg width="16" height="16"><use href="#icon-close"/></svg></button></div>
+      <div class="modal-body">
+        <p class="settings-hint">选择要查看的收料工厂，切换后看板数据将重新加载。</p>
+        <div class="factory-list" id="factoryList"></div>
+      </div>
     </div>
   </div>
   <div class="toast" id="toast"><svg width="14" height="14"><use href="#icon-check"/></svg><span id="toastText">操作完成</span></div>
@@ -1235,6 +1255,8 @@
     /* ===================== QMS 数据层 ===================== */
     let qmsToken = null;
     let qmsLoading = false;
+    let FACTORIES = [];
+    let currentFactory = { code: 'STTH', name: '泰国协创' };
     const DASH = {
       records: [], today: [], week: [], month: [], prevMonth: [],
       byDate: {}, suppliers: [], inspectors: [], alerts: [],
@@ -1283,6 +1305,75 @@
       if (data && data.status && data.status !== '200') throw new Error(data.message || ('QMS 请求失败 ' + data.status));
       return data;
     }
+
+    /* ===================== 工厂管理 ===================== */
+    function loadSavedFactory() {
+      try {
+        const saved = localStorage.getItem('qms_factory');
+        if (saved) { const f = JSON.parse(saved); if (f && f.code) currentFactory = { code: f.code, name: f.name || f.code }; }
+      } catch (e) {}
+    }
+    async function loadFactories() {
+      try {
+        const cached = localStorage.getItem('qms_factories_cache');
+        if (cached) { const arr = JSON.parse(cached); if (Array.isArray(arr) && arr.length) { FACTORIES = arr; return; } }
+      } catch (e) {}
+      try {
+        const res = await qmsRequest(QMS_CONFIG.dataUrl + '/sys/dict/type/factory');
+        if (res && res.data && Array.isArray(res.data)) {
+          FACTORIES = res.data.map((f) => ({ code: f.code, name: f.name || f.code }));
+          try { localStorage.setItem('qms_factories_cache', JSON.stringify(FACTORIES)); } catch (e) {}
+        }
+      } catch (e) { console.error('loadFactories', e); }
+    }
+    function applyFactory() {
+      QMS_CONFIG.factoryCode = currentFactory.code;
+      QMS_CONFIG.factoryName = currentFactory.name;
+      const pn = $('#plantName'); if (pn) pn.textContent = currentFactory.name;
+      const ps = $('#plantSub'); if (ps) ps.textContent = `${currentFactory.code} · ${currentFactory.name}`;
+      $$('.factory-name').forEach((el) => { el.textContent = currentFactory.name; });
+    }
+    function renderFactoryList() {
+      const el = $('#factoryList'); if (!el) return;
+      if (!FACTORIES.length) { el.innerHTML = '<div class="settings-hint">工厂列表加载中…</div>'; return; }
+      el.innerHTML = FACTORIES.map((f) => {
+        const active = f.code === currentFactory.code;
+        return `<div class="factory-item ${active ? 'active' : ''}" data-code="${escHtml(f.code)}" role="button" tabindex="0">
+          <span class="factory-item-name">${escHtml(f.name)}</span>
+          <span class="factory-item-code">${escHtml(f.code)}</span>
+          <svg class="factory-item-check" width="16" height="16"><use href="#icon-check"/></svg>
+        </div>`;
+      }).join('');
+    }
+    function openSettingsModal() {
+      renderFactoryList();
+      if (!FACTORIES.length) loadFactories().then(() => renderFactoryList());
+      $('#settingsModalBackdrop').classList.add('open');
+    }
+    function closeSettingsModal() { $('#settingsModalBackdrop').classList.remove('open'); }
+    function clearDash() {
+      DASH.records = []; DASH.today = []; DASH.week = []; DASH.month = []; DASH.prevMonth = [];
+      DASH.byDate = {}; DASH.suppliers = []; DASH.inspectors = []; DASH.alerts = [];
+      DASH.flow = { today: { pending: 0, processing: 0, done: 0, overdue: 0 }, week: { pending: 0, processing: 0, done: 0, overdue: 0 }, month: { pending: 0, processing: 0, done: 0, overdue: 0 } };
+      DASH.pendingTotal = 0; DASH.overdueTotal = 0;
+      DASH.resultStats = { pass: 0, special: 0, fail: 0, total: 0, passRate: 0 }; DASH.prevPassRate = null;
+    }
+    function selectFactory(code) {
+      const f = FACTORIES.find((x) => x.code === code);
+      if (!f) return;
+      if (f.code === currentFactory.code) { closeSettingsModal(); return; }
+      currentFactory = { code: f.code, name: f.name };
+      try { localStorage.setItem('qms_factory', JSON.stringify(currentFactory)); } catch (e) {}
+      applyFactory();
+      renderFactoryList();
+      try { localStorage.removeItem('qms_dash_cache'); } catch (e) {}
+      clearDash();
+      renderAll();
+      closeSettingsModal();
+      showToast(`已切换到 ${f.name}`);
+      loadDashboardData();
+    }
+
     function qmsSelectPageUrl(searchParams, pageSize = 500, pageNum = 1, sort = 'create_date', order = 'desc') {
       const sp = new URLSearchParams();
       sp.set('pageSize', String(pageSize)); sp.set('pageNum', String(pageNum));
@@ -2004,6 +2095,15 @@
       $('#alertLink').addEventListener('click', openAlertsModal);
       $('#alertsModalClose').addEventListener('click', closeAlertsModal);
       $('#alertsModalBackdrop').addEventListener('click', (event) => { if (event.target === $('#alertsModalBackdrop')) closeAlertsModal(); });
+      $('#settingsNav').addEventListener('click', (event) => { event.preventDefault(); openSettingsModal(); });
+      $('#plantSwitch').addEventListener('click', () => openSettingsModal());
+      $('#plantSwitch').addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openSettingsModal(); } });
+      $('#settingsModalClose').addEventListener('click', closeSettingsModal);
+      $('#settingsModalBackdrop').addEventListener('click', (event) => { if (event.target === $('#settingsModalBackdrop')) closeSettingsModal(); });
+      $('#factoryList').addEventListener('click', (event) => {
+        const item = event.target.closest('.factory-item');
+        if (item) selectFactory(item.dataset.code);
+      });
       document.addEventListener('click', (event) => {
         const btn = event.target.closest('.detail-btn');
         if (btn) { event.stopPropagation(); openDetail(btn.closest('tr')); }
@@ -2025,6 +2125,9 @@
     let urgentFilter = null;
 
     applyLocale();
+    loadSavedFactory();
+    applyFactory();
+    loadFactories();
     bindEvents();
     applyFilters();
     loadDashboardData();
