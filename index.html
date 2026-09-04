@@ -1374,7 +1374,7 @@
       loadDashboardData();
     }
 
-    function qmsSelectPageUrl(searchParams, pageSize = 500, pageNum = 1, sort = 'create_date', order = 'desc') {
+    function qmsSelectPageUrl(searchParams, pageSize = 2000, pageNum = 1, sort = 'create_date', order = 'desc') {
       const sp = new URLSearchParams();
       sp.set('pageSize', String(pageSize)); sp.set('pageNum', String(pageNum));
       if (sort) sp.set('sort', sort);
@@ -1382,7 +1382,7 @@
       Object.entries(searchParams || {}).forEach(([k, v]) => { if (v !== null && v !== undefined && v !== '') sp.set('searchParams[' + k + ']', v); });
       return QMS_CONFIG.supplierQualityUrl + '/iqc/documents/selectPage?' + sp.toString();
     }
-    async function qmsSelectAll(searchParams, pageSize = 500) {
+    async function qmsSelectAll(searchParams, pageSize = 2000) {
       const all = [];
       let pageNum = 1;
       while (true) {
