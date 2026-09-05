@@ -503,10 +503,10 @@
     .inspector-summary span { color: var(--muted); font-size: 12px; }
     .inspector-columns { display: grid; grid-template-columns: repeat(5, minmax(58px, 1fr)); align-items: end; gap: 10px; height: 176px; margin-top: 10px; padding: 10px 5px 0; border-bottom: 1px solid var(--line); }
     .inspector-column { flex: none; display: flex; flex-direction: column; align-items: center; justify-content: end; gap: 7px; min-width: 0; height: 100%; }
-    .inspector-column strong { color: var(--navy); font-family: var(--font-mono); font-size: 13px; font-weight: 800; }
-    .inspector-column i { width: 34px; height: var(--h); min-height: 12px; border-radius: 8px 8px 2px 2px; background: var(--amber); box-shadow: 0 5px 12px rgba(229,164,59,.15); }
+    .inspector-column strong { flex-shrink: 0; color: var(--navy); font-family: var(--font-mono); font-size: 13px; font-weight: 800; }
+    .inspector-column i { flex-shrink: 1; width: 34px; height: var(--h); min-height: 12px; border-radius: 8px 8px 2px 2px; background: var(--amber); box-shadow: 0 5px 12px rgba(229,164,59,.15); }
     .inspector-column:first-child i { background: var(--blue); box-shadow: 0 5px 12px rgba(57,119,239,.18); }
-    .inspector-column span { width: 100%; max-width: 100%; overflow: hidden; color: var(--muted); font-size: 12px; text-align: center; white-space: normal; line-height: 1.25; word-break: break-word; }
+    .inspector-column span { flex-shrink: 0; width: 100%; max-width: 100%; overflow: visible; color: var(--muted); font-size: 12px; text-align: center; white-space: normal; line-height: 1.2; word-break: break-word; }
     .capacity-line { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; padding-top: 13px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; }
     .capacity-line strong { color: var(--ink); font-family: var(--font-mono); font-size: 12px; }
     .result-content { display: grid; grid-template-columns: 155px 1fr; align-items: center; gap: 7px; min-height: 222px; }
@@ -713,7 +713,7 @@
     body.wallboard-mode .result-row small { font-size: 11px; }
     body.wallboard-mode .analytics-card { min-height: 0; overflow: hidden; }
     body.wallboard-mode .inspector-columns { display: grid; grid-template-columns: repeat(5, minmax(58px, 1fr)); height: clamp(78px, 8.5vh, 105px); gap: 8px; }
-    body.wallboard-mode .inspector-column span { width: 100%; max-width: 100%; overflow: hidden; white-space: normal; line-height: 1.2; word-break: break-word; font-size: 12px; }
+    body.wallboard-mode .inspector-column span { width: 100%; max-width: 100%; overflow: visible; white-space: normal; line-height: 1.15; word-break: break-word; font-size: 12px; }
     body.wallboard-mode .result-content { min-height: clamp(106px, 10.2vh, 126px); }
     body.supplier-wallboard-mode .app-shell { grid-template-columns: minmax(0, 1fr); }
     body.supplier-wallboard-mode .sidebar, body.supplier-wallboard-mode .topbar { display: none; }
@@ -1018,7 +1018,7 @@
           <div class="breadcrumbs"><span data-i18n="breadcrumb_parent">质量运营</span><svg width="13" height="13"><use href="#icon-chevron-right"/></svg><strong id="breadcrumbCurrent">IQC 来料检验</strong></div>
         </div>
         <div class="top-actions">
-          <button class="btn wallboard-button" id="wallboardToggle" aria-pressed="false"><svg width="14" height="14"><use href="#icon-grid"/></svg><span id="wallboardToggleText" data-i18n="enter_wallboard">看板模式</span></button>
+          <button class="btn wallboard-button" id="wallboardToggle" aria-pressed="false"><svg width="14" height="14"><use href="#icon-grid"/></svg><span id="wallboardToggleText" data-i18n="enter_wallboard">来料检验看板</span></button>
           <button class="btn supplier-wallboard-button" id="supplierWallboardToggle" aria-pressed="false"><svg width="14" height="14"><use href="#icon-chart"/></svg><span id="supplierWallboardToggleText" data-i18n="supplier_wallboard_entry">供应商看板</span></button>
           <div class="locale-switch" aria-label="Language switcher">
             <button data-locale="zh" class="active">中文</button>
@@ -1326,7 +1326,7 @@
   </div>
   <div class="toast" id="toast"><svg width="14" height="14"><use href="#icon-check"/></svg><span id="toastText">操作完成</span></div>
   <div class="wallboard-bar" id="wallboardBar">
-    <div class="wallboard-status"><span class="live-dot"></span><strong id="wallboardModeLabel" data-i18n="wallboard_live">看板模式 · 实时</strong><span class="wallboard-clock" id="wallboardClock">--:--:--</span></div>
+    <div class="wallboard-status"><span class="live-dot"></span><strong id="wallboardModeLabel" data-i18n="wallboard_live">来料检验看板 · 实时</strong><span class="wallboard-clock" id="wallboardClock">--:--:--</span></div>
     <button class="wallboard-exit" id="wallboardExit"><svg width="12" height="12"><use href="#icon-close"/></svg><span id="wallboardExitText" data-i18n="exit_wallboard">退出看板</span></button>
   </div>
 
@@ -1372,7 +1372,7 @@
     };
 
     Object.assign(I18N.zh, {
-      factory_label: '当前工厂', factory_sub: '泰国 · 工厂 01 · IQC', supplier_board_subtitle: '独立供应商质量看板 · 柱状图可横向滚动，排名列表可纵向滚动', supplier_chart_hint: '批次合格率 · 供应商 Top 10', score: '合格率', enter_wallboard: '看板模式', exit_wallboard: '退出看板', wallboard_live: '看板模式 · 实时', sidebar_hide: '收起导航', sidebar_show: '展开导航', top_risk: '正向第一供应商'
+      factory_label: '当前工厂', factory_sub: '泰国 · 工厂 01 · IQC', supplier_board_subtitle: '独立供应商质量看板 · 柱状图可横向滚动，排名列表可纵向滚动', supplier_chart_hint: '批次合格率 · 供应商 Top 10', score: '合格率', enter_wallboard: '来料检验看板', exit_wallboard: '退出看板', wallboard_live: '来料检验看板 · 实时', sidebar_hide: '收起导航', sidebar_show: '展开导航', top_risk: '正向第一供应商'
     });
     Object.assign(I18N.th, {
       factory_label: 'โรงงานปัจจุบัน', factory_sub: 'ประเทศไทย · โรงงาน 01 · IQC', supplier_board_subtitle: 'แดชบอร์ดคุณภาพซัพพลายเออร์แยกต่างหาก · เลื่อนกราฟแนวนอนและรายการแนวตั้งได้', supplier_chart_hint: 'อัตราผ่านรายล็อต · ซัพพลายเออร์ Top 10', score: 'อัตราผ่าน', enter_wallboard: 'โหมดแดชบอร์ด', exit_wallboard: 'ออกจากโหมดแดชบอร์ด', wallboard_live: 'โหมดแดชบอร์ด · เรียลไทม์', sidebar_hide: 'ซ่อนเมนูนำทาง', sidebar_show: 'แสดงเมนูนำทาง', top_risk: 'ซัพพลายเออร์อันดับหนึ่ง'
@@ -2095,16 +2095,18 @@
       if (!window.echarts) { el.innerHTML = sbEmptyHtml('图表库未加载', '请检查网络后重试'); return; }
       if (!sbCharts.top10) sbCharts.top10 = echarts.init(el);
       const c = sbCharts.top10;
-      const list = [...sbSuppliersData].sort((a, b) => (a.rate === null ? -1 : a.rate) - (b.rate === null ? -1 : b.rate) || (b.nonconforming - a.nonconforming) || (b.batches - a.batches)).slice(0, 10).reverse();
+      // 与看板模式右下角 supplierRankBoard 同口径：不合格批次(退货+特采)降序 + 合格率=(总批次-不合格)/总批次
+      const refRate = (s) => (s.batches > 0 ? (s.batches - s.nonconforming) / s.batches * 100 : 0);
+      const list = [...sbSuppliersData].filter((s) => s.nonconforming > 0).sort((a, b) => (b.nonconforming - a.nonconforming) || (refRate(a) - refRate(b))).slice(0, 10);
       if (!list.length) { el.innerHTML = sbEmptyHtml('暂无供应商质量数据', '请调整时间范围或筛选条件'); c.clear(); return; }
       const names = list.map((s) => s.name);
-      const rates = list.map((s) => s.rate === null ? 0 : Number(s.rate.toFixed(1)));
+      const rates = list.map((s) => Math.floor(refRate(s)));
       c.setOption({
-        tooltip: { formatter: (p) => { const s = list[p.dataIndex]; const deltaTxt = s.delta === null ? (sbPrevMap.has(s.code) ? '0.0pp' : '新增') : (s.delta >= 0 ? '+' : '') + s.delta.toFixed(1) + 'pp'; return `${s.name}<br/>合格率：${s.score}<br/>合格批次：${s.pass}/${s.total}<br/>环比：${deltaTxt}<br/>${s.insufficient ? '样本不足（<5批）' : ''}`; } },
+        tooltip: { formatter: (p) => { const s = list[p.dataIndex]; return `${s.name}<br/>合格率：${Math.floor(refRate(s))}%<br/>不合格批次：${s.nonconforming}<br/>检验批次：${s.batches}`; } },
         grid: { left: 90, right: 40, top: 10, bottom: 24 },
         xAxis: { type: 'value', min: 0, max: 100, axisLabel: { color: '#64748B', fontSize: 11 }, splitLine: { lineStyle: { color: '#F1F5F9' } } },
         yAxis: { type: 'category', data: names, axisLabel: { color: '#334155', fontSize: 12 }, axisLine: { lineStyle: { color: '#E5E7EB' } } },
-        series: [{ type: 'bar', data: rates.map((v, i) => ({ value: v, itemStyle: { color: v < 90 ? '#EF4444' : v < SB_TARGET ? '#F59E0B' : '#16A34A' } })), barMaxWidth: 16, markLine: { silent: true, symbol: 'none', label: { show: true, formatter: '目标 ' + SB_TARGET + '%', color: '#F59E0B', fontSize: 11 }, lineStyle: { color: '#F59E0B', type: 'dashed', width: 1.5 }, data: [{ xAxis: SB_TARGET }] }, label: { show: true, position: 'right', formatter: (p) => list[p.dataIndex].score, color: '#334155', fontSize: 11 } }]
+        series: [{ type: 'bar', data: rates.map((v) => ({ value: v, itemStyle: { color: v < 90 ? '#EF4444' : v < SB_TARGET ? '#F59E0B' : '#16A34A' } })), barMaxWidth: 16, markLine: { silent: true, symbol: 'none', label: { show: true, formatter: '目标 ' + SB_TARGET + '%', color: '#F59E0B', fontSize: 11 }, lineStyle: { color: '#F59E0B', type: 'dashed', width: 1.5 }, data: [{ xAxis: SB_TARGET }] }, label: { show: true, position: 'right', formatter: (p) => list[p.dataIndex] ? Math.floor(refRate(list[p.dataIndex])) + '%' : '', color: '#334155', fontSize: 11 } }]
       });
       c.off('click'); c.on('click', (p) => { if (list[p.dataIndex]) selectSbSupplier(list[p.dataIndex].code); });
     }
