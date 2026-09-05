@@ -506,7 +506,7 @@
     .inspector-column strong { color: var(--navy); font-family: var(--font-mono); font-size: 13px; font-weight: 800; }
     .inspector-column i { width: 34px; height: var(--h); min-height: 12px; border-radius: 8px 8px 2px 2px; background: var(--amber); box-shadow: 0 5px 12px rgba(229,164,59,.15); }
     .inspector-column:first-child i { background: var(--blue); box-shadow: 0 5px 12px rgba(57,119,239,.18); }
-    .inspector-column span { width: max-content; max-width: none; overflow: visible; color: var(--muted); font-size: 12px; text-align: center; text-overflow: clip; white-space: nowrap; }
+    .inspector-column span { width: 100%; max-width: 100%; overflow: hidden; color: var(--muted); font-size: 12px; text-align: center; white-space: normal; line-height: 1.25; word-break: break-word; }
     .capacity-line { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; padding-top: 13px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; }
     .capacity-line strong { color: var(--ink); font-family: var(--font-mono); font-size: 12px; }
     .result-content { display: grid; grid-template-columns: 155px 1fr; align-items: center; gap: 7px; min-height: 222px; }
@@ -713,7 +713,7 @@
     body.wallboard-mode .result-row small { font-size: 11px; }
     body.wallboard-mode .analytics-card { min-height: 0; overflow: hidden; }
     body.wallboard-mode .inspector-columns { display: grid; grid-template-columns: repeat(5, minmax(58px, 1fr)); height: clamp(78px, 8.5vh, 105px); gap: 8px; }
-    body.wallboard-mode .inspector-column span { width: max-content; max-width: none; overflow: visible; text-overflow: clip; white-space: nowrap; font-size: 12px; }
+    body.wallboard-mode .inspector-column span { width: 100%; max-width: 100%; overflow: hidden; white-space: normal; line-height: 1.2; word-break: break-word; font-size: 12px; }
     body.wallboard-mode .result-content { min-height: clamp(106px, 10.2vh, 126px); }
     body.supplier-wallboard-mode .app-shell { grid-template-columns: minmax(0, 1fr); }
     body.supplier-wallboard-mode .sidebar, body.supplier-wallboard-mode .topbar { display: none; }
@@ -734,7 +734,7 @@
     body.supplier-wallboard-mode .sb-kpi { padding: 11px 14px; }
     body.supplier-wallboard-mode .sb-kpi-value { font-size: 26px; }
     body.supplier-wallboard-mode .sb-chart { height: 260px; }
-    body.supplier-wallboard-mode .sb-risk-table-wrap { max-height: 240px; }
+    body.supplier-wallboard-mode .sb-risk-table-wrap { max-height: 240px; overflow: hidden; }
     body.supplier-wallboard-mode .wallboard-bar { display: flex; top: auto; bottom: 24px; left: auto; right: 28px; transform: none; }
 
     /* Independent page views */
@@ -1884,7 +1884,7 @@
       $('#inspectorTotal').textContent = nf.format(list.reduce((a, b) => a + b.count, 0));
       if (!list.length) { $('#inspectorColumns').innerHTML = '<div style="color:var(--muted);font-size: 12px;align-self:center">暂无待检任务</div>'; $('#capacityValue').textContent = '0%'; return; }
       const max = list[0].count || 1;
-      $('#inspectorColumns').innerHTML = list.map((e, i) => `<div class="inspector-column"><strong>${e.count}</strong><i style="--h:${Math.max(14, e.count / max * 93)}%"></i><span>${escHtml(e.name)}</span></div>`).join('');
+      $('#inspectorColumns').innerHTML = list.map((e, i) => `<div class="inspector-column"><strong>${e.count}</strong><i style="--h:${Math.max(14, e.count / max * 93)}%"></i><span title="${escHtml(e.name)}">${escHtml(e.name)}</span></div>`).join('');
       $('#capacityValue').textContent = (list.reduce((a, b) => a + b.count, 0) / (list.length * max) * 100).toFixed(1) + '%';
     }
 
@@ -2485,6 +2485,10 @@
         const data = JSON.parse(raw);
         if (data && data.records && data.records.length) {
           computeDerived(data.records, null, data.overdueTotal);
+          // 补齐供应商看板数据（缓存路径原先漏算，导致 sb-page 图表空白）
+          sbPrevMap = new Map();
+          computeSuppliers(DASH.prevMonth).forEach((s) => sbPrevMap.set(s.code, s.raw));
+          sbSuppliersData = computeSbSuppliers(DASH.month);
           renderAll();
           return true;
         }
@@ -2613,24 +2617,29 @@
     let sbAutoScrollTimer = null;
     function stopSbAutoScroll() {
       if (sbAutoScrollTimer) { cancelAnimationFrame(sbAutoScrollTimer); sbAutoScrollTimer = null; }
+      const wrap = $('.sb-risk-table-wrap');
+      const table = wrap ? wrap.querySelector('table') : null;
+      if (table) table.style.transform = '';
     }
     function startSbAutoScroll() {
       stopSbAutoScroll();
       const wrap = $('.sb-risk-table-wrap');
       if (!wrap) return;
+      const table = wrap.querySelector('table');
+      if (!table) return;
+      table.style.willChange = 'transform';
       let last = performance.now();
-      let acc = 0;
+      let pos = 0;
       const speed = 22; // 像素/秒，慢速轮播
       const step = (now) => {
         const dt = Math.min((now - last) / 1000, 0.1);
         last = now;
-        if (!wrap.matches(':hover')) {
-          const max = wrap.scrollHeight - wrap.clientHeight;
-          if (max > 0) {
-            acc += speed * dt;
-            const stepPx = Math.floor(acc);
-            if (stepPx > 0) { acc -= stepPx; wrap.scrollTop = wrap.scrollTop >= max - 1 ? 0 : wrap.scrollTop + stepPx; }
-          }
+        const max = wrap.scrollHeight - wrap.clientHeight;
+        if (!wrap.matches(':hover') && max > 0) {
+          pos += speed * dt;
+          if (pos >= max) pos = 0;
+          // 用 transform 亚像素平移，避免 scrollTop 整数截断导致的卡顿/低帧率
+          table.style.transform = `translateY(${-pos}px)`;
         }
         sbAutoScrollTimer = requestAnimationFrame(step);
       };
