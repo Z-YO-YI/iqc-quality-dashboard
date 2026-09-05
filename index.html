@@ -670,6 +670,7 @@
       margin: 0;
       padding: 17px 18px 13px;
     }
+    body.wallboard-mode .supplier-rank-chart { flex: 1; min-height: 0; margin-top: 10px; }
     body.wallboard-mode .supplier-wallboard-entry { display: none; }
     body.wallboard-mode .supplier-board-body {
       display: grid;
@@ -1261,20 +1262,10 @@
 
         <section class="card supplier-dashboard" id="supplierRankBoard">
           <div class="card-head">
-            <div><h2 class="card-title" data-i18n="supplier_title">供应商质量排行</h2><p class="card-subtitle" data-i18n="supplier_board_subtitle">按批次合格率 · 柱状图可横向滚动，排名列表可纵向滚动</p></div>
+            <div><h2 class="card-title" id="supplierRankTitle">倒数前10名供应商</h2><p class="card-subtitle">柱 = 不合格批次数 · 折线 = 批次合格率（与 QMS 看板同口径）</p></div>
             <div class="rank-tabs"><button class="active" data-supplier-mode="bottom" data-i18n="bottom_rank">倒数排名</button><button data-supplier-mode="top" data-i18n="top_rank">正向排名</button></div>
           </div>
-          <div class="supplier-board-body">
-            <div class="supplier-chart-panel">
-              <div class="supplier-chart-topline"><span data-i18n="supplier_chart_hint">批次合格率 · 供应商 Top 10</span><strong id="supplierChartMetric">—</strong></div>
-              <div class="supplier-column-chart" id="supplierColumnChart"></div>
-            </div>
-            <div class="supplier-board-list">
-              <div class="supplier-list-head"><span>#</span><span data-i18n="col_supplier">供应商 / 编码</span><span data-i18n="score">合格率</span><span data-i18n="supplier_batches">批次</span></div>
-              <div class="supplier-list-scroll"><div class="rank-list" id="rankList"></div></div>
-            </div>
-          </div>
-          <div class="rank-footer"><span id="rankFooterLabel" data-i18n="bottom_risk">倒数第一供应商</span><strong id="rankFooterValue">—</strong></div>
+          <div class="supplier-rank-chart" id="supplierRankChart"></div>
         </section>
 
         <footer class="page-footer"><span>SHARETRONIC.IQC · IQC 来料检验看板</span><span><span data-i18n="last_refresh">上次更新</span> <strong id="lastRefresh">—</strong></span></footer>
@@ -2406,33 +2397,49 @@
     }
     function renderSupplierRankings() {
       const board = $('#supplierRankBoard');
-      if (!board) return;
+      const el = $('#supplierRankChart');
+      if (!board || !el) return;
       const isBottom = supplierMode === 'bottom';
-      // 倒数排名：不合格批次多/合格率低在前；正向排名：合格率高在前
+      // 与 QMS 看板同口径：合格率 = (总批次 - 不合格批次) / 总批次，不合格批次 = 退货 + 特采（进行中批次默认算合格）
+      const refRate = (s) => (s.batches > 0 ? (s.batches - s.nonconforming) / s.batches * 100 : 0);
+      // 倒数=按不合格批次数降序取前10；正向=按合格率降序取前10
       const list = isBottom
-        ? [...DASH.suppliers].sort((a, b) => (b.nonconforming - a.nonconforming) || (a.raw - b.raw))
-        : [...DASH.suppliers].sort((a, b) => (b.raw - a.raw) || (a.nonconforming - b.nonconforming));
-      const rankEl = $('#rankList'), chartEl = $('#supplierColumnChart');
-      if (!rankEl || !chartEl) return;
-      if (!list.length) {
-        rankEl.innerHTML = '<div class="rank-row" style="color:var(--muted)">暂无数据</div>';
-        chartEl.innerHTML = '';
-        $('#supplierChartMetric').textContent = '—';
-        $('#rankFooterValue').textContent = '—';
-        return;
-      }
-      rankEl.innerHTML = list.map((item, index) => `<div class="rank-row ${isBottom ? 'is-bottom' : ''}">
-        <span class="rank-no">${String(index + 1).padStart(2, '0')}</span>
-        <span class="rank-supplier" title="${escHtml(item.name)}">${escHtml(item.name)}</span>
-        <strong class="rank-score">${item.score}</strong>
-        <span class="rank-batches">${nf.format(item.batches)}</span></div>`).join('');
-      chartEl.innerHTML = list.slice(0, 10).map((item, index) => {
-        const height = Math.max(18, Math.min(92, (item.raw - 80) * 5));
-        return `<div class="supplier-bar-item ${isBottom ? 'is-bottom' : ''}" title="${escHtml(item.name)} · ${item.score}"><strong>${item.score}</strong><i style="--bar-height:${height}%"></i><span>${String(index + 1).padStart(2, '0')} · ${escHtml(item.name)}</span></div>`;
-      }).join('');
-      $('#supplierChartMetric').textContent = list[0].score;
-      $('#rankFooterLabel').textContent = t(isBottom ? 'bottom_risk' : 'top_risk');
-      $('#rankFooterValue').textContent = `${list[0].name} · ${list[0].score}`;
+        ? [...DASH.suppliers].filter((s) => s.nonconforming > 0).sort((a, b) => (b.nonconforming - a.nonconforming) || (refRate(a) - refRate(b))).slice(0, 10)
+        : [...DASH.suppliers].sort((a, b) => (refRate(b) - refRate(a)) || (b.batches - a.batches)).slice(0, 10);
+      const now = new Date();
+      const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      const titleEl = $('#supplierRankTitle');
+      if (titleEl) titleEl.textContent = (isBottom ? '倒数前10名供应商' : '正向前10名供应商') + '-' + ym;
+      if (!window.echarts) { el.innerHTML = '<div class="sb-empty" style="padding:20px"><strong>图表库未加载</strong></div>'; return; }
+      if (!list.length) { el.innerHTML = '<div class="sb-empty" style="padding:20px"><strong>暂无供应商质量数据</strong></div>'; if (sbCharts.supplierRank) { try { sbCharts.supplierRank.clear(); } catch (e) {} } return; }
+      if (!sbCharts.supplierRank) sbCharts.supplierRank = echarts.init(el);
+      const c = sbCharts.supplierRank;
+      const names = list.map((s) => s.name);
+      // 柱：倒数=不合格批次数，正向=合格批次数；线：合格率(0~1)，与 QMS 同口径截断到整数百分比
+      const barData = list.map((s) => (isBottom ? s.nonconforming : s.pass));
+      const barName = isBottom ? '不合格批次' : '合格批次';
+      const rateData = list.map((s) => (Math.floor(refRate(s)) / 100));
+      c.setOption({
+        tooltip: {
+          trigger: 'axis',
+          formatter: (ps) => {
+            const s = list[ps[0].dataIndex];
+            return `<b>${s.name}</b><br/>批次合格率：${Math.floor(refRate(s))}%<br/>${barName}：${isBottom ? s.nonconforming : s.pass}<br/>检验批次：${s.batches}`;
+          }
+        },
+        legend: { top: 0, right: 0, textStyle: { color: '#64748B', fontSize: 11 } },
+        grid: { left: 6, right: 6, top: 34, bottom: 2, containLabel: true },
+        xAxis: { type: 'category', data: names, axisTick: { show: false }, axisLine: { lineStyle: { color: '#E5E7EB' } }, axisLabel: { color: '#475569', fontSize: 11, interval: 0, rotate: 40, width: 64, overflow: 'truncate' } },
+        yAxis: [
+          { type: 'value', name: barName, minInterval: 1, axisLabel: { color: '#64748B', fontSize: 11 }, splitLine: { lineStyle: { color: '#F1F5F9' } } },
+          { type: 'value', name: '合格率', min: 0, max: 1, axisLabel: { color: '#64748B', fontSize: 11, formatter: (v) => (v * 100).toFixed(0) + '%' }, splitLine: { show: false } }
+        ],
+        series: [
+          { name: barName, type: 'bar', data: barData, barMaxWidth: 22, itemStyle: { color: isBottom ? '#EF4444' : '#16A34A', borderRadius: [3, 3, 0, 0] }, label: { show: true, position: 'top', color: '#334155', fontSize: 11 } },
+          { name: '合格率', type: 'line', yAxisIndex: 1, data: rateData, symbolSize: 6, lineStyle: { color: '#F59E0B', width: 2 }, itemStyle: { color: '#F59E0B' }, label: { show: true, position: 'top', formatter: (p) => (p.value * 100).toFixed(0) + '%', color: '#F59E0B', fontSize: 11 } }
+        ]
+      });
+      try { c.resize(); } catch (e) {}
     }
     function renderAll() {
       renderKpis();
@@ -2641,6 +2648,8 @@
       else stopTableAutoScroll();
       if (supplierWallboardMode) startSbAutoScroll();
       else stopSbAutoScroll();
+      // 看板模式切换后，右下角供应商排行图表从 display:none 变为可见，需 resize
+      if (wallboardMode) setTimeout(() => { if (sbCharts.supplierRank) { try { sbCharts.supplierRank.resize(); } catch (e) {} } }, 80);
     }
     function setWallboardMode(enabled, useFullscreen = true) {
       if (enabled) supplierWallboardMode = false;
