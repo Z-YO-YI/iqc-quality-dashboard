@@ -724,17 +724,22 @@
     body.supplier-wallboard-mode .analytics-grid,
     body.supplier-wallboard-mode .page-footer { display: none; }
     body.supplier-wallboard-mode .content { max-width: 1920px; min-height: 100vh; margin: 0 auto; padding: 22px 28px 20px; }
-    body.supplier-wallboard-mode .sb-page { display: block; min-height: calc(100vh - 42px); }
+    body.supplier-wallboard-mode .sb-page { display: flex; flex-direction: column; min-height: calc(100vh - 42px); }
     body.supplier-wallboard-mode .sb-filters,
     body.supplier-wallboard-mode .sb-actions,
     body.supplier-wallboard-mode .sb-filter-tags,
     body.supplier-wallboard-mode .sb-updated { display: none; }
-    body.supplier-wallboard-mode .sb-topbar { margin-bottom: 12px; }
-    body.supplier-wallboard-mode .sb-kpis { gap: 10px; margin-bottom: 12px; }
+    body.supplier-wallboard-mode .sb-topbar { flex-shrink: 0; margin-bottom: 12px; }
+    body.supplier-wallboard-mode .sb-kpis { flex-shrink: 0; gap: 10px; margin-bottom: 12px; }
     body.supplier-wallboard-mode .sb-kpi { padding: 11px 14px; }
     body.supplier-wallboard-mode .sb-kpi-value { font-size: 26px; }
-    body.supplier-wallboard-mode .sb-chart { height: 260px; }
-    body.supplier-wallboard-mode .sb-risk-table-wrap { max-height: 240px; overflow: hidden; }
+    /* 让行与图表填满屏幕，消除底部空白 */
+    body.supplier-wallboard-mode .sb-row { flex: 1; min-height: 0; display: grid; margin-bottom: 12px; }
+    body.supplier-wallboard-mode .sb-card { display: flex; flex-direction: column; min-height: 0; }
+    body.supplier-wallboard-mode .sb-card-head { flex-shrink: 0; }
+    body.supplier-wallboard-mode .sb-chart { flex: 1; height: auto; min-height: 0; }
+    body.supplier-wallboard-mode .sb-risk-table-wrap { flex: 1; max-height: none; min-height: 0; overflow: hidden; }
+    body.supplier-wallboard-mode .sb-alerts { flex-shrink: 0; }
     body.supplier-wallboard-mode .wallboard-bar { display: flex; top: auto; bottom: 24px; left: auto; right: 28px; transform: none; }
 
     /* Independent page views */
@@ -2095,18 +2100,32 @@
       if (!window.echarts) { el.innerHTML = sbEmptyHtml('图表库未加载', '请检查网络后重试'); return; }
       if (!sbCharts.top10) sbCharts.top10 = echarts.init(el);
       const c = sbCharts.top10;
-      // 与看板模式右下角 supplierRankBoard 同口径：不合格批次(退货+特采)降序 + 合格率=(总批次-不合格)/总批次
+      // 与来料检验看板右下角 supplierRankBoard 同口径：不合格批次(退货+特采)降序 + 合格率=(总批次-不合格)/总批次
       const refRate = (s) => (s.batches > 0 ? (s.batches - s.nonconforming) / s.batches * 100 : 0);
       const list = [...sbSuppliersData].filter((s) => s.nonconforming > 0).sort((a, b) => (b.nonconforming - a.nonconforming) || (refRate(a) - refRate(b))).slice(0, 10);
       if (!list.length) { el.innerHTML = sbEmptyHtml('暂无供应商质量数据', '请调整时间范围或筛选条件'); c.clear(); return; }
       const names = list.map((s) => s.name);
-      const rates = list.map((s) => Math.floor(refRate(s)));
+      const barData = list.map((s) => s.nonconforming);
+      const rateData = list.map((s) => (Math.floor(refRate(s)) / 100));
       c.setOption({
-        tooltip: { formatter: (p) => { const s = list[p.dataIndex]; return `${s.name}<br/>合格率：${Math.floor(refRate(s))}%<br/>不合格批次：${s.nonconforming}<br/>检验批次：${s.batches}`; } },
-        grid: { left: 90, right: 40, top: 10, bottom: 24 },
-        xAxis: { type: 'value', min: 0, max: 100, axisLabel: { color: '#64748B', fontSize: 11 }, splitLine: { lineStyle: { color: '#F1F5F9' } } },
-        yAxis: { type: 'category', data: names, axisLabel: { color: '#334155', fontSize: 12 }, axisLine: { lineStyle: { color: '#E5E7EB' } } },
-        series: [{ type: 'bar', data: rates.map((v) => ({ value: v, itemStyle: { color: v < 90 ? '#EF4444' : v < SB_TARGET ? '#F59E0B' : '#16A34A' } })), barMaxWidth: 16, markLine: { silent: true, symbol: 'none', label: { show: true, formatter: '目标 ' + SB_TARGET + '%', color: '#F59E0B', fontSize: 11 }, lineStyle: { color: '#F59E0B', type: 'dashed', width: 1.5 }, data: [{ xAxis: SB_TARGET }] }, label: { show: true, position: 'right', formatter: (p) => list[p.dataIndex] ? Math.floor(refRate(list[p.dataIndex])) + '%' : '', color: '#334155', fontSize: 11 } }]
+        tooltip: {
+          trigger: 'axis',
+          formatter: (ps) => {
+            const s = list[ps[0].dataIndex];
+            return `<b>${s.name}</b><br/>批次合格率：${Math.floor(refRate(s))}%<br/>不合格批次：${s.nonconforming}<br/>检验批次：${s.batches}`;
+          }
+        },
+        legend: { top: 0, right: 0, textStyle: { color: '#64748B', fontSize: 11 } },
+        grid: { left: 6, right: 6, top: 34, bottom: 2, containLabel: true },
+        xAxis: { type: 'category', data: names, axisTick: { show: false }, axisLine: { lineStyle: { color: '#E5E7EB' } }, axisLabel: { color: '#475569', fontSize: 11, interval: 0, rotate: 40, width: 64, overflow: 'truncate' } },
+        yAxis: [
+          { type: 'value', name: '不合格批次', minInterval: 1, axisLabel: { color: '#64748B', fontSize: 11 }, splitLine: { lineStyle: { color: '#F1F5F9' } } },
+          { type: 'value', name: '合格率', min: 0, max: 1, axisLabel: { color: '#64748B', fontSize: 11, formatter: (v) => (v * 100).toFixed(0) + '%' }, splitLine: { show: false } }
+        ],
+        series: [
+          { name: '不合格批次', type: 'bar', data: barData, barMaxWidth: 22, itemStyle: { color: '#EF4444', borderRadius: [3, 3, 0, 0] }, label: { show: true, position: 'top', color: '#334155', fontSize: 11 } },
+          { name: '合格率', type: 'line', yAxisIndex: 1, data: rateData, symbolSize: 6, lineStyle: { color: '#F59E0B', width: 2 }, itemStyle: { color: '#F59E0B' }, label: { show: true, position: 'top', formatter: (p) => (p.value * 100).toFixed(0) + '%', color: '#F59E0B', fontSize: 11 } }
+        ]
       });
       c.off('click'); c.on('click', (p) => { if (list[p.dataIndex]) selectSbSupplier(list[p.dataIndex].code); });
     }
