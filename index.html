@@ -654,8 +654,10 @@
     body.wallboard-mode .analytics-grid { display: contents; }
     body.wallboard-mode .analytics-grid > .analytics-card:first-child { grid-area: inspector; min-width: 0; }
     body.wallboard-mode .analytics-grid > .analytics-card:nth-child(2) { grid-area: result; min-width: 0; }
+    /* 供应商质量排行卡片：默认隐藏（供应商页用 sb-page），仅普通看板模式右下角显示 */
+    .supplier-dashboard#supplierRankBoard { display: none; }
     /* Keep the supplier ranking visible, spanning both lower rows with chart + scrollable list. */
-    body.wallboard-mode .content > .supplier-dashboard#suppliers {
+    body.wallboard-mode .content > .supplier-dashboard#supplierRankBoard {
       display: flex !important;
       flex-direction: column;
       visibility: visible !important;
@@ -1257,6 +1259,23 @@
       </div>
     </section>
 
+        <section class="card supplier-dashboard" id="supplierRankBoard">
+          <div class="card-head">
+            <div><h2 class="card-title" data-i18n="supplier_title">供应商质量排行</h2><p class="card-subtitle" data-i18n="supplier_board_subtitle">按批次合格率 · 柱状图可横向滚动，排名列表可纵向滚动</p></div>
+            <div class="rank-tabs"><button class="active" data-supplier-mode="bottom" data-i18n="bottom_rank">倒数排名</button><button data-supplier-mode="top" data-i18n="top_rank">正向排名</button></div>
+          </div>
+          <div class="supplier-board-body">
+            <div class="supplier-chart-panel">
+              <div class="supplier-chart-topline"><span data-i18n="supplier_chart_hint">批次合格率 · 供应商 Top 10</span><strong id="supplierChartMetric">—</strong></div>
+              <div class="supplier-column-chart" id="supplierColumnChart"></div>
+            </div>
+            <div class="supplier-board-list">
+              <div class="supplier-list-head"><span>#</span><span data-i18n="col_supplier">供应商 / 编码</span><span data-i18n="score">合格率</span><span data-i18n="supplier_batches">批次</span></div>
+              <div class="supplier-list-scroll"><div class="rank-list" id="rankList"></div></div>
+            </div>
+          </div>
+          <div class="rank-footer"><span id="rankFooterLabel" data-i18n="bottom_risk">倒数第一供应商</span><strong id="rankFooterValue">—</strong></div>
+        </section>
 
         <footer class="page-footer"><span>SHARETRONIC.IQC · IQC 来料检验看板</span><span><span data-i18n="last_refresh">上次更新</span> <strong id="lastRefresh">—</strong></span></footer>
       </div>
@@ -2385,6 +2404,36 @@
         totalTime: r.totalTime
       };
     }
+    function renderSupplierRankings() {
+      const board = $('#supplierRankBoard');
+      if (!board) return;
+      const isBottom = supplierMode === 'bottom';
+      // 倒数排名：不合格批次多/合格率低在前；正向排名：合格率高在前
+      const list = isBottom
+        ? [...DASH.suppliers].sort((a, b) => (b.nonconforming - a.nonconforming) || (a.raw - b.raw))
+        : [...DASH.suppliers].sort((a, b) => (b.raw - a.raw) || (a.nonconforming - b.nonconforming));
+      const rankEl = $('#rankList'), chartEl = $('#supplierColumnChart');
+      if (!rankEl || !chartEl) return;
+      if (!list.length) {
+        rankEl.innerHTML = '<div class="rank-row" style="color:var(--muted)">暂无数据</div>';
+        chartEl.innerHTML = '';
+        $('#supplierChartMetric').textContent = '—';
+        $('#rankFooterValue').textContent = '—';
+        return;
+      }
+      rankEl.innerHTML = list.map((item, index) => `<div class="rank-row ${isBottom ? 'is-bottom' : ''}">
+        <span class="rank-no">${String(index + 1).padStart(2, '0')}</span>
+        <span class="rank-supplier" title="${escHtml(item.name)}">${escHtml(item.name)}</span>
+        <strong class="rank-score">${item.score}</strong>
+        <span class="rank-batches">${nf.format(item.batches)}</span></div>`).join('');
+      chartEl.innerHTML = list.slice(0, 10).map((item, index) => {
+        const height = Math.max(18, Math.min(92, (item.raw - 80) * 5));
+        return `<div class="supplier-bar-item ${isBottom ? 'is-bottom' : ''}" title="${escHtml(item.name)} · ${item.score}"><strong>${item.score}</strong><i style="--bar-height:${height}%"></i><span>${String(index + 1).padStart(2, '0')} · ${escHtml(item.name)}</span></div>`;
+      }).join('');
+      $('#supplierChartMetric').textContent = list[0].score;
+      $('#rankFooterLabel').textContent = t(isBottom ? 'bottom_risk' : 'top_risk');
+      $('#rankFooterValue').textContent = `${list[0].name} · ${list[0].score}`;
+    }
     function renderAll() {
       renderKpis();
       setFlowRange(currentFlowRange);
@@ -2396,6 +2445,7 @@
       updateDatePill();
       $('#lastRefresh').textContent = currentTimeString();
       renderSbBoard();
+      renderSupplierRankings();
     }
     function computeDerived(records, active, overdueTotal) {
       const today = todayStr();
@@ -2732,6 +2782,11 @@
       });
       $('#supplierDetailModalClose').addEventListener('click', closeSupplierDetail);
       $('#supplierDetailModalBackdrop').addEventListener('click', (event) => { if (event.target === $('#supplierDetailModalBackdrop')) closeSupplierDetail(); });
+      $$('#supplierRankBoard [data-supplier-mode]').forEach((button) => button.addEventListener('click', () => {
+        supplierMode = button.dataset.supplierMode;
+        $$('#supplierRankBoard [data-supplier-mode]').forEach((x) => x.classList.toggle('active', x === button));
+        renderSupplierRankings();
+      }));
       document.addEventListener('click', (event) => {
         const btn = event.target.closest('.detail-btn');
         if (btn) { event.stopPropagation(); openDetail(btn.closest('tr')); }
