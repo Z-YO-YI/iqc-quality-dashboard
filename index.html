@@ -899,10 +899,12 @@
     .sb-select { height: 34px; padding: 0 10px; border: 1px solid var(--sb-border); border-radius: 10px; color: var(--ink); background: #fff; font-size: 12px; }
     .sb-select:focus { outline: none; border-color: var(--sb-blue); }
     .sb-actions { display: flex; align-items: center; gap: 8px; }
-    .sb-btn { height: 34px; display: inline-flex; align-items: center; gap: 6px; padding: 0 14px; border: 1px solid var(--sb-border); border-radius: 10px; color: var(--ink); background: #fff; font-size: 12px; font-weight: 650; }
+    .sb-btn { height: 34px; display: inline-flex; align-items: center; gap: 6px; padding: 0 14px; border: 1px solid var(--sb-border); border-radius: 10px; color: var(--ink); background: #fff; font-size: 12px; font-weight: 650; cursor: pointer; }
     .sb-btn:hover { border-color: #cbd5e1; background: #f8fafc; }
     .sb-btn-primary { color: #fff; border-color: var(--sb-blue); background: var(--sb-blue); }
     .sb-btn-primary:hover { background: #1d4ed8; border-color: #1d4ed8; }
+    .sb-btn.is-loading { pointer-events: none; opacity: .65; }
+    .sb-btn.is-loading svg { animation: spin .7s linear infinite; }
     .sb-updated { color: var(--sb-muted); font-size: 12px; }
 
     .sb-kpis { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px; margin-bottom: 16px; }
@@ -2260,7 +2262,17 @@
       $$('#sbParetoSeg button').forEach((b) => b.addEventListener('click', () => { $$('#sbParetoSeg button').forEach((x) => x.classList.toggle('active', x === b)); renderSbPareto(); }));
       $('#sbPrevMonth').addEventListener('click', () => setSbMonth(supplierMonthOffset - 1));
       $('#sbNextMonth').addEventListener('click', () => setSbMonth(supplierMonthOffset + 1));
-      $('#sbRefreshBtn').addEventListener('click', () => { const b = $('#sbRefreshBtn'); b.classList.add('is-loading'); loadDashboardData().then(() => { b.classList.remove('is-loading'); fetchSbTrend().then(() => renderSbBoard()); }); });
+      $('#sbRefreshBtn').addEventListener('click', () => {
+        const b = $('#sbRefreshBtn');
+        if (b.classList.contains('is-loading')) return;
+        b.classList.add('is-loading');
+        showToast('正在刷新数据…');
+        const done = () => { b.classList.remove('is-loading'); };
+        loadDashboardData().then(() => {
+          done();
+          fetchSbTrend().then(() => { renderSbBoard(); showToast('数据已更新'); });
+        }).catch(() => { done(); showToast('刷新失败，请重试'); });
+      });
       $('#sbWallboardBtn').addEventListener('click', () => setSupplierWallboardMode(!supplierWallboardMode));
       $('#sbCategoryFilter').addEventListener('change', () => renderSbBoard());
       $('#sbSupplierFilter').addEventListener('change', () => renderSbBoard());
