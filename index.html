@@ -1456,17 +1456,38 @@
       }
       throw new Error((data && data.message) || 'QMS 登录失败');
     }
+    function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
     async function qmsRequest(url, retry = true) {
       if (!qmsToken) await qmsLogin();
-      const res = await fetch(url, { headers: { 'Authorization': 'bearer ' + qmsToken, 'X-Requested-With': 'XMLHttpRequest' } });
-      if (res.status === 401 && retry) {
-        qmsToken = null;
-        try { localStorage.removeItem('qms_token_cache'); } catch (e) {}
-        await qmsLogin(); return qmsRequest(url, false);
+      let lastErr = null;
+      const MAX = 3;
+      for (let attempt = 0; attempt < MAX; attempt++) {
+        try {
+          const res = await fetch(url, { headers: { 'Authorization': 'bearer ' + qmsToken, 'X-Requested-With': 'XMLHttpRequest' } });
+          // 401：token 失效，重新登录后重试
+          if (res.status === 401 && retry) {
+            qmsToken = null;
+            try { localStorage.removeItem('qms_token_cache'); } catch (e) {}
+            await qmsLogin();
+            continue;
+          }
+          // 5xx / 429：服务端繁忙，退避重试
+          if (res.status >= 500 || res.status === 429) {
+            lastErr = new Error('QMS 服务繁忙 (' + res.status + ')');
+            await sleep(300 * (attempt + 1));
+            continue;
+          }
+          const data = await res.json();
+          if (data && data.status && data.status !== '200') throw new Error(data.message || ('QMS 请求失败 ' + data.status));
+          return data;
+        } catch (e) {
+          // 业务错误（QMS 返回非 200）不重试，直接抛
+          if (e && e.message && String(e.message).indexOf('QMS') === 0) throw e;
+          lastErr = e;
+          if (attempt < MAX - 1) await sleep(300 * (attempt + 1));
+        }
       }
-      const data = await res.json();
-      if (data && data.status && data.status !== '200') throw new Error(data.message || ('QMS 请求失败 ' + data.status));
-      return data;
+      throw lastErr || new Error('QMS 请求失败');
     }
 
     /* ===================== 工厂管理 ===================== */
@@ -1921,17 +1942,19 @@
       return DASH.month;
     }
 
-    // 供应商聚合（含环比、风险）
+    // 供应商聚合（含环比、风险、物料类别、最近批次日期）
     function computeSbSuppliers(records) {
       const map = new Map();
       records.forEach((r) => {
         const rawName = r.supplierName || '';
         const key = rawName || r.supplierCode || '未知';
-        if (!map.has(key)) map.set(key, { code: key, supplierCode: r.supplierCode || '', name: cleanSupplierName(rawName) || key, rawName: key, batches: 0, pass: 0, fail: 0, special: 0 });
+        if (!map.has(key)) map.set(key, { code: key, supplierCode: r.supplierCode || '', name: cleanSupplierName(rawName) || key, rawName: key, batches: 0, pass: 0, fail: 0, special: 0, _cats: new Set(), recent: '' });
         const e = map.get(key);
         e.batches += 1;
         const res = r.syncInspectionResultName;
         if (res === '合格') e.pass += 1; else if (res === '退货') e.fail += 1; else if (res === '特采') e.special += 1;
+        if (r.materialCategory) e._cats.add(r.materialCategory);
+        if ((r.createDate || '') > (e.recent || '')) e.recent = r.createDate || '';
       });
       return Array.from(map.values()).map((e) => {
         const total = e.pass + e.fail + e.special;
@@ -1940,11 +1963,16 @@
         const insufficient = e.batches < SB_MIN_SAMPLE;
         const prevRate = sbPrevMap.has(e.code) ? sbPrevMap.get(e.code) : null;
         const delta = (rate !== null && prevRate !== null) ? (rate - prevRate) : null;
-        return { ...e, total, nonconforming, rate, raw: rate === null ? 0 : rate, score: rate === null ? '无数据' : rate.toFixed(1) + '%', insufficient, delta };
+        const categories = Array.from(e._cats || []);
+        const obj = { ...e, categories, total, nonconforming, rate, raw: rate === null ? 0 : rate, score: rate === null ? '无数据' : rate.toFixed(1) + '%', insufficient, delta };
+        delete obj._cats;
+        obj.risk = sbRiskInfo(obj); // 预计算风险，避免渲染时对 200+ 供应商重复计算
+        return obj;
       }).sort((a, b) => (b.nonconforming - a.nonconforming) || (a.rate - b.rate) || (b.batches - a.batches));
     }
 
     function sbRiskInfo(s) {
+      if (s && s.risk) return s.risk; // 预计算缓存命中
       const reasons = [];
       let level = 'normal';
       if (s.insufficient) {
@@ -2155,7 +2183,7 @@
       sbApplyFilters().forEach((s) => {
         const r = sbRiskInfo(s);
         if (r.level === 'high' || r.level === 'mid') {
-          const recent = (DASH.month.filter((x) => (x.supplierName || '') === s.code).sort((a, b) => (b.createDate || '').localeCompare(a.createDate || ''))[0] || {}).createDate;
+          const recent = s.recent;
           alerts.push({ s, r, recent, type: r.level === 'high' ? 'danger' : 'warn' });
         }
       });
@@ -2171,7 +2199,7 @@
 
     function renderSbFilters() {
       const catEl = $('#sbCategoryFilter'), supEl = $('#sbSupplierFilter'), facEl = $('#sbFactoryFilter');
-      sbCategories = Array.from(new Set(sbSuppliersData.map((s) => { const r = DASH.month.find((x) => (x.supplierName || '') === s.code); return r ? r.materialCategory : ''; }).filter(Boolean))).sort();
+      sbCategories = Array.from(new Set(sbSuppliersData.flatMap((s) => s.categories || []))).sort();
       if (catEl) { const cur = catEl.value; catEl.innerHTML = '<option value="">物料类别</option>' + sbCategories.map((c) => `<option value="${escHtml(c)}">${escHtml(c)}</option>`).join(''); catEl.value = cur; }
       if (supEl) { const cur = supEl.value; const names = sbSuppliersData.map((s) => s.name).sort(); supEl.innerHTML = '<option value="">供应商</option>' + names.map((n) => `<option value="${escHtml(n)}">${escHtml(n)}</option>`).join(''); supEl.value = cur; }
       if (facEl) { const cur = facEl.value; facEl.innerHTML = '<option value="">工厂</option>' + FACTORIES.map((f) => `<option value="${escHtml(f.code)}">${escHtml(f.name)}</option>`).join(''); facEl.value = cur; }
@@ -2182,7 +2210,7 @@
       const sup = $('#sbSupplierFilter') ? $('#sbSupplierFilter').value : '';
       let list = sbSuppliersData;
       if (sbSelectedSupplier) list = list.filter((s) => s.code === sbSelectedSupplier);
-      if (cat) list = list.filter((s) => { const r = DASH.month.find((x) => (x.supplierName || '') === s.code); return r && r.materialCategory === cat; });
+      if (cat) list = list.filter((s) => (s.categories || []).includes(cat));
       if (sup) list = list.filter((s) => s.code === sup || s.name === sup);
       return list;
     }
@@ -2286,7 +2314,7 @@
         <div class="sms-item good"><label>批次合格率</label><strong>${s.score}</strong></div>`;
       // 风险等级 + 环比 + 物料类别
       const deltaTxt = s.delta === null ? (sbPrevMap.has(s.code) ? '0.0pp' : '新增') : (s.delta >= 0 ? '+' : '') + s.delta.toFixed(1) + 'pp';
-      const cats = Array.from(new Set(DASH.month.filter((x) => (x.supplierName || '') === code).map((x) => x.materialCategory).filter(Boolean)));
+      const cats = (s.categories && s.categories.length) ? s.categories : Array.from(new Set(DASH.month.filter((x) => (x.supplierName || '') === code).map((x) => x.materialCategory).filter(Boolean)));
       $('#supplierDetailModalMeta').innerHTML = `<span class="m-label">风险等级</span><span>${sbLevelTag(r.level)}</span><span class="m-label">环比</span><strong>${deltaTxt}</strong><span class="m-label">物料类别</span><strong>${escHtml(cats.join('、') || '—')}</strong>`;
       // 风险提示
       const reasons = r.reasons;
@@ -2534,13 +2562,15 @@
         const monthStart = monthPrefix(0) + '-01';
         const prevRange = monthRange(-1);
         // 待办 = 进行中(0) + 超时未完成(2)；本月 = 合格率/结果/供应商统计；上月 = 环比
-        const [active, overdue, month, prevMonth] = await Promise.all([
+        // 用 allSettled 容错：单个数据集失败用空数组兜底，不拖垮整个看板
+        const settled = await Promise.allSettled([
           qmsSelectAll({ factoryCode: QMS_CONFIG.factoryCode, inspectionStatus: '0' }),
           qmsSelectAll({ factoryCode: QMS_CONFIG.factoryCode, inspectionStatus: '2' }),
           qmsSelectAll({ factoryCode: QMS_CONFIG.factoryCode, createDateStart: monthStart, createDateEnd: today }, 5000),
           qmsSelectAll({ factoryCode: QMS_CONFIG.factoryCode, createDateStart: prevRange.start, createDateEnd: prevRange.end }, 5000)
         ]);
         if (mySeq !== loadSeq) return;
+        const [active, overdue, month, prevMonth] = settled.map((r) => (r.status === 'fulfilled' ? r.value : []));
         const map = new Map();
         [...month, ...overdue, ...active].forEach((r) => { if (r.orderNumber) map.set(r.orderNumber, r); });
         const records = Array.from(map.values()).sort((a, b) => (b.createDate || '').localeCompare(a.createDate || ''));
