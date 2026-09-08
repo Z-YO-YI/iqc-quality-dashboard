@@ -1361,9 +1361,7 @@
       ssoUrl: 'https://qms.sharetronic.com/qmsSso/oauth/login',
       supplierQualityUrl: 'https://qms.sharetronic.com/qmsSupplierQuality',
       dataUrl: 'https://qms.sharetronic.com/qmsData',
-      basicAuth: 'Basic cW1zLWRhdGE6JDJhJDEwJGs2dk5uUzlPUDN0alRtZktyRWVmVnU1bkVUeU1HY0hZZzBPektTMXdnL0V6SHd1eWU2QW9D',
-      username: 'zhangyouyi',
-      password: '123456',
+      proxyUrl: 'https://iqc-proxy.yyiqc1927.workers.dev',
       factoryCode: 'STTH',
       factoryName: 'SHARETRONIC DATA TECHNOLOGY (THAILAND)CO.,LTD.'
     };
@@ -1416,7 +1414,6 @@
     const getTableRows = () => $$('#iqcTableBody tr[data-status]');
 
     /* ===================== QMS 数据层 ===================== */
-    let qmsToken = null;
     let qmsLoading = false;
     let loadSeq = 0;
     let FACTORIES = [];
@@ -1437,49 +1434,34 @@
     function monthPrefix(offset = 0) { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + offset); return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}`; }
 
     async function qmsLogin() {
-      // 复用本地缓存的 token（12 小时内有效），避免每次打开都重新登录
-      try {
-        const cached = localStorage.getItem('qms_token_cache');
-        if (cached) {
-          const payload = JSON.parse(atob(cached.split('.')[1]));
-          if (payload.exp * 1000 > Date.now() + 60000) { qmsToken = cached; return qmsToken; }
-        }
-      } catch (e) {}
-      const res = await fetch(QMS_CONFIG.ssoUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'Authorization': QMS_CONFIG.basicAuth },
-        body: JSON.stringify({ username: QMS_CONFIG.username, password: QMS_CONFIG.password })
-      });
-      const data = await res.json();
-      if (data && data.access_token) {
-        qmsToken = data.access_token;
-        try { localStorage.setItem('qms_token_cache', qmsToken); } catch (e) {}
-        return qmsToken;
-      }
-      throw new Error((data && data.message) || 'QMS 登录失败');
+      // 登录已迁移到 Cloudflare Worker 代理（凭证保存在服务端 Secrets），前端不再持有凭证
+      return null;
     }
     function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
     async function qmsRequest(url, retry = true) {
-      if (!qmsToken) await qmsLogin();
+      // 走 Cloudflare Worker 代理：前端只传路径 + 查询参数，凭证保存在服务端 Secrets
+      let u;
+      try { u = new URL(url); } catch (e) { throw new Error('QMS 请求地址无效'); }
+      const path = u.pathname;
+      const query = {};
+      u.searchParams.forEach((v, k) => { query[k] = v; });
       let lastErr = null;
       const MAX = 3;
       for (let attempt = 0; attempt < MAX; attempt++) {
         try {
-          const res = await fetch(url, { headers: { 'Authorization': 'bearer ' + qmsToken, 'X-Requested-With': 'XMLHttpRequest' } });
-          // 401：token 失效，重新登录后重试
-          if (res.status === 401 && retry) {
-            qmsToken = null;
-            try { localStorage.removeItem('qms_token_cache'); } catch (e) {}
-            await qmsLogin();
-            continue;
-          }
-          // 5xx / 429：服务端繁忙，退避重试
+          const res = await fetch(QMS_CONFIG.proxyUrl + '/api/qms', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path, query })
+          });
+          // 5xx / 429：代理或服务端繁忙，退避重试
           if (res.status >= 500 || res.status === 429) {
-            lastErr = new Error('QMS 服务繁忙 (' + res.status + ')');
+            lastErr = new Error('代理服务繁忙 (' + res.status + ')');
             await sleep(300 * (attempt + 1));
             continue;
           }
           const data = await res.json();
+          if (data && data.error) throw new Error(data.error);
           if (data && data.status && data.status !== '200') throw new Error(data.message || ('QMS 请求失败 ' + data.status));
           return data;
         } catch (e) {
@@ -2568,7 +2550,6 @@
       const fromCache = loadCachedDash();
       if (!fromCache) setSyncState(true);
       try {
-        await qmsLogin();
         if (mySeq !== loadSeq) return;
         const today = todayStr();
         const monthStart = monthPrefix(0) + '-01';
