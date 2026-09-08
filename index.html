@@ -2701,8 +2701,13 @@
       else stopTableAutoScroll();
       if (supplierWallboardMode) startSbAutoScroll();
       else stopSbAutoScroll();
-      // 看板模式切换后，右下角供应商排行图表从 display:none 变为可见，需 resize
-      if (wallboardMode) setTimeout(() => { if (sbCharts.supplierRank) { try { sbCharts.supplierRank.resize(); } catch (e) {} } }, 80);
+      // 看板模式切换后，图表从 display:none 变为可见，需重绘；但全屏切换尚未完成，
+      // 这里只作兜底延迟（正常由 fullscreenchange 更早触发），避免"先错后对"的跳变
+      if (wallboardMode || supplierWallboardMode) {
+        setTimeout(() => {
+          Object.values(sbCharts).forEach((c) => { try { c.resize(); } catch (e) {} });
+        }, 400);
+      }
     }
     function setWallboardMode(enabled, useFullscreen = true) {
       if (enabled) supplierWallboardMode = false;
@@ -2801,6 +2806,12 @@
       $('#supplierWallboardToggle').addEventListener('click', () => setSupplierWallboardMode(!supplierWallboardMode));
       $('#wallboardExit').addEventListener('click', () => supplierWallboardMode ? setSupplierWallboardMode(false) : setWallboardMode(false));
       document.addEventListener('fullscreenchange', () => {
+        if (document.fullscreenElement) {
+          // 进入全屏后，等布局稳定再统一重绘所有图表，消除"先错后对"的缩放跳变
+          requestAnimationFrame(() => requestAnimationFrame(() => {
+            Object.values(sbCharts).forEach((c) => { try { c.resize(); } catch (e) {} });
+          }));
+        }
         if (!document.fullscreenElement && wallboardMode) setWallboardMode(false, false);
         if (!document.fullscreenElement && supplierWallboardMode) setSupplierWallboardMode(false, false);
       });
