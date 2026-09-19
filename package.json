@@ -1,0 +1,12 @@
+{
+  "name": "iqc-quality-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "check": "node --check assets/dashboard.js && node scripts/check.mjs",
+    "test": "node --test tests/*.test.cjs",
+    "build": "node scripts/build.mjs",
+    "start": "node scripts/serve.mjs"
+  },
+  "engines": { "node": ">=22" }
+}
