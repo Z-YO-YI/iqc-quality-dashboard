@@ -1,51 +1,139 @@
 # IQC 来料检验看板
 
-正式仓库：[Z-YO-YI/iqc-quality-dashboard](https://github.com/Z-YO-YI/iqc-quality-dashboard)。静态 HTML/CSS/JavaScript + ECharts，通过既有 Cloudflare Worker 只读访问 QMS；前端不持有登录凭证。
+面向工厂质量团队的来料检验与供应商质量可视化平台。连接 QMS 检验数据，集中展示检验任务、质量指标与供应商风险，支持日常业务查看和车间大屏展示。
 
-## 开发与验证
+[![CI](https://github.com/Z-YO-YI/iqc-quality-dashboard/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Z-YO-YI/iqc-quality-dashboard/actions/workflows/ci.yml)
+[![Deploy Pages](https://github.com/Z-YO-YI/iqc-quality-dashboard/actions/workflows/pages.yml/badge.svg?branch=main)](https://github.com/Z-YO-YI/iqc-quality-dashboard/actions/workflows/pages.yml)
 
-需要 Node.js 22+，无开发依赖，无需安装 npm 包。
+[在线访问](https://iqc.namecheap.xin/) · [快速开始](#快速开始) · [维护指南](docs/MAINTENANCE.md) · [更新日志](CHANGELOG.md)
+
+## 项目概览
+
+项目采用轻量级静态前端架构，通过 Cloudflare Worker 代理读取 QMS 数据，使用 ECharts 展示质量趋势与供应商分析，并由 GitHub Actions 自动验证、构建和发布。
+
+| 模块 | 功能 |
+| --- | --- |
+| 质量总览 | 今日送检、待检、超时、合格率与加急指标，检验流转、质量趋势及异常预警 |
+| 检验任务 | 按日期、状态、加急和关键词筛选，支持排序、分页、详情查看及 CSV 导出 |
+| 供应商质量 | 供应商指标、月度趋势、风险矩阵、质量排名、风险列表与供应商详情 |
+| 来料检验大屏 | 全屏展示任务与质量统计，支持自动滚动、自动翻页及手动翻页 |
+| 供应商质量大屏 | 固定高度的图表与风险区域，列表在区域内部滚动，适用于持续展示 |
+| 多工厂与多语言 | 支持切换工厂，以及中文、英文、泰文和中泰双语界面 |
+
+数据每 5 分钟自动同步，也可手动刷新。界面保留 QMS 返回的供应商名称、料号等业务原始信息，不自动翻译业务数据。
+
+## 技术架构
+
+| 层级 | 技术 | 职责 |
+| --- | --- | --- |
+| 页面与交互 | HTML、CSS、原生 JavaScript | 页面布局、筛选、状态管理与多语言 |
+| 数据可视化 | ECharts | 趋势、排名及风险图表 |
+| 接口代理 | Cloudflare Worker | 服务端认证与 QMS 请求转发 |
+| 数据源 | QMS | 提供工厂字典与检验记录 |
+| 检查与测试 | Node.js 内置工具 | 语法检查、资源校验与回归测试 |
+| 持续集成与部署 | GitHub Actions、GitHub Pages | 验证、构建及静态站点发布 |
+
+浏览器只向代理发送查询条件，QMS 登录凭证保存在 Worker Secrets 中。本仓库包含前端、开发工具与发布配置；Worker 独立部署，其服务代码不在本仓库内。
+
+## 快速开始
+
+### 环境要求
+
+- Git
+- Node.js 22 或更新版本
+- 支持现代 JavaScript 与 Canvas 的浏览器
+
+项目无额外开发依赖，无需执行 `npm install`。
+
+### 获取代码并启动
 
 ```sh
+git clone https://github.com/Z-YO-YI/iqc-quality-dashboard.git
+cd iqc-quality-dashboard
 node scripts/serve.mjs
-node scripts/check.mjs
-node --test tests/*.test.cjs
-node scripts/build.mjs
-git diff --check
 ```
 
-默认预览 http://127.0.0.1:8765，可用第二个命令行参数指定端口。普通预览连接真实只读接口。访问 /__test__/ 使用 6000 条虚构记录、1500 条待检任务与 300 家风险供应商，不访问 QMS，不使用真实浏览器缓存。测试入口与测试代码仅用于本机，生产构建不会复制它们。
+启动后访问 [本地看板](http://127.0.0.1:8765/)。默认页面使用项目配置的真实 QMS 代理，需要代理和上游服务可用。
 
-## 代码结构
+如需使用其他端口：
 
-- index.html：页面结构与声明式翻译标记。
-- assets/dashboard.js：请求、统计、状态和渲染。
-- assets/ui-i18n.js：补充界面文案、中文/英文/泰文/中泰翻译；业务原始名称不改写。
-- assets/wallboard.js：表格自动滚动与图表尺寸调度。
-- assets/dashboard.css：布局与固定看板行高。
-- tests/：请求、分页、缓存、语言、风险缓存及滚动回归。
-- scripts/：静态检查、构建、只绑定本机的预览服务。
+```sh
+node scripts/serve.mjs 8766
+```
 
-## 看板行为
+### 使用测试数据
 
-供应商看板以视口高度分配两个图表行与预警区，下方三张卡片等高，风险列表在卡片内滚动，行数不会撑高页面。两个大屏均有语言按钮。
+访问 [本地测试页面](http://127.0.0.1:8765/__test__/)，可在不连接 QMS 的情况下查看页面并验证大数据量展示。
 
-来料看板每页最多 20 条，自动滚动到尾部后停留再翻页，所有筛选结果都可轮播；也能手动翻页。鼠标停留暂停移动，后台页面停止动画。启用系统“减少动态效果”时关闭自动滚动，保留手动滚动与分页。动画使用 tbody 的 transform，布局尺寸仅在尺寸变化时测量。退出看板清理监听器和动画。
+测试场景包含 6,000 条虚构记录、1,500 条待检任务和 300 家风险供应商，使用独立的内存缓存。测试入口与数据不会进入生产构建。
 
-请求超时 30 秒，最多三次尝试；总览四个数据集全部成功才替换快照。分页以 total 为准，检测重复页与缺失页。缓存按工厂、版本和 30 分钟有效期隔离，保留待办与上月数据。
+## 常用命令
 
-## 分支与发布
+在项目根目录执行：
 
-main 是正式源码，功能在独立分支经 PR、CI 验证后合并。Deploy Pages 工作流再次执行检查和测试，再构建 dist 并发布 GitHub Pages。Pages 应配置为 GitHub Actions（build_type=workflow）；自定义域名保持 iqc.namecheap.xin。gh-pages 保留为旧部署历史，不再作为开发或发布源。
+| 命令 | 说明 |
+| --- | --- |
+| `node scripts/serve.mjs` | 启动本地预览服务 |
+| `node scripts/check.mjs` | 检查脚本语法、静态资源引用及前端凭证字面量 |
+| `node --test tests/*.test.cjs` | 运行自动化回归测试 |
+| `node scripts/build.mjs` | 生成静态站点构建产物 |
+| `git diff --check` | 检查差异中的空白格式问题 |
 
-构建仅复制 index.html、CNAME、echarts.min.js 与三个脚本及样式文件，不发布 tests、文档或本地设置。禁止通过 API 单独覆盖 index.html，否则会遗漏 assets。回退通过 revert PR，不 force push、不覆盖历史。
+构建输出位于 `dist/`，包含页面、样式、业务脚本、ECharts 及域名配置。测试、文档和本地开发配置不包含在构建产物中。
 
-## 凭证处理
+## 项目结构
 
-接管时 main 的旧 HTML 内嵌登录凭证，gh-pages 最新代码已经迁移到 Worker。此次合并用不含凭证的代理版替换旧 HTML，忽略 .env、.dev.vars 等敏感配置，不提交旧 HANDOVER 或历史工作日志。
+```text
+iqc-quality-dashboard/
+├── .github/workflows/
+│   ├── ci.yml                 # 持续集成检查
+│   └── pages.yml              # GitHub Pages 构建与发布
+├── assets/
+│   ├── dashboard.css          # 页面与大屏样式
+│   ├── dashboard.js           # 数据请求、业务统计与页面渲染
+│   ├── ui-i18n.js             # 补充界面翻译与日期格式化
+│   └── wallboard.js           # 自动滚动与图表尺寸调度
+├── docs/                      # 维护及验证文档
+├── scripts/                   # 预览、检查与构建脚本
+├── tests/                     # 回归测试与本地测试数据
+├── index.html                 # 页面入口
+├── echarts.min.js             # 图表库
+├── CNAME                      # GitHub Pages 自定义域名
+├── package.json               # 项目信息与命令入口
+└── CHANGELOG.md               # 更新日志
+```
 
-所有者明确要求不改 QMS 密码；本次未修改 QMS 账户及 Worker Secret。删除当前源码不能撤销已泄露凭证，也不能清除 Git 历史；本次未重写历史。Cloudflare 三个 Secret 已确认加密保存，但其轮换状态仍未知。
+## 配置与部署
 
-## 已知边界
+### 数据接入
 
-保留现有业务算法：主要 KPI 使用“合格 / 已判定批次”，部分排名图使用“(全部批次 - 退货 - 特采) / 全部批次”。统一前需要对照 QMS 官方业务口径。季/年目前为滚动 3/12 个月；大工厂性能及 Worker 访问控制属于后续独立事项。Pareto/DPPM 缺少上游字段时显示空状态。
+默认数据源配置位于 `assets/dashboard.js` 的 `QMS_CONFIG` 中，包括代理地址、QMS 接口地址和默认工厂。部署到其他环境时，应同步核对前端配置与 Worker 的上游设置。
+
+账号、密码和认证密钥应仅在服务端配置，不应写入前端文件、提交记录或构建产物。当前前端无需填写 QMS 登录凭证。
+
+### 自动发布
+
+`main` 是正式源码分支。变更通过 Pull Request 与 CI 验证后合并，随后由 **Deploy Pages** 工作流执行检查、测试、构建和部署。
+
+仓库的 GitHub Pages 发布方式应设为 **GitHub Actions**，发布环境为 `github-pages`。当前生产域名为 [iqc.namecheap.xin](https://iqc.namecheap.xin/)。其他环境需使用对应的 `CNAME` 与域名配置。
+
+生产发布应使用完整构建产物，确保 HTML、CSS 和 JavaScript 来自同一版本。具体发布检查与回退方式见[维护指南](docs/MAINTENANCE.md)。
+
+## 开发协作
+
+1. 同步远程 `main`，创建独立开发分支。
+2. 完成修改，并运行检查、测试和构建命令。
+3. 涉及界面时，使用本地测试数据验证语言切换、筛选和大屏展示。
+4. 更新相关文档，以 Conventional Commits 格式提交变更。
+5. 推送分支并创建 Pull Request，说明变更范围与验证结果。
+
+问题反馈可提交至 [Issues](https://github.com/Z-YO-YI/iqc-quality-dashboard/issues)。请说明页面、语言、工厂范围及复现步骤；涉及业务数据的截图应先脱敏。
+
+## 数据口径与使用说明
+
+- 指标与趋势依赖 QMS 返回的数据及字段，缺少上游字段时显示空状态，不生成替代业务数据。
+- 部分 KPI 与排名图采用不同合格率统计口径，比较前应确认分母与统计范围。
+- 季度和年度筛选当前分别表示滚动 3 个月与 12 个月。
+- 大屏自动滚动支持鼠标悬停暂停；页面切到后台时暂停动画，系统启用“减少动态效果”时保留手动操作。
+
+详细的统计口径、缓存机制和运维边界见[维护指南](docs/MAINTENANCE.md)；验证记录见[验证文档](docs/VALIDATION.md)。
