@@ -137,13 +137,40 @@ test('risk reasons update on language change without changing numeric risk class
   a.run("locale = 'mix'");
   assert.match(a.run("ui('质量预警')"), /质量预警 · /);
 });
-test('wallboard renders a bounded page and reaches later records without dropping them', () => {
-  const a = app(); a.ctx.createTableScroller = () => ({ stop() {} });
+test('wallboard cycles the full filtered list and overview retains pagination', () => {
+  const a = app(); let options;
+  a.ctx.createLoopingTableScroller = (_, value) => { options = value; return { stop() {} }; };
   a.ctx.computeTableRows = () => Array.from({length: 1500}, (_, id) => ({ id }));
   a.ctx.rowHtml = r => `<tr data-row="${r.id}"></tr>`;
   a.run('wallboardMode = true; renderTableRows()');
-  assert.equal((a.elements.get('#iqcTableBody').innerHTML.match(/data-row=/g) || []).length, 20);
-  a.run('gotoPage(75)');
+  assert.equal(options.count, 1500); assert.equal(options.speed, 72);
+  assert.equal(a.elements.get('#tablePagination').style.display, 'none');
+  options.renderWindow(1499, 3);
+  assert.match(a.elements.get('#iqcTableBody').innerHTML, /data-row="1499".*data-row="0".*data-row="1"/);
+  a.run('wallboardMode = false; gotoPage(75)');
   assert.match(a.elements.get('#iqcTableBody').innerHTML, /data-row="1499"/);
+  assert.equal((a.elements.get('#iqcTableBody').innerHTML.match(/data-row=/g) || []).length, 20);
   assert.equal(a.elements.get('#pageInfo').textContent, '75 / 75');
+  assert.equal(a.elements.get('#tablePagination').style.display, 'flex');
+});
+
+test('legacy tasks route resolves to overview', () => {
+  const a = app(); let hash;
+  a.ctx.history = { replaceState(_, __, value) { hash = value; } };
+  a.ctx.scheduleChartResize = () => {}; a.ctx.updatePageUi = () => {};
+  a.run("setPage('tasks', false)");
+  assert.equal(a.run('currentPage'), 'overview'); assert.equal(hash, '#overview');
+});
+
+test('refresh retains the current task after insertion; explicit filtering resets the loop', () => {
+  const a = app(); let options;
+  a.ctx.createLoopingTableScroller = (_, value) => {
+    options = value; return { position: () => ({ index: 2, offset: 12 }), stop() {} };
+  };
+  let rows = ['A', 'B', 'C', 'D'].map(orderNumber => ({ orderNumber }));
+  a.ctx.computeTableRows = () => rows; a.ctx.rowHtml = r => `<tr>${r.orderNumber}</tr>`;
+  a.run('wallboardMode = true; renderTableRows()');
+  rows = [{ orderNumber: 'NEW' }, ...rows]; a.run('renderTableRows()');
+  assert.equal(options.initialIndex, 3); assert.equal(options.initialOffset, 12);
+  a.run('applyFilters()'); assert.equal(options.initialIndex, undefined);
 });

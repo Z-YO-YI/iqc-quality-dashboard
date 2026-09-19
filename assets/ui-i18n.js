@@ -1,5 +1,6 @@
 // Interface copy only. QMS names, identifiers and status codes remain source data.
 const UI_TEXT = {
+  '全部任务循环滚动': ['Cycling through all tasks', 'เลื่อนวนงานทั้งหมด'],
   '供应商质量看板': ['Supplier quality dashboard', 'แดชบอร์ดคุณภาพซัพพลายเออร์'],
   '来料质量 / 供应商绩效 / 风险预警': ['Incoming quality / Supplier performance / Risk alerts', 'คุณภาพขาเข้า / ผลงานซัพพลายเออร์ / การแจ้งเตือนความเสี่ยง'],
   '月': ['Month', 'เดือน'], '季': ['Quarter', 'ไตรมาส'], '年': ['Year', 'ปี'],

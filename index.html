@@ -48,7 +48,6 @@
         <p class="nav-label" data-i18n="navigation">导航菜单</p>
         <div class="nav-list">
           <a class="nav-item active" href="#overview" data-page="overview"><svg width="17" height="17"><use href="#icon-grid"/></svg><span data-i18n="menu_overview">质量总览</span></a>
-          <a class="nav-item" href="#tasks" data-page="tasks"><svg width="17" height="17"><use href="#icon-inbox"/></svg><span data-i18n="menu_tasks">检验任务</span><span class="nav-badge" id="tasksBadge">0</span></a>
           <a class="nav-item" href="#suppliers" data-page="suppliers"><svg width="17" height="17"><use href="#icon-truck"/></svg><span data-i18n="menu_supplier">供应商质量</span></a>
         </div>
       </nav>
@@ -57,9 +56,6 @@
       <div class="sync-card">
         <div class="sync-head"><span class="live-dot"></span><span class="sync-title">QMS API</span><span class="sync-live">LIVE</span></div>
         <div class="sync-copy" data-i18n="sync_copy">已连接 QMS 数据源，任务与状态实时同步。</div>
-      </div>
-      <div class="user-chip">
-        <div><strong data-i18n="role_label">质量管理员</strong></div>
       </div>
     </aside>
 
@@ -72,12 +68,15 @@
         <div class="top-actions">
           <button class="btn wallboard-button" id="wallboardToggle" aria-pressed="false"><svg width="14" height="14"><use href="#icon-grid"/></svg><span id="wallboardToggleText" data-i18n="enter_wallboard">来料检验看板</span></button>
           <button class="btn supplier-wallboard-button" id="supplierWallboardToggle" aria-pressed="false"><svg width="14" height="14"><use href="#icon-chart"/></svg><span id="supplierWallboardToggleText" data-i18n="supplier_wallboard_entry">供应商看板</span></button>
-          <div class="locale-switch" aria-label="Language switcher">
-            <button data-locale="zh" class="active">中文</button>
-            <button data-locale="th">ไทย</button>
-            <button data-locale="en">EN</button>
-            <button data-locale="mix">中泰</button>
-          </div>
+          <details class="locale-menu">
+            <summary aria-label="Language"><span class="locale-current">中文</span><span class="locale-arrow">⌄</span></summary>
+            <div class="locale-switch" aria-label="Language switcher">
+              <button data-locale="zh" class="active">中文</button>
+              <button data-locale="th">ไทย</button>
+              <button data-locale="en">EN</button>
+              <button data-locale="mix">中泰</button>
+            </div>
+          </details>
           <button class="icon-button" id="notificationBtn" title="Notifications"><svg width="16" height="16"><use href="#icon-bell"/></svg></button>
         </div>
       </header>
@@ -379,7 +378,7 @@
   <div class="toast" id="toast"><svg width="14" height="14"><use href="#icon-check"/></svg><span id="toastText" data-ui="操作完成">操作完成</span></div>
   <div class="wallboard-bar" id="wallboardBar">
     <div class="wallboard-status"><span class="live-dot"></span><strong id="wallboardModeLabel" data-i18n="wallboard_live">来料检验看板 · 实时</strong><span class="wallboard-clock" id="wallboardClock">--:--:--</span></div>
-    <div class="wallboard-languages" aria-label="Language"><button data-locale="zh">中文</button><button data-locale="th">ไทย</button><button data-locale="en">EN</button><button data-locale="mix">中泰</button></div>
+    <details class="locale-menu"><summary aria-label="Language"><span class="locale-current">中文</span><span class="locale-arrow">⌄</span></summary><div class="locale-switch" aria-label="Language switcher"><button data-locale="zh">中文</button><button data-locale="th">ไทย</button><button data-locale="en">EN</button><button data-locale="mix">中泰</button></div></details>
     <button class="wallboard-exit" id="wallboardExit"><svg width="12" height="12"><use href="#icon-close"/></svg><span id="wallboardExitText" data-i18n="exit_wallboard">退出看板</span></button>
   </div>
 

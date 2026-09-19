@@ -62,6 +62,57 @@ function createTableScroller(wrap, { speed = 24, onEnd } = {}) {
   } };
 }
 
+// Recycle a viewport-sized row window, preserving the order of the entire task list.
+function createLoopingTableScroller(wrap, { count, renderWindow, speed = 72, initialIndex = 0, initialOffset = 0 }) {
+  const table = wrap.querySelector('table'), body = table.querySelector('tbody');
+  const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  let frame = null, last = null, distance = 0, rowHeight = 44, size = 0, start = -1;
+  let hovering = false, stopped = false, scrollable = false, initialized = false;
+  const paint = () => {
+    const next = Math.floor(distance / rowHeight) % count;
+    if (next !== start) { start = next; renderWindow(start, size); }
+    body.style.transform = `translate3d(0, ${-(distance % rowHeight)}px, 0)`;
+  };
+  const cancel = () => { if (frame !== null) cancelAnimationFrame(frame); frame = null; last = null; };
+  const schedule = () => {
+    if (!stopped && frame === null && scrollable && !hovering && !document.hidden && !motion.matches) frame = requestAnimationFrame(step);
+  };
+  const step = now => {
+    frame = null;
+    if (last !== null) distance = (distance + speed * Math.min(now - last, 50) / 1000) % (count * rowHeight);
+    last = now; paint(); schedule();
+  };
+  const measure = () => {
+    cancel();
+    if (!count) return;
+    const measured = body.querySelector('tr')?.offsetHeight;
+    if (measured) rowHeight = measured;
+    if (!initialized) { distance = (initialIndex % count) * rowHeight + Math.min(initialOffset, rowHeight - 0.001); initialized = true; }
+    const visibleHeight = Math.max(0, wrap.clientHeight - table.querySelector('thead').offsetHeight);
+    scrollable = count * rowHeight > visibleHeight;
+    size = motion.matches || !scrollable ? count : Math.ceil(visibleHeight / rowHeight) + 2;
+    start = -1;
+    if (motion.matches || !scrollable) {
+      distance = 0; renderWindow(0, count); body.style.transform = ''; body.style.willChange = '';
+    } else { body.style.willChange = 'transform'; paint(); }
+    schedule();
+  };
+  const enter = () => { hovering = true; cancel(); };
+  const leave = () => { hovering = false; schedule(); };
+  const visibility = () => { cancel(); schedule(); };
+  const observer = new ResizeObserver(measure);
+  wrap.scrollTop = 0;
+  wrap.addEventListener('pointerenter', enter); wrap.addEventListener('pointerleave', leave);
+  document.addEventListener('visibilitychange', visibility); motion.addEventListener('change', measure);
+  observer.observe(wrap); measure();
+  return { position: () => ({ index: Math.floor(distance / rowHeight) % count, offset: distance % rowHeight }), stop() {
+    stopped = true; cancel(); observer.disconnect();
+    wrap.removeEventListener('pointerenter', enter); wrap.removeEventListener('pointerleave', leave);
+    document.removeEventListener('visibilitychange', visibility); motion.removeEventListener('change', measure);
+    body.style.transform = ''; body.style.willChange = '';
+  } };
+}
+
 let chartResizeFrame = null;
 function scheduleChartResize() {
   if (chartResizeFrame !== null) return;
