@@ -340,7 +340,7 @@
     function computeInspectors(records) {
       const map = new Map();
       records.forEach((r) => { const n = r.inspectorName || '未分配'; map.set(n, (map.get(n) || 0) + 1); });
-      return Array.from(map.entries()).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count).slice(0, 5);
+      return Array.from(map.entries()).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count);
     }
     function computeAlerts() {
       const alerts = [];
@@ -1438,7 +1438,6 @@
     function applyLocale() {
       try { localStorage.setItem('iqc_locale', locale); } catch {}
       translateStaticUi();
-      syncThemeControls();
       $('#sbMonthLabel').textContent = supplierMonthLabel(supplierMonthOffset);
       setSyncState(syncState.loading, syncState.error, syncState.mode);
       document.documentElement.lang = locale === 'th' ? 'th' : locale === 'en' ? 'en' : 'zh-CN';
@@ -1515,7 +1514,9 @@
       });
     }
     function bindEvents() {
-      bindThemeControls();
+      $('#displaySettings').addEventListener('toggle', event => {
+        $('#displaySettingsToggle').setAttribute('aria-expanded', String(event.newState === 'open'));
+      });
       $$('[data-locale]').forEach((button) => button.addEventListener('click', () => {
         locale = button.dataset.locale; applyLocale();
       }));

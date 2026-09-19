@@ -935,6 +935,10 @@ body.supplier-wallboard-mode .sb-topbar,
 body.supplier-wallboard-mode .sb-kpis,
 body.supplier-wallboard-mode .sb-row { margin: 0; min-height: 0; }
 body.supplier-wallboard-mode .sb-row { grid-template-rows: minmax(0, 1fr); align-items: stretch; }
+/* The fixed-height wallboard must not inherit the ordinary page's stacked breakpoint. */
+body.supplier-wallboard-mode .sb-kpis { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+body.supplier-wallboard-mode .sb-row-top { grid-template-columns: minmax(0, 1.35fr) minmax(0, .95fr); }
+body.supplier-wallboard-mode .sb-card-risklist { grid-column: auto; }
 body.supplier-wallboard-mode .sb-row-bottom { grid-template-columns: minmax(0, .9fr) minmax(0, 1fr) minmax(0, 1.05fr); }
 body.supplier-wallboard-mode .sb-card { min-width: 0; min-height: 0; overflow: hidden; }
 body.supplier-wallboard-mode .sb-card-head { padding: 10px 12px 0; flex-wrap: wrap; gap: 6px; }
@@ -998,7 +1002,7 @@ body.wallboard-mode .table-wrap { border-top: 0; }
 .result-row span { font-size: 13px; color: var(--ink); }
 .result-row strong { font-size: 22px; }
 .result-row small { grid-column: auto; margin: 0; color: var(--muted); font-size: 13px; min-width: 48px; text-align: right; }
-body.wallboard-mode .content { grid-template-rows: minmax(0, 1.4fr) minmax(0, .85fr) minmax(0, .65fr); }
+body.wallboard-mode .content { grid-template-rows: minmax(0, 1.35fr) minmax(0, .9fr) minmax(0, .75fr); }
 body.wallboard-mode .result-content { grid-template-columns: minmax(110px, .8fr) minmax(0, 1.5fr); gap: 16px; }
 body.wallboard-mode .result-donut { width: clamp(110px, 15vh, 180px); height: clamp(110px, 15vh, 180px); }
 body.wallboard-mode .result-donut::before { width: 74%; height: 74%; }
@@ -1016,3 +1020,34 @@ body.wallboard-mode .result-row small { font-size: 12px; }
 
 /* Solid SVG segments preserve chart proportions without background images. */
 .donut-segments { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); pointer-events: none; }
+body.wallboard-mode #iqcTable { min-width: 0; }
+body.wallboard-mode #iqcTable col { width: var(--wallboard-width) !important; }
+body.wallboard-mode #iqcTable :is(th, td) { padding-inline: 6px; }
+body.wallboard-mode .inspector-summary, body.wallboard-mode .result-foot, body.wallboard-mode .capacity-line { flex-shrink: 0; }
+.inspector-columns { overflow-y: auto; grid-auto-rows: minmax(140px, 1fr); }
+body.wallboard-mode .inspector-columns { grid-auto-rows: minmax(50px, 1fr); }
+body.wallboard-mode .inspector-column { gap: 2px; }
+body.wallboard-mode .inspector-column strong { font-size: 12px; line-height: 14px; }
+body.wallboard-mode .inspector-column span { font-size: 11px; line-height: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body.wallboard-mode .inspector-column i { min-height: 0; max-height: calc(100% - 32px); }
+body.supplier-wallboard-mode .sb-risk-table .sb-tag { max-width: 100%; padding-inline: 4px; white-space: normal; overflow-wrap: anywhere; line-height: 1.2; }
+@media (max-height: 760px) {
+  body.wallboard-mode .result-donut { width: 100px; height: 100px; }
+  body.wallboard-mode .result-core strong { font-size: 22px; }
+  body.wallboard-mode .result-core span { font-size: 10px; line-height: 1.2; }
+  body.wallboard-mode .result-legend { gap: 4px; }
+  body.wallboard-mode .result-row { padding-block: 4px; }
+  body.wallboard-mode .result-row strong { font-size: 18px; }
+}
+/* Long translations should wrap between controls, never through their labels. */
+.hero { flex-wrap: wrap; }
+.hero-actions { flex-wrap: wrap; }
+.hero-actions :is(.btn, .date-pill), .segmented button { flex-shrink: 0; white-space: nowrap; }
+.overview-card .card-head { flex-wrap: wrap; }
+.kpi-icon { flex-shrink: 0; }
+.kpi-foot { padding-right: 32px; }
+@media (max-width: 1450px) {
+  body:not(.wallboard-mode):not(.supplier-wallboard-mode) .overview-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  body:not(.wallboard-mode):not(.supplier-wallboard-mode) .alert-card { grid-column: 1 / -1; min-height: 190px; }
+  body:not(.wallboard-mode):not(.supplier-wallboard-mode) .alert-list { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+}

@@ -29,6 +29,16 @@ test('solid donut segments retain proportions, omit zero categories and show neu
   assert.match(a.run("donutSegments([1], ['green'])"), /stroke-dasharray="100 0"/);
 });
 
+test('inspector totals include everyone when more than five inspectors have pending tasks', () => {
+  const a = app();
+  const result = a.run("computeInspectors([...Array.from({length: 7}, (_, i) => ({inspectorName: `Inspector ${i}`})), {inspectorName: 'Inspector 6'}, {}])");
+  assert.equal(result.length, 8);
+  assert.equal(result.reduce((sum, item) => sum + item.count, 0), 9);
+  assert.equal(result[0].name, 'Inspector 6');
+  assert.equal(result[0].count, 2);
+  assert.ok(result.some(item => item.name === '未分配'));
+});
+
 test('pagination respects server total even when server caps page size', async () => {
   const a = app(); let calls = 0;
   a.ctx.qmsRequest = async () => ({ data: { total: 3, resultData: calls++ === 0 ? [{ id: 1 }, { id: 2 }] : [{ id: 3 }] } });
