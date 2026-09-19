@@ -506,10 +506,17 @@
       $('#kpiUrgentFoot').textContent = today.length ? (urgentToday / today.length * 100).toFixed(1) + '%' : '0%';
     }
 
-    function flowConic(f) {
-      const total = (f.pending + f.processing + f.done + f.overdue) || 1;
-      const p = f.pending / total * 100, pr = f.processing / total * 100, d = f.done / total * 100, o = f.overdue / total * 100;
-      return `conic-gradient(#3977ef 0 ${p}%, #14b39e ${p}% ${p + pr}%, #77a4f3 ${p + pr}% ${p + pr + d}%, #e55d68 ${p + pr + d}% 100%)`;
+    function donutSegments(values, colors) {
+      const total = values.reduce((sum, value) => sum + value, 0);
+      if (!total) return '<circle cx="50" cy="50" r="43.5" fill="none" stroke="#e4eaf2" stroke-width="13"/>';
+      let offset = 0;
+      return values.map((value, index) => {
+        if (!value) return '';
+        const size = value / total * 100;
+        const circle = `<circle cx="50" cy="50" r="43.5" fill="none" stroke="${colors[index]}" stroke-width="13" pathLength="100" stroke-dasharray="${size} ${100 - size}" stroke-dashoffset="${-offset}"/>`;
+        offset += size;
+        return circle;
+      }).join('');
     }
     function setFlowRange(range) {
       currentFlowRange = range;
@@ -520,7 +527,7 @@
       $('#flowProcessing').textContent = nf.format(data.processing);
       $('#flowDone').textContent = nf.format(data.done);
       $('#flowOverdue').textContent = nf.format(data.overdue);
-      $('#flowDonut').style.background = flowConic(data);
+      $('#flowDonut .donut-segments').innerHTML = donutSegments([data.pending, data.processing, data.done, data.overdue], ['#3977ef', '#14b39e', '#77a4f3', '#e55d68']);
       const now = new Date(); const p = (n) => String(n).padStart(2, '0');
       const timeStr = `${p(now.getHours())}:${p(now.getMinutes())}`;
       $('.donut-caption').textContent = ui('累计送检 · 截止 {time}', {time:timeStr});
@@ -570,7 +577,7 @@
       $('#resultTotal').textContent = nf.format(rs.total);
       const total = rs.total || 1;
       const p = rs.pass / total * 100, s = rs.special / total * 100, f = rs.fail / total * 100;
-      $('#resultDonut').style.background = `conic-gradient(var(--green) 0 ${p}%, var(--amber) ${p}% ${p + s}%, var(--red) ${p + s}% 100%)`;
+      $('#resultDonut .donut-segments').innerHTML = donutSegments([rs.pass, rs.special, rs.fail], ['var(--green)', 'var(--amber)', 'var(--red)']);
       $('#resultLegend').innerHTML = `
         <div class="result-row"><i class="result-mark green"></i><span data-i18n="result_pass">${t('result_pass')}</span><strong>${nf.format(rs.pass)}</strong><small>${(p).toFixed(1)}%</small></div>
         <div class="result-row"><i class="result-mark amber"></i><span data-i18n="result_special">${t('result_special')}</span><strong>${nf.format(rs.special)}</strong><small>${(s).toFixed(1)}%</small></div>

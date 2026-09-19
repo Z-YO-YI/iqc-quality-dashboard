@@ -17,6 +17,18 @@ function app() {
   vm.runInContext('renderAll = () => {}; renderSbBoard = () => {}; renderSbTrendChart = () => {}; showToast = () => {}; sleep = async () => {};', ctx);
   return { ctx, store, elements, run: (s) => vm.runInContext(s, ctx) };
 }
+test('solid donut segments retain proportions, omit zero categories and show neutral empty states', () => {
+  const a = app();
+  const markup = a.run("donutSegments([3, 0, 1], ['green', 'amber', 'red'])");
+  assert.equal((markup.match(/<circle /g) || []).length, 2);
+  assert.match(markup, /stroke="green"[^>]*stroke-dasharray="75 25"[^>]*stroke-dashoffset="0"/);
+  assert.match(markup, /stroke="red"[^>]*stroke-dasharray="25 75"[^>]*stroke-dashoffset="-75"/);
+  const empty = a.run("donutSegments([0, 0, 0], ['green', 'amber', 'red'])");
+  assert.match(empty, /stroke="#e4eaf2"/);
+  assert.doesNotMatch(empty, /NaN|stroke-dasharray/);
+  assert.match(a.run("donutSegments([1], ['green'])"), /stroke-dasharray="100 0"/);
+});
+
 test('pagination respects server total even when server caps page size', async () => {
   const a = app(); let calls = 0;
   a.ctx.qmsRequest = async () => ({ data: { total: 3, resultData: calls++ === 0 ? [{ id: 1 }, { id: 2 }] : [{ id: 3 }] } });
