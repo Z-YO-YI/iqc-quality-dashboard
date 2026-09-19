@@ -5,9 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#f3f6fa" />
   <title>SHARETRONIC.IQC 来料检验看板</title>
-  <script src="assets/theme.js"></script>
   <link rel="stylesheet" href="assets/dashboard.css">
-  <link rel="stylesheet" href="assets/theme.css">
+  <link rel="stylesheet" href="assets/settings.css">
   <script src="echarts.min.js"></script>
 </head>
 <body data-page="overview">
@@ -180,7 +179,7 @@
           <div class="table-meta"><div class="table-meta-left"><span class="live-dot"></span><span data-i18n="live_data">QMS 实时同步</span><span>·</span><span data-i18n="refresh_every">每 5 分钟刷新</span></div><div><span data-ui="共">共</span> <strong id="visibleCount">0</strong> <span data-i18n="unit_task">条任务</span><span id="pageRange" class="page-range"></span></div></div>
           <div class="table-wrap">
             <table id="iqcTable">
-              <colgroup><col style="width:155px"><col style="width:92px"><col style="width:207px"><col style="width:83px"><col style="width:98px"><col style="width:141px"><col style="width:90px"><col style="width:66px"><col style="width:107px"><col style="width:78px"><col style="width:84px"><col style="width:100px"><col style="width:100px"><col style="width:58px"></colgroup>
+              <colgroup><col style="width:155px;--wallboard-width:10.62371%"><col style="width:92px;--wallboard-width:6.30569%"><col style="width:207px;--wallboard-width:14.18780%"><col style="width:83px;--wallboard-width:5.68883%"><col style="width:98px;--wallboard-width:6.71693%"><col style="width:141px;--wallboard-width:9.66415%"><col style="width:90px;--wallboard-width:6.16861%"><col style="width:66px;--wallboard-width:4.52365%"><col style="width:107px;--wallboard-width:7.33379%"><col style="width:78px;--wallboard-width:5.34613%"><col style="width:84px;--wallboard-width:5.75737%"><col style="width:100px;--wallboard-width:6.85401%"><col style="width:100px;--wallboard-width:6.85401%"><col style="width:58px;--wallboard-width:3.97533%"></colgroup>
               <thead><tr>
                 <th data-sort="id"><span class="th-wrap"><span data-i18n="col_id">单号</span><i class="sort-arrow">↕</i></span></th>
                 <th data-sort="part"><span class="th-wrap"><span data-i18n="col_part">料号</span><i class="sort-arrow">↕</i></span></th>
@@ -378,12 +377,6 @@
   <section class="display-settings" id="displaySettings" popover="auto" role="dialog" aria-labelledby="displaySettingsTitle">
     <header class="display-settings-head"><div><h2 id="displaySettingsTitle" data-ui="显示设置">显示设置</h2><p data-ui="更改即时生效，自动保存">更改即时生效，自动保存</p></div><button class="display-settings-close" popovertarget="displaySettings" popovertargetaction="hide" data-ui-aria-label="关闭设置"><svg width="18" height="18"><use href="#icon-close"/></svg></button></header>
     <fieldset><legend data-ui="语言">语言</legend><div class="settings-languages"><button data-locale="zh">中文</button><button data-locale="th">ไทย</button><button data-locale="en">EN</button><button data-locale="mix">中泰</button></div></fieldset>
-    <fieldset><legend data-ui="主题效果">主题效果</legend><div class="settings-themes">
-      <button data-theme-choice="classic"><i class="theme-preview classic" aria-hidden="true"></i><span data-ui="经典">经典</span></button>
-      <button data-theme-choice="glass"><i class="theme-preview glass" aria-hidden="true"></i><span data-ui="液态玻璃">液态玻璃</span></button>
-      <button data-theme-choice="transparent"><i class="theme-preview transparent" aria-hidden="true"></i><span data-ui="普通透明">普通透明</span></button>
-    </div></fieldset>
-    <div class="transparency-control"><div class="transparency-label"><label for="transparencyRange" data-ui="背景透明度">背景透明度</label><output id="transparencyValue" for="transparencyRange">70%</output></div><input id="transparencyRange" type="range" min="0" max="100" step="0.1" value="70" aria-describedby="transparencyHint"><div class="transparency-ends"><span data-ui="不透明">不透明</span><span data-ui="完全透明">完全透明</span></div><p id="transparencyHint"></p></div>
   </section>
   <script src="assets/ui-i18n.js"></script>
   <script src="assets/wallboard.js"></script>

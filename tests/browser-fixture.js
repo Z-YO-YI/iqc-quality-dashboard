@@ -7,7 +7,7 @@
     supplierName: `Fixture supplier ${Math.floor(i / 20)}`, supplierCode: `S-${Math.floor(i / 20)}`,
     materialCategory: 'Fixture category', qty: 10, createDate: date,
     inspectionStatus: i % 4 === 0 ? '0' : '1', syncInspectionResultName: i % 4 === 0 ? '' : i % 3 === 0 ? '退货' : '合格',
-    expeditedFlagName: '否', inspectorName: 'Fixture inspector', taskName: 'IQC', totalTime: '1天2时'
+    expeditedFlagName: '否', inspectorName: `Fixture inspector ${Math.floor(i / 4) % 7}`, taskName: 'IQC', totalTime: '1天2时'
   }));
   // Do not reuse real browser cache or persist fixture records.
   const store = new Map();
