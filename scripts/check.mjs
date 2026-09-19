@@ -1,10 +1,10 @@
 import { readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
-for (const path of ['assets/dashboard.js', 'assets/ui-i18n.js', 'assets/wallboard.js', 'scripts/build.mjs', 'scripts/serve.mjs']) {
+for (const path of ['assets/dashboard.js', 'assets/ui-i18n.js', 'assets/wallboard.js', 'assets/theme.js', 'scripts/build.mjs', 'scripts/serve.mjs']) {
   execFileSync(process.execPath, ['--check', path], { stdio: 'inherit' });
 }
 const html = readFileSync('index.html', 'utf8');
-for (const path of ['assets/dashboard.js', 'assets/dashboard.css', 'assets/ui-i18n.js', 'assets/wallboard.js', 'echarts.min.js']) {
+for (const path of ['assets/dashboard.js', 'assets/dashboard.css', 'assets/ui-i18n.js', 'assets/wallboard.js', 'assets/theme.js', 'assets/theme.css', 'echarts.min.js']) {
   if (!html.includes(path)) throw new Error(`Missing asset reference: ${path}`);
   readFileSync(path);
 }

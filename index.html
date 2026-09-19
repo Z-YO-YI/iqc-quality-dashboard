@@ -5,7 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#f3f6fa" />
   <title>SHARETRONIC.IQC 来料检验看板</title>
+  <script src="assets/theme.js"></script>
   <link rel="stylesheet" href="assets/dashboard.css">
+  <link rel="stylesheet" href="assets/theme.css">
   <script src="echarts.min.js"></script>
 </head>
 <body data-page="overview">
@@ -68,6 +70,10 @@
         <div class="top-actions">
           <button class="btn wallboard-button" id="wallboardToggle" aria-pressed="false"><svg width="14" height="14"><use href="#icon-grid"/></svg><span id="wallboardToggleText" data-i18n="enter_wallboard">来料检验看板</span></button>
           <button class="btn supplier-wallboard-button" id="supplierWallboardToggle" aria-pressed="false"><svg width="14" height="14"><use href="#icon-chart"/></svg><span id="supplierWallboardToggleText" data-i18n="supplier_wallboard_entry">供应商看板</span></button>
+          <details class="locale-menu theme-menu">
+            <summary data-ui-aria-label="主题"><svg width="14" height="14"><use href="#icon-grid"/></svg><span data-theme-current>经典</span><span class="locale-arrow">⌄</span></summary>
+            <div class="locale-switch"><button data-theme-choice="classic"><i class="theme-swatch classic" aria-hidden="true"></i><span data-ui="经典">经典</span></button><button data-theme-choice="glass"><i class="theme-swatch glass" aria-hidden="true"></i><span data-ui="液态玻璃">液态玻璃</span></button></div>
+          </details>
           <details class="locale-menu">
             <summary aria-label="Language"><span class="locale-current">中文</span><span class="locale-arrow">⌄</span></summary>
             <div class="locale-switch" aria-label="Language switcher">
@@ -377,6 +383,10 @@
   </div>
   <div class="toast" id="toast"><svg width="14" height="14"><use href="#icon-check"/></svg><span id="toastText" data-ui="操作完成">操作完成</span></div>
   <div class="wallboard-bar" id="wallboardBar">
+    <details class="locale-menu theme-menu">
+      <summary data-ui-aria-label="主题"><span data-theme-current>经典</span><span class="locale-arrow">⌄</span></summary>
+      <div class="locale-switch"><button data-theme-choice="classic"><i class="theme-swatch classic" aria-hidden="true"></i><span data-ui="经典">经典</span></button><button data-theme-choice="glass"><i class="theme-swatch glass" aria-hidden="true"></i><span data-ui="液态玻璃">液态玻璃</span></button></div>
+    </details>
     <div class="wallboard-status"><span class="live-dot"></span><strong id="wallboardModeLabel" data-i18n="wallboard_live">来料检验看板 · 实时</strong><span class="wallboard-clock" id="wallboardClock">--:--:--</span></div>
     <details class="locale-menu"><summary aria-label="Language"><span class="locale-current">中文</span><span class="locale-arrow">⌄</span></summary><div class="locale-switch" aria-label="Language switcher"><button data-locale="zh">中文</button><button data-locale="th">ไทย</button><button data-locale="en">EN</button><button data-locale="mix">中泰</button></div></details>
     <button class="wallboard-exit" id="wallboardExit"><svg width="12" height="12"><use href="#icon-close"/></svg><span id="wallboardExitText" data-i18n="exit_wallboard">退出看板</span></button>
