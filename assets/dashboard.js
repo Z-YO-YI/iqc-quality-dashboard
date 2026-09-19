@@ -1438,7 +1438,6 @@
       $$('[data-i18n]').forEach((node) => { node.textContent = t(node.dataset.i18n); });
       $$('[data-i18n-placeholder]').forEach((node) => { node.placeholder = t(node.dataset.i18nPlaceholder); });
       $$('[data-locale]').forEach((button) => { button.classList.toggle('active', button.dataset.locale === locale); button.setAttribute('aria-pressed', button.dataset.locale === locale ? 'true' : 'false'); });
-      $$('.locale-current').forEach(node => { node.textContent = { zh: '中文', th: 'ไทย', en: 'EN', mix: '中泰' }[locale]; });
       setFlowRange(currentFlowRange);
       updateSidebarUi(); updatePageUi(); updateWallboardUi();
       if (uiReady) {
@@ -1512,10 +1511,7 @@
       bindThemeControls();
       $$('[data-locale]').forEach((button) => button.addEventListener('click', () => {
         locale = button.dataset.locale; applyLocale();
-        const menu = button.closest('details'); if (menu) { menu.open = false; menu.querySelector('summary').focus(); }
       }));
-      document.addEventListener('click', event => $$('.locale-menu[open]').forEach(menu => { if (!menu.contains(event.target)) menu.open = false; }));
-      document.addEventListener('keydown', event => { if (event.key === 'Escape') $$('.locale-menu[open]').forEach(menu => { menu.open = false; menu.querySelector('summary').focus(); }); });
       $$('.nav-item[data-page]').forEach((item) => item.addEventListener('click', (event) => { event.preventDefault(); setPage(item.dataset.page); }));
       window.addEventListener('hashchange', () => setPage(window.location.hash.slice(1), false));
       window.addEventListener('popstate', () => setPage(window.location.hash.slice(1), false));
