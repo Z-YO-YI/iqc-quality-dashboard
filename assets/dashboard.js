@@ -67,7 +67,7 @@
     let sidebarHidden = false;
     let wallboardMode = false;
     let supplierWallboardMode = false;
-    const validPages = ['overview', 'tasks', 'suppliers'];
+    const validPages = ['overview', 'suppliers'];
     let currentPage = validPages.includes(window.location.hash.slice(1)) ? window.location.hash.slice(1) : 'overview';
     const nf = new Intl.NumberFormat('en-US');
     const $ = (selector, root = document) => root.querySelector(selector);
@@ -409,23 +409,24 @@
         <td><button class="action-btn detail-btn" title="${ui('View')}"><svg width="13" height="13"><use href="#icon-external"/></svg></button></td>
       </tr>`;
     }
-    function renderTableRows() {
+    function renderTableRows(resetScroll = false) {
+      const previous = !resetScroll && tableScroller?.position?.();
+      const anchor = previous ? tableRows[previous.index]?.orderNumber : null;
       stopTableAutoScroll();
       tableRows = computeTableRows();
       const total = tableRows.length;
       const totalPages = Math.max(1, Math.ceil(total / TABLE_PAGE_SIZE));
-      // Bound the DOM to one page; the wallboard advances after each scroll cycle.
+      // The standard overview is paginated; the wallboard recycles all filtered tasks.
       if (tablePage > totalPages) tablePage = totalPages; if (tablePage < 1) tablePage = 1;
-      const rows = tableRows.slice((tablePage - 1) * TABLE_PAGE_SIZE, tablePage * TABLE_PAGE_SIZE);
+      const rows = wallboardMode ? tableRows.slice(0, 1) : tableRows.slice((tablePage - 1) * TABLE_PAGE_SIZE, tablePage * TABLE_PAGE_SIZE);
       const body = $('#iqcTableBody');
       body.innerHTML = rows.map(rowHtml).join('') + `<tr class="empty-row" id="emptyRow"><td colspan="14"><span data-i18n="empty_state">${t('empty_state')}</span></td></tr>`;
-      // 侧边栏徽章 = 待办任务总数
-      const badge = $('#tasksBadge');
-      if (badge) badge.textContent = total;
       $('#visibleCount').textContent = total;
       const pageRange = $('#pageRange');
       if (pageRange) {
-        if (total > 0) {
+        if (wallboardMode && total > 0) {
+          pageRange.textContent = ' · ' + ui('全部任务循环滚动');
+        } else if (total > 0) {
           const start = (tablePage - 1) * TABLE_PAGE_SIZE + 1;
           const end = Math.min(tablePage * TABLE_PAGE_SIZE, total);
           pageRange.textContent = ' · ' + ui('正在显示 {start}-{end} / {total}', {start, end, total});
@@ -437,13 +438,16 @@
       const pag = $('#tablePagination');
       if (pag) {
         {
-          pag.style.display = 'flex';
+          pag.style.display = wallboardMode ? 'none' : 'flex';
           $('#pageInfo').textContent = `${tablePage} / ${totalPages}`;
           $('#prevPageBtn').disabled = tablePage <= 1;
           $('#nextPageBtn').disabled = tablePage >= totalPages;
         }
       }
-      if (wallboardMode) startTableAutoScroll();
+      if (wallboardMode) {
+        const index = anchor ? tableRows.findIndex(row => row.orderNumber === anchor) : -1;
+        startTableAutoScroll(index >= 0 ? { initialIndex: index, initialOffset: previous.offset } : {});
+      }
     }
     function gotoPage(p) {
       tablePage = p;
@@ -1336,7 +1340,7 @@
     }
     function updatePageUi() {
       document.body.dataset.page = currentPage;
-      const breadcrumbKey = currentPage === 'tasks' ? 'breadcrumb_tasks' : currentPage === 'suppliers' ? 'breadcrumb_suppliers' : 'breadcrumb_overview';
+      const breadcrumbKey = currentPage === 'suppliers' ? 'breadcrumb_suppliers' : 'breadcrumb_overview';
       const breadcrumb = $('#breadcrumbCurrent');
       if (breadcrumb) breadcrumb.textContent = t(breadcrumbKey);
       $$('.nav-item[data-page]').forEach((item) => {
@@ -1347,6 +1351,7 @@
     }
     function setPage(page, updateHash = true) {
       currentPage = validPages.includes(page) ? page : 'overview';
+      if (page === 'tasks') history.replaceState(null, '', '#overview');
       updatePageUi();
       if (updateHash && window.location.hash !== `#${currentPage}`) history.pushState(null, '', `#${currentPage}`);
       // 切换到供应商页时，ECharts 图表从 display:none 变为可见，需重新 resize
@@ -1373,13 +1378,15 @@
     }
     let tableScroller = null, riskScroller = null;
     function stopTableAutoScroll() { tableScroller?.stop(); tableScroller = null; }
-    function startTableAutoScroll() {
+    function startTableAutoScroll(position = {}) {
       stopTableAutoScroll();
       if (!wallboardMode) return;
-      const pages = Math.ceil(tableRows.length / TABLE_PAGE_SIZE);
-      tableScroller = createTableScroller($('.table-card .table-wrap'), {
-        speed: 36,
-        onEnd: pages > 1 ? () => gotoPage(tablePage >= pages ? 1 : tablePage + 1) : undefined
+      if (!tableRows.length) return;
+      tableScroller = createLoopingTableScroller($('.table-card .table-wrap'), {
+        speed: 72, count: tableRows.length, ...position,
+        renderWindow: (start, count) => {
+          $('#iqcTableBody').innerHTML = Array.from({ length: count }, (_, i) => rowHtml(tableRows[(start + i) % tableRows.length])).join('');
+        }
       });
     }
     function stopSbAutoScroll() { riskScroller?.stop(); riskScroller = null; }
@@ -1395,8 +1402,7 @@
         if (supplierWallboardMode) supplierBoard.style.removeProperty('display');
         else supplierBoard.style.removeProperty('display');
       }
-      if (wallboardMode) startTableAutoScroll();
-      else stopTableAutoScroll();
+      if (!wallboardMode) stopTableAutoScroll();
       if (supplierWallboardMode) startSbAutoScroll();
       else stopSbAutoScroll();
       scheduleChartResize();
@@ -1413,6 +1419,7 @@
       if (enabled) wallboardMode = false;
       supplierWallboardMode = Boolean(enabled);
       syncWallboardClasses(); updateWallboardUi();
+      renderTableRows();
       if (supplierWallboardMode && useFullscreen && document.documentElement.requestFullscreen && !document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
       if (!supplierWallboardMode && document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
     }
@@ -1430,6 +1437,7 @@
       $$('[data-i18n]').forEach((node) => { node.textContent = t(node.dataset.i18n); });
       $$('[data-i18n-placeholder]').forEach((node) => { node.placeholder = t(node.dataset.i18nPlaceholder); });
       $$('[data-locale]').forEach((button) => { button.classList.toggle('active', button.dataset.locale === locale); button.setAttribute('aria-pressed', button.dataset.locale === locale ? 'true' : 'false'); });
+      $$('.locale-current').forEach(node => { node.textContent = { zh: '中文', th: 'ไทย', en: 'EN', mix: '中泰' }[locale]; });
       setFlowRange(currentFlowRange);
       updateSidebarUi(); updatePageUi(); updateWallboardUi();
       if (uiReady) {
@@ -1486,7 +1494,7 @@
     }
     function applyFilters() {
       tablePage = 1;
-      renderTableRows();
+      renderTableRows(true);
     }
     function enableSorting() {
       $$('th[data-sort]').forEach((header) => {
@@ -1495,12 +1503,17 @@
           if (tableSort && tableSort.type === type) tableSort.direction *= -1;
           else tableSort = { type, direction: -1 };
           tablePage = 1;
-          renderTableRows();
+          renderTableRows(true);
         });
       });
     }
     function bindEvents() {
-      $$('[data-locale]').forEach((button) => button.addEventListener('click', () => { locale = button.dataset.locale; applyLocale(); }));
+      $$('[data-locale]').forEach((button) => button.addEventListener('click', () => {
+        locale = button.dataset.locale; applyLocale();
+        const menu = button.closest('details'); if (menu) { menu.open = false; menu.querySelector('summary').focus(); }
+      }));
+      document.addEventListener('click', event => $$('.locale-menu[open]').forEach(menu => { if (!menu.contains(event.target)) menu.open = false; }));
+      document.addEventListener('keydown', event => { if (event.key === 'Escape') $$('.locale-menu[open]').forEach(menu => { menu.open = false; menu.querySelector('summary').focus(); }); });
       $$('.nav-item[data-page]').forEach((item) => item.addEventListener('click', (event) => { event.preventDefault(); setPage(item.dataset.page); }));
       window.addEventListener('hashchange', () => setPage(window.location.hash.slice(1), false));
       window.addEventListener('popstate', () => setPage(window.location.hash.slice(1), false));
@@ -1525,11 +1538,11 @@
         $('#dateStart').hidden = !isCustom;
         $('#dateEnd').hidden = !isCustom;
         $('#dateSep').hidden = !isCustom;
-        if (DASH.records.length) { tablePage = 1; renderTableRows(); }
+        if (DASH.records.length) { tablePage = 1; renderTableRows(true); }
       });
       const onCustomDate = async () => {
         await loadDateRange($('#dateStart').value, $('#dateEnd').value);
-        tablePage = 1; renderTableRows();
+        tablePage = 1; renderTableRows(true);
       };
       $('#dateStart').addEventListener('change', onCustomDate);
       $('#dateEnd').addEventListener('change', onCustomDate);
@@ -1589,6 +1602,7 @@
     let uiReady = false;
 
     applyLocale();
+    if (window.location.hash === '#tasks') setPage('tasks', false);
     loadSavedFactory();
     applyFactory();
     loadFactories();
