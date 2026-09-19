@@ -4,7 +4,7 @@ for (const path of ['assets/dashboard.js', 'assets/ui-i18n.js', 'assets/wallboar
   execFileSync(process.execPath, ['--check', path], { stdio: 'inherit' });
 }
 const html = readFileSync('index.html', 'utf8');
-for (const path of ['assets/dashboard.js', 'assets/dashboard.css', 'assets/ui-i18n.js', 'assets/wallboard.js', 'assets/settings.css', 'echarts.min.js']) {
+for (const path of ['assets/dashboard.js', 'assets/dashboard.css', 'assets/ui-i18n.js', 'assets/wallboard.js', 'assets/settings.css', 'assets/incoming-wallboard.css', 'echarts.min.js']) {
   if (!html.includes(path)) throw new Error(`Missing asset reference: ${path}`);
   readFileSync(path);
 }
