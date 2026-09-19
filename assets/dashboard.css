@@ -979,6 +979,8 @@ body.supplier-wallboard-mode .sb-alert-cards { overflow: auto; min-height: 0; pa
 body.supplier-wallboard-mode .sb-alert-card { padding: 7px 10px; }
 body.supplier-wallboard-mode .wallboard-bar { bottom: 10px; right: 24px; }
 body.wallboard-mode .table-wrap { overflow-y: hidden; overscroll-behavior: contain; }
+/* Collapsed borders are painted by the table and do not follow the animated tbody. */
+body.wallboard-mode #iqcTable { border-collapse: separate; border-spacing: 0; }
 body.wallboard-mode .table-pagination { flex: 0 0 auto; padding: 3px 12px; }
 body.wallboard-mode .card, body.supplier-wallboard-mode .sb-card { box-shadow: none; }
 .wallboard-languages { display: flex; gap: 3px; }
