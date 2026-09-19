@@ -70,19 +70,6 @@
         <div class="top-actions">
           <button class="btn wallboard-button" id="wallboardToggle" aria-pressed="false"><svg width="14" height="14"><use href="#icon-grid"/></svg><span id="wallboardToggleText" data-i18n="enter_wallboard">来料检验看板</span></button>
           <button class="btn supplier-wallboard-button" id="supplierWallboardToggle" aria-pressed="false"><svg width="14" height="14"><use href="#icon-chart"/></svg><span id="supplierWallboardToggleText" data-i18n="supplier_wallboard_entry">供应商看板</span></button>
-          <details class="locale-menu theme-menu">
-            <summary data-ui-aria-label="主题"><svg width="14" height="14"><use href="#icon-grid"/></svg><span data-theme-current>经典</span><span class="locale-arrow">⌄</span></summary>
-            <div class="locale-switch"><button data-theme-choice="classic"><i class="theme-swatch classic" aria-hidden="true"></i><span data-ui="经典">经典</span></button><button data-theme-choice="glass"><i class="theme-swatch glass" aria-hidden="true"></i><span data-ui="液态玻璃">液态玻璃</span></button></div>
-          </details>
-          <details class="locale-menu">
-            <summary aria-label="Language"><span class="locale-current">中文</span><span class="locale-arrow">⌄</span></summary>
-            <div class="locale-switch" aria-label="Language switcher">
-              <button data-locale="zh" class="active">中文</button>
-              <button data-locale="th">ไทย</button>
-              <button data-locale="en">EN</button>
-              <button data-locale="mix">中泰</button>
-            </div>
-          </details>
           <button class="icon-button" id="notificationBtn" title="Notifications"><svg width="16" height="16"><use href="#icon-bell"/></svg></button>
         </div>
       </header>
@@ -383,15 +370,21 @@
   </div>
   <div class="toast" id="toast"><svg width="14" height="14"><use href="#icon-check"/></svg><span id="toastText" data-ui="操作完成">操作完成</span></div>
   <div class="wallboard-bar" id="wallboardBar">
-    <details class="locale-menu theme-menu">
-      <summary data-ui-aria-label="主题"><span data-theme-current>经典</span><span class="locale-arrow">⌄</span></summary>
-      <div class="locale-switch"><button data-theme-choice="classic"><i class="theme-swatch classic" aria-hidden="true"></i><span data-ui="经典">经典</span></button><button data-theme-choice="glass"><i class="theme-swatch glass" aria-hidden="true"></i><span data-ui="液态玻璃">液态玻璃</span></button></div>
-    </details>
     <div class="wallboard-status"><span class="live-dot"></span><strong id="wallboardModeLabel" data-i18n="wallboard_live">来料检验看板 · 实时</strong><span class="wallboard-clock" id="wallboardClock">--:--:--</span></div>
-    <details class="locale-menu"><summary aria-label="Language"><span class="locale-current">中文</span><span class="locale-arrow">⌄</span></summary><div class="locale-switch" aria-label="Language switcher"><button data-locale="zh">中文</button><button data-locale="th">ไทย</button><button data-locale="en">EN</button><button data-locale="mix">中泰</button></div></details>
     <button class="wallboard-exit" id="wallboardExit"><svg width="12" height="12"><use href="#icon-close"/></svg><span id="wallboardExitText" data-i18n="exit_wallboard">退出看板</span></button>
   </div>
 
+  <button class="display-settings-toggle" id="displaySettingsToggle" popovertarget="displaySettings" aria-haspopup="dialog" aria-expanded="false" aria-controls="displaySettings" data-ui-aria-label="设置" data-ui-title="设置"><svg width="20" height="20"><use href="#icon-settings"/></svg><span data-ui="设置">设置</span></button>
+  <section class="display-settings" id="displaySettings" popover="auto" role="dialog" aria-labelledby="displaySettingsTitle">
+    <header class="display-settings-head"><div><h2 id="displaySettingsTitle" data-ui="显示设置">显示设置</h2><p data-ui="更改即时生效，自动保存">更改即时生效，自动保存</p></div><button class="display-settings-close" popovertarget="displaySettings" popovertargetaction="hide" data-ui-aria-label="关闭设置"><svg width="18" height="18"><use href="#icon-close"/></svg></button></header>
+    <fieldset><legend data-ui="语言">语言</legend><div class="settings-languages"><button data-locale="zh">中文</button><button data-locale="th">ไทย</button><button data-locale="en">EN</button><button data-locale="mix">中泰</button></div></fieldset>
+    <fieldset><legend data-ui="主题效果">主题效果</legend><div class="settings-themes">
+      <button data-theme-choice="classic"><i class="theme-preview classic" aria-hidden="true"></i><span data-ui="经典">经典</span></button>
+      <button data-theme-choice="glass"><i class="theme-preview glass" aria-hidden="true"></i><span data-ui="液态玻璃">液态玻璃</span></button>
+      <button data-theme-choice="transparent"><i class="theme-preview transparent" aria-hidden="true"></i><span data-ui="普通透明">普通透明</span></button>
+    </div></fieldset>
+    <div class="transparency-control"><div class="transparency-label"><label for="transparencyRange" data-ui="背景透明度">背景透明度</label><output id="transparencyValue" for="transparencyRange">70%</output></div><input id="transparencyRange" type="range" min="0" max="100" step="0.1" value="70" aria-describedby="transparencyHint"><div class="transparency-ends"><span data-ui="不透明">不透明</span><span data-ui="完全透明">完全透明</span></div><p id="transparencyHint"></p></div>
+  </section>
   <script src="assets/ui-i18n.js"></script>
   <script src="assets/wallboard.js"></script>
   <script src="assets/dashboard.js"></script>

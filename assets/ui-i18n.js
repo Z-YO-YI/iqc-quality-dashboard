@@ -1,5 +1,12 @@
 // Interface copy only. QMS names, identifiers and status codes remain source data.
 const UI_TEXT = {
+  '设置': ['Settings', 'ตั้งค่า'], '显示设置': ['Display settings', 'ตั้งค่าการแสดงผล'],
+  '关闭设置': ['Close settings', 'ปิดการตั้งค่า'], '语言': ['Language', 'ภาษา'], '主题效果': ['Appearance', 'รูปแบบธีม'],
+  '普通透明': ['Transparent', 'โปร่งใส'], '背景透明度': ['Background transparency', 'ความโปร่งใสของพื้นหลัง'],
+  '不透明': ['Opaque', 'ทึบแสง'], '完全透明': ['Fully transparent', 'โปร่งใสทั้งหมด'],
+  '更改即时生效，自动保存': ['Changes apply instantly and save automatically', 'ใช้การเปลี่ยนแปลงทันทีและบันทึกอัตโนมัติ'],
+  '仅调整背景，文字和图表保持清晰': ['Only backgrounds change; text and charts stay clear', 'ปรับเฉพาะพื้นหลัง ข้อความและกราฟยังคงชัดเจน'],
+  '选择透明主题后可调节': ['Choose a transparent theme to adjust', 'เลือกธีมโปร่งใสเพื่อปรับค่า'],
   '主题': ['Theme', 'ธีม'], '经典': ['Classic', 'คลาสสิก'], '液态玻璃': ['Liquid Glass', 'กระจกใส'],
   '全部任务循环滚动': ['Cycling through all tasks', 'เลื่อนวนงานทั้งหมด'],
   '供应商质量看板': ['Supplier quality dashboard', 'แดชบอร์ดคุณภาพซัพพลายเออร์'],
