@@ -1431,6 +1431,7 @@
     function applyLocale() {
       try { localStorage.setItem('iqc_locale', locale); } catch {}
       translateStaticUi();
+      syncThemeControls();
       $('#sbMonthLabel').textContent = supplierMonthLabel(supplierMonthOffset);
       setSyncState(syncState.loading, syncState.error, syncState.mode);
       document.documentElement.lang = locale === 'th' ? 'th' : locale === 'en' ? 'en' : 'zh-CN';
@@ -1508,6 +1509,7 @@
       });
     }
     function bindEvents() {
+      bindThemeControls();
       $$('[data-locale]').forEach((button) => button.addEventListener('click', () => {
         locale = button.dataset.locale; applyLocale();
         const menu = button.closest('details'); if (menu) { menu.open = false; menu.querySelector('summary').focus(); }
