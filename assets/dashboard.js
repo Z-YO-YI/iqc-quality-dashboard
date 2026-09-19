@@ -1378,7 +1378,7 @@
       if (!wallboardMode) return;
       const pages = Math.ceil(tableRows.length / TABLE_PAGE_SIZE);
       tableScroller = createTableScroller($('.table-card .table-wrap'), {
-        speed: 28,
+        speed: 36,
         onEnd: pages > 1 ? () => gotoPage(tablePage >= pages ? 1 : tablePage + 1) : undefined
       });
     }
