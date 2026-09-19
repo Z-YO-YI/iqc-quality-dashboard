@@ -7,6 +7,7 @@
   <title>SHARETRONIC.IQC 来料检验看板</title>
   <link rel="stylesheet" href="assets/dashboard.css">
   <link rel="stylesheet" href="assets/settings.css">
+  <link rel="stylesheet" href="assets/incoming-wallboard.css">
   <script src="echarts.min.js"></script>
 </head>
 <body data-page="overview">
@@ -213,7 +214,7 @@
             <div class="card-head"><div><h2 class="card-title" data-i18n="inspector_title">检验员待检统计</h2><p class="card-subtitle" data-i18n="inspector_subtitle">当前待检任务 · 按数量排序</p></div><span class="kpi-icon amber"><svg width="16" height="16"><use href="#icon-user"/></svg></span></div>
             <div class="inspector-summary"><strong id="inspectorTotal">—</strong><span data-i18n="unit_waiting_lot">个待检批次</span></div>
             <div class="inspector-columns" id="inspectorColumns">
-              <div class="inspector-column empty"><strong>—</strong><i style="--h:0%"></i><span data-i18n="unit_waiting_lot">个待检批次</span></div>
+              <div class="inspector-column empty"><strong>—</strong><i style="--share:0%"></i><span data-i18n="unit_waiting_lot">个待检批次</span></div>
             </div>
             <div class="capacity-line"><span data-i18n="capacity_label">团队产能使用率</span><strong id="capacityValue">—</strong></div>
           </article>

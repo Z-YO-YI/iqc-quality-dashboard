@@ -94,10 +94,6 @@
     function daysAgoStr(n) { const d = new Date(); d.setDate(d.getDate() - n); return fmtDate(d); }
     function monthPrefix(offset = 0) { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + offset); return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}`; }
 
-    async function qmsLogin() {
-      // 登录已迁移到 Cloudflare Worker 代理（凭证保存在服务端 Secrets），前端不再持有凭证
-      return null;
-    }
     function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
     async function qmsRequest(url, retry = true) {
       // 走 Cloudflare Worker 代理：前端只传路径 + 查询参数，凭证保存在服务端 Secrets
@@ -587,10 +583,13 @@
 
     function renderInspectors() {
       const list = DASH.inspectors;
+      const columns = list.length <= 6 ? 1 : list.length <= 16 ? 2 : 3;
+      $('#inspectorColumns').style.setProperty('--inspector-columns', columns);
+      $('#inspectorColumns').style.setProperty('--inspector-rows', Math.max(1, Math.ceil(list.length / columns)));
       $('#inspectorTotal').textContent = nf.format(list.reduce((a, b) => a + b.count, 0));
       if (!list.length) { $('#inspectorColumns').innerHTML = `<div style="color:var(--muted);font-size: 12px;align-self:center">${ui('暂无待检任务')}</div>`; $('#capacityValue').textContent = '0%'; return; }
       const max = list[0].count || 1;
-      $('#inspectorColumns').innerHTML = list.map((e, i) => `<div class="inspector-column"><strong>${e.count}</strong><i style="--h:${Math.max(14, e.count / max * 93)}%"></i><span title="${escHtml(e.name === '未分配' ? ui('未分配') : e.name)}">${escHtml(e.name === '未分配' ? ui('未分配') : e.name)}</span></div>`).join('');
+      $('#inspectorColumns').innerHTML = list.map(e => `<div class="inspector-column"><strong>${e.count}</strong><i style="--share:${e.count / max * 100}%" aria-hidden="true"></i><span title="${escHtml(e.name === '未分配' ? ui('未分配') : e.name)}">${escHtml(e.name === '未分配' ? ui('未分配') : e.name)}</span></div>`).join('');
       $('#capacityValue').textContent = (list.reduce((a, b) => a + b.count, 0) / (list.length * max) * 100).toFixed(1) + '%';
     }
 
@@ -628,13 +627,6 @@
     }
     function sbEmptyHtml(title, sub) {
       return `<div class="sb-empty"><strong>${escHtml(title)}</strong><span>${escHtml(sub)}</span></div>`;
-    }
-
-    // 当前周期（月/季/年）的明细记录
-    function sbPeriodRecords() {
-      if (sbPeriod === 'quarter') { const from = monthRange(-2).start; return DASH.records.filter((r) => (r.createDate || '') >= from); }
-      if (sbPeriod === 'year') { const from = monthRange(-11).start; return DASH.records.filter((r) => (r.createDate || '') >= from); }
-      return DASH.month;
     }
 
     // 供应商聚合（含环比、风险、物料类别、最近批次日期）

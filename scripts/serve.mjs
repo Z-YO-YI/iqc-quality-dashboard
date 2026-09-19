@@ -1,6 +1,7 @@
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 const files = { '/assets/ui-i18n.js': ['assets/ui-i18n.js', 'text/javascript'], '/assets/wallboard.js': ['assets/wallboard.js', 'text/javascript'], '/': ['index.html', 'text/html'], '/index.html': ['index.html', 'text/html'], '/assets/dashboard.js': ['assets/dashboard.js', 'text/javascript'], '/assets/dashboard.css': ['assets/dashboard.css', 'text/css'], '/echarts.min.js': ['echarts.min.js', 'text/javascript'] };
+files['/assets/incoming-wallboard.css'] = ['assets/incoming-wallboard.css', 'text/css'];
 files['/assets/settings.css'] = ['assets/settings.css', 'text/css'];
 createServer(async (req, res) => {
   if (req.url === '/__test__/') {
