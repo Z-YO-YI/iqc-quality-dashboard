@@ -716,7 +716,7 @@
     body.supplier-wallboard-mode .analytics-grid,
     body.supplier-wallboard-mode .page-footer { display: none; }
     body.supplier-wallboard-mode .content { max-width: 1920px; min-height: 100vh; margin: 0 auto; padding: 22px 28px 20px; }
-    body.supplier-wallboard-mode .sb-page { display: flex; flex-direction: column; min-height: calc(100vh - 42px); }
+    body.supplier-wallboard-mode .sb-page { display: grid; min-height: 0; }
     body.supplier-wallboard-mode .sb-filters,
     body.supplier-wallboard-mode .sb-actions,
     body.supplier-wallboard-mode .sb-filter-tags,
@@ -951,3 +951,67 @@
 
     @media (max-width: 1599px) { .sb-kpi-value { font-size: 26px; } .sb-kpi { padding: 14px 15px; } }
     @media (max-width: 1359px) { .sb-kpis { grid-template-columns: repeat(3, 1fr); } .sb-row-top { grid-template-columns: 1fr; } .sb-row-bottom { grid-template-columns: 1fr 1fr; } .sb-card-risklist { grid-column: 1 / -1; } }
+
+/* Viewport tracks, rather than content height, control both supplier chart rows. */
+body.supplier-wallboard-mode { overflow: hidden; }
+body.supplier-wallboard-mode .content {
+  height: 100vh; height: 100dvh; min-height: 0; padding: 16px 24px 58px;
+  overflow: hidden; box-sizing: border-box;
+}
+body.supplier-wallboard-mode .sb-page {
+  display: grid; height: 100%; min-height: 0;
+  grid-template-rows: auto auto minmax(0, 1fr) minmax(0, 1fr) minmax(60px, .32fr);
+  gap: 10px; overflow: hidden;
+}
+body.supplier-wallboard-mode .sb-topbar,
+body.supplier-wallboard-mode .sb-kpis,
+body.supplier-wallboard-mode .sb-row { margin: 0; min-height: 0; }
+body.supplier-wallboard-mode .sb-row { grid-template-rows: minmax(0, 1fr); align-items: stretch; }
+body.supplier-wallboard-mode .sb-row-bottom { grid-template-columns: minmax(0, .9fr) minmax(0, 1fr) minmax(0, 1.05fr); }
+body.supplier-wallboard-mode .sb-card { min-width: 0; min-height: 0; overflow: hidden; }
+body.supplier-wallboard-mode .sb-card-head { padding: 10px 12px 0; flex-wrap: wrap; gap: 6px; }
+body.supplier-wallboard-mode .sb-card-title { font-size: clamp(12px, 1.2vw, 16px); }
+body.supplier-wallboard-mode .sb-chart { flex: 1 1 0; min-height: 0; overflow: hidden; }
+body.supplier-wallboard-mode .sb-empty { min-height: 0; height: 100%; padding: 12px; box-sizing: border-box; }
+body.supplier-wallboard-mode .sb-risk-table-wrap { flex: 1 1 0; height: 0; min-height: 0; overflow: auto; }
+body.supplier-wallboard-mode .sb-alerts { padding-bottom: 0; }
+body.supplier-wallboard-mode .sb-alert-cards { overflow: auto; min-height: 0; padding: 6px 12px; }
+body.supplier-wallboard-mode .sb-alert-card { padding: 7px 10px; }
+body.supplier-wallboard-mode .wallboard-bar { bottom: 10px; right: 24px; }
+body.wallboard-mode .table-wrap { overflow-y: hidden; overscroll-behavior: contain; }
+body.wallboard-mode .table-pagination { flex: 0 0 auto; padding: 3px 12px; }
+body.wallboard-mode .card, body.supplier-wallboard-mode .sb-card { box-shadow: none; }
+.wallboard-languages { display: flex; gap: 3px; }
+.wallboard-languages button { color: inherit; background: transparent; border: 0; border-radius: 4px; padding: 4px 7px; cursor: pointer; }
+.wallboard-languages button.active { background: #e8efff; color: #2457bf; }
+@media (prefers-reduced-motion: reduce) {
+  body.wallboard-mode .table-wrap, body.supplier-wallboard-mode .sb-risk-table-wrap { overflow-y: auto; }
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+
+.sb-kpi-value small { margin-inline-start: 4px; }
+.sb-risk-table { min-width: 0; }
+body.supplier-wallboard-mode .sb-risk-table th { white-space: normal; overflow-wrap: anywhere; font-size: 10px; padding: 6px 4px; }
+body.supplier-wallboard-mode .sb-risk-table td { padding-inline: 4px; font-size: 11px; }
+body.supplier-wallboard-mode .sb-kpi-label, body.supplier-wallboard-mode .sb-kpi-sub { overflow-wrap: anywhere; }
+
+body.wallboard-mode { overflow: hidden; }
+body.wallboard-mode .content { height: 100dvh; padding-top: 54px; grid-template-rows: minmax(0, 1.4fr) minmax(0, .65fr) minmax(0, .65fr); }
+body.wallboard-mode .analytics-card { display: flex; flex-direction: column; min-height: 0; padding: 10px 14px; }
+body.wallboard-mode .analytics-card .card-subtitle { display: none; }
+body.wallboard-mode .analytics-card .card-head { flex: 0 0 auto; }
+body.wallboard-mode .inspector-summary { margin: 0; }
+body.wallboard-mode .inspector-summary strong { font-size: 22px; }
+body.wallboard-mode .inspector-columns { flex: 1 1 0; min-height: 0; height: auto; margin-top: 0; padding-top: 0; }
+body.wallboard-mode .inspector-column { min-height: 0; }
+body.wallboard-mode .inspector-column i { max-height: calc(100% - 36px); flex-shrink: 1; }
+body.wallboard-mode .capacity-line { margin-top: 3px; padding-top: 3px; font-size: 10px; }
+body.wallboard-mode .result-content { flex: 1 1 0; min-height: 0; margin-top: 2px; }
+body.wallboard-mode .result-foot { padding-top: 3px; margin-top: 3px; }
+body.wallboard-mode .table-toolbar .card-subtitle { display: none; }
+body.wallboard-mode th { white-space: normal; overflow-wrap: anywhere; }
+body.wallboard-mode td { overflow: hidden; text-overflow: ellipsis; }
+
+body.wallboard-mode .result-donut { width: 86px; height: 86px; }
+body.wallboard-mode .result-donut::before { width: 62px; height: 62px; }
+body.wallboard-mode .result-core span { font-size: 9px; }

@@ -11,10 +11,11 @@ function app() {
     document: { querySelector(s) { if (!elements.has(s)) elements.set(s, { style: {}, classList: { toggle() {}, remove() {} } }); return elements.get(s); }, querySelectorAll() { return []; } },
     localStorage: { getItem(k) { return store.get(k) || null; }, setItem(k, v) { store.set(k, v); } }
   });
+  vm.runInContext(fs.readFileSync('assets/ui-i18n.js', 'utf8'), ctx);
   vm.runInContext(source.slice(0, source.lastIndexOf('    applyLocale();')), ctx);
   vm.runInContext('const originalRenderSbBoard = renderSbBoard;', ctx);
   vm.runInContext('renderAll = () => {}; renderSbBoard = () => {}; renderSbTrendChart = () => {}; showToast = () => {}; sleep = async () => {};', ctx);
-  return { ctx, store, run: (s) => vm.runInContext(s, ctx) };
+  return { ctx, store, elements, run: (s) => vm.runInContext(s, ctx) };
 }
 test('pagination respects server total even when server caps page size', async () => {
   const a = app(); let calls = 0;
@@ -112,4 +113,37 @@ test('chart recovers after empty-state markup replaced its canvas', () => {
   a.ctx.echarts = { init() { created++; return { current: true }; } };
   a.run("sbCharts.top10 = oldChart; ensureSbChart('top10', chartElement); ensureSbChart('top10', chartElement)");
   assert.equal(disposed, true); assert.equal(cleared, true); assert.equal(created, 1);
+});
+test('all added interface messages provide English and Thai with matching placeholders', () => {
+  const a = app();
+  for (const [source, translations] of Object.entries(a.run('UI_TEXT'))) {
+    const placeholders = text => [...text.matchAll(/\{(\w+)\}/g)].map(m => m[1]).sort();
+    for (const translated of translations) {
+      assert.ok(translated.trim(), source);
+      assert.deepEqual(placeholders(translated), placeholders(source), source);
+      assert.doesNotMatch(translated, /[\u4e00-\u9fff]/, source);
+    }
+  }
+});
+test('risk reasons update on language change without changing numeric risk classification', () => {
+  const a = app();
+  a.run("sbSuppliersData = computeSbSuppliers(Array.from({length: 6}, () => ({supplierName:'Example',syncInspectionResultName:'退货'})))");
+  const level = a.run('sbSuppliersData[0].risk.level');
+  a.run("locale = 'en'");
+  const en = a.run('sbRiskInfo(sbSuppliersData[0])');
+  assert.equal(en.level, level); assert.match(en.reasons[0], /Pass rate/);
+  a.run("locale = 'th'");
+  assert.match(a.run('sbRiskInfo(sbSuppliersData[0]).reasons[0]'), /อัตราผ่าน/);
+  a.run("locale = 'mix'");
+  assert.match(a.run("ui('质量预警')"), /质量预警 · /);
+});
+test('wallboard renders a bounded page and reaches later records without dropping them', () => {
+  const a = app(); a.ctx.createTableScroller = () => ({ stop() {} });
+  a.ctx.computeTableRows = () => Array.from({length: 1500}, (_, id) => ({ id }));
+  a.ctx.rowHtml = r => `<tr data-row="${r.id}"></tr>`;
+  a.run('wallboardMode = true; renderTableRows()');
+  assert.equal((a.elements.get('#iqcTableBody').innerHTML.match(/data-row=/g) || []).length, 20);
+  a.run('gotoPage(75)');
+  assert.match(a.elements.get('#iqcTableBody').innerHTML, /data-row="1499"/);
+  assert.equal(a.elements.get('#pageInfo').textContent, '75 / 75');
 });

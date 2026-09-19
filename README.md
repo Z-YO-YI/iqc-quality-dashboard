@@ -1,73 +1,51 @@
 # IQC 来料检验看板
 
-静态 HTML/CSS/JavaScript + 本地 ECharts，读取 Cloudflare Worker 代理提供的 QMS 数据。正式仓库为 `Z-YO-YI/iqc-quality-dashboard`。
+正式仓库：[Z-YO-YI/iqc-quality-dashboard](https://github.com/Z-YO-YI/iqc-quality-dashboard)。静态 HTML/CSS/JavaScript + ECharts，通过既有 Cloudflare Worker 只读访问 QMS；前端不持有登录凭证。
 
-## 本地开发
+## 开发与验证
 
-需要 Node.js 22 或更新版本，无第三方开发依赖，无需安装 npm 包。
+需要 Node.js 22+，无开发依赖，无需安装 npm 包。
 
 ```sh
 node scripts/serve.mjs
-node --check assets/dashboard.js
 node scripts/check.mjs
-node --test tests/data.test.cjs
+node --test tests/*.test.cjs
 node scripts/build.mjs
 git diff --check
 ```
 
-预览地址为 `http://127.0.0.1:8765`。预览默认请求真实 QMS，只读查询；自动化测试使用虚构数据，不访问生产接口。构建产物在被 Git 忽略的 `dist/`，仅复制五个公开站点文件，不包含文档、测试或本地配置。
+默认预览 http://127.0.0.1:8765，可用第二个命令行参数指定端口。普通预览连接真实只读接口。访问 /__test__/ 使用 6000 条虚构记录、1500 条待检任务与 300 家风险供应商，不访问 QMS，不使用真实浏览器缓存。测试入口与测试代码仅用于本机，生产构建不会复制它们。
 
-## 目录
+## 代码结构
 
-- `index.html`：页面结构。
-- `assets/dashboard.css`：样式。
-- `assets/dashboard.js`：数据请求、状态、统计与 UI。
-- `echarts.min.js`：现有图表依赖。
-- `scripts/`：静态检查、构建、仅绑定本机的预览服务。
-- `tests/`：请求、分页、缓存和异步竞态回归测试。
-- `.github/workflows/ci.yml`：PR 和开发分支验证。
+- index.html：页面结构与声明式翻译标记。
+- assets/dashboard.js：请求、统计、状态和渲染。
+- assets/ui-i18n.js：补充界面文案、中文/英文/泰文/中泰翻译；业务原始名称不改写。
+- assets/wallboard.js：表格自动滚动与图表尺寸调度。
+- assets/dashboard.css：布局与固定看板行高。
+- tests/：请求、分页、缓存、语言、风险缓存及滚动回归。
+- scripts/：静态检查、构建、只绑定本机的预览服务。
 
-## 数据规则
+## 看板行为
 
-请求超时为 30 秒，最多尝试三次；鉴权和业务错误直接失败。分页以服务端 total 为准，检测缺失页和重复页，超过 1000 页停止并报错。总览四个数据集全部成功才替换快照；任意失败保留之前数据并标识异常或缓存状态。
+供应商看板以视口高度分配两个图表行与预警区，下方三张卡片等高，风险列表在卡片内滚动，行数不会撑高页面。两个大屏均有语言按钮。
 
-缓存带版本、工厂和时间，30 分钟后失效；保存待办和上月记录，避免从不完整记录重算环比。供应商趋势和月份请求带序列号，旧响应不能覆盖新选择。
+来料看板每页最多 20 条，自动滚动到尾部后停留再翻页，所有筛选结果都可轮播；也能手动翻页。鼠标停留暂停移动，后台页面停止动画。启用系统“减少动态效果”时关闭自动滚动，保留手动滚动与分页。动画使用 tbody 的 transform，布局尺寸仅在尺寸变化时测量。退出看板清理监听器和动画。
 
-**业务口径待确认**：交接文档声称批次合格率按全部批次计算且包含进行中，但远程线上代码实际使用“合格 / 已判定批次”。本次保留线上公式，不在缺少 QMS 对账证据时变更指标含义。季度/年度当前为滚动 3/12 个月；不是自然季度/年度。Pareto/DPPM 缺少上游字段，继续显示空状态。
+请求超时 30 秒，最多三次尝试；总览四个数据集全部成功才替换快照。分页以 total 为准，检测重复页与缺失页。缓存按工厂、版本和 30 分钟有效期隔离，保留待办与上月数据。
 
-## 发布与维护
+## 分支与发布
 
-目前 Pages 从 `gh-pages` 根目录部署。`main` 落后于 `gh-pages`。接管分支基于远程线上版本创建，应先 PR 合并到 main，再通过 main → gh-pages 的发布 PR 同步整个站点；不要仅更新 index.html（现在还依赖 assets）。必须选择 merge commit，保持两分支共享历史，不使用 force push，不重写历史。
+main 是正式源码，功能在独立分支经 PR、CI 验证后合并。Deploy Pages 工作流再次执行检查和测试，再构建 dist 并发布 GitHub Pages。Pages 应配置为 GitHub Actions（build_type=workflow）；自定义域名保持 iqc.namecheap.xin。gh-pages 保留为旧部署历史，不再作为开发或发布源。
 
-发布前完成 CI、浏览器总览/任务/供应商/多语言验收、真实 QMS 数量对账，以及下述凭证处理。发布后验证域名、静态资源、Worker 健康与真实查询。故障回退使用 revert PR；保留 CNAME。
+构建仅复制 index.html、CNAME、echarts.min.js 与三个脚本及样式文件，不发布 tests、文档或本地设置。禁止通过 API 单独覆盖 index.html，否则会遗漏 assets。回退通过 revert PR，不 force push、不覆盖历史。
 
-## 凭证事件与发布阻塞
+## 凭证处理
 
-2026-09-19 核查：远程 main 仍有硬编码凭证；gh-pages 当前版本已改用代理。Cloudflare 管理台确认三项 Secret 存在且加密，但不能读取值或证明 QMS 旧密码已失效。历史日志未找到完成换密的证据。
+接管时 main 的旧 HTML 内嵌登录凭证，gh-pages 最新代码已经迁移到 Worker。此次合并用不含凭证的代理版替换旧 HTML，忽略 .env、.dev.vars 等敏感配置，不提交旧 HANDOVER 或历史工作日志。
 
-需要账户所有者在 QMS 更换已泄露密码，并在 Worker 更新对应 Secret；涉及共享 Basic Auth 的轮换应由 QMS 管理员协调。不要把新旧密码、令牌、真实检验数据写入 Git、截图或聊天。完成后由已登录的正常会话验证代理查询。历史凭证必须通过撤销/轮换失效，删除当前文件不能清除泄露风险。
+所有者明确要求不改 QMS 密码；本次未修改 QMS 账户及 Worker Secret。删除当前源码不能撤销已泄露凭证，也不能清除 Git 历史；本次未重写历史。Cloudflare 三个 Secret 已确认加密保存，但其轮换状态仍未知。
 
-账户所有者已明确要求保留现有 QMS 密码与 Worker Secret，仅清理当前源码中的凭证并继续提交、合并。未更改生产 Worker 或生产部署。当前不能宣称项目已正式发布或安全事件已解决。
+## 已知边界
 
-此外，交接 Worker 采用公开入口、宽泛路径前缀及通配 CORS；CORS 不是鉴权。正式验收还需确认企业检验数据访问控制要求，并验证线上 Worker 是否存在同样配置。
-
-## 恢复 GitHub 同步
-
-账户所有者已授权清理当前源码并继续同步，执行：
-
-```sh
-git fetch origin
-git switch codex/iqc-stability
-git merge origin/gh-pages
-node --check assets/dashboard.js
-node scripts/check.mjs
-node --test tests/data.test.cjs
-node scripts/build.mjs
-git diff --check
-git add index.html assets scripts tests package.json .gitignore .gitattributes README.md CHANGELOG.md .github docs
-git commit -m "fix: harden IQC data loading and add maintenance checks"
-git push -u origin codex/iqc-stability
-gh pr create --base main --head codex/iqc-stability --title "fix: stabilize IQC dashboard data loading" --body-file docs/PR.md
-```
-
-检查 CI 和正式验收事项后才合并 PR。后续 main → gh-pages 发布 PR 必须包含页面、CSS、JS、图表文件及 CNAME，并验证 Pages 构建成功。
+保留现有业务算法：主要 KPI 使用“合格 / 已判定批次”，部分排名图使用“(全部批次 - 退货 - 特采) / 全部批次”。统一前需要对照 QMS 官方业务口径。季/年目前为滚动 3/12 个月；大工厂性能及 Worker 访问控制属于后续独立事项。Pareto/DPPM 缺少上游字段时显示空状态。

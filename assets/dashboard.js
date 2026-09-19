@@ -62,6 +62,7 @@
     });
 
     let locale = 'zh';
+    try { const saved = localStorage.getItem('iqc_locale'); if (['zh', 'en', 'th', 'mix'].includes(saved)) locale = saved; } catch {}
     let currentFlowRange = 'today';
     let sidebarHidden = false;
     let wallboardMode = false;
@@ -168,7 +169,7 @@
     }
     function renderFactoryList() {
       const el = $('#factoryList'); if (!el) return;
-      if (!FACTORIES.length) { el.innerHTML = '<div class="settings-hint">工厂列表加载中…</div>'; return; }
+      if (!FACTORIES.length) { el.innerHTML = `<div class="settings-hint">${ui('工厂列表加载中…')}</div>`; return; }
       el.innerHTML = FACTORIES.map((f) => {
         const active = f.code === currentFactory.code;
         return `<div class="factory-item ${active ? 'active' : ''}" data-code="${escHtml(f.code)}" role="button" tabindex="0">
@@ -210,7 +211,7 @@
       clearDash();
       renderAll();
       closeSettingsModal();
-      showToast(`已切换到 ${f.name}`);
+      showToast(ui('已切换到 {name}', {name:f.name}));
       loadDashboardData();
     }
 
@@ -347,7 +348,7 @@
         alerts.push({ type: 'danger', titleKey: 'alert_overdue', copy: `${r.orderNumber} · ${cleanSupplierName(r.supplierName)} · ${r.totalTime || '超时'}` });
       });
       const urgentPending = DASH.records.filter((r) => r.expeditedFlagName === '是' && r.inspectionStatus === '0' && ['组长确认', '配置模板'].includes(r.taskName));
-      if (urgentPending.length) alerts.push({ type: 'warn', titleKey: 'alert_urgent', copy: `${urgentPending.length} ${t('unit_lot_full')}等待检验员接单` });
+      if (urgentPending.length) alerts.push({ type: 'warn', titleKey: 'alert_urgent', copy: ui('{value} 批等待检验员接单', {value:urgentPending.length}) });
       DASH.month.filter((r) => r.syncInspectionResultName === '退货').forEach((r) => {
         alerts.push({ type: 'info', titleKey: 'alert_fail', copy: `${cleanSupplierName(r.supplierName)} · ${r.materialNumber} · ${t('result_fail')}` });
       });
@@ -405,17 +406,17 @@
         <td>${escHtml(r.taskName || '')}</td>
         <td><span class="status-pill ${st.key}" data-i18n="${st.i18n}">${st.label}</span></td>
         <td><span class="status-pill ${res.key}" data-i18n="${res.i18n}">${res.label}</span></td>
-        <td><button class="action-btn detail-btn" title="View"><svg width="13" height="13"><use href="#icon-external"/></svg></button></td>
+        <td><button class="action-btn detail-btn" title="${ui('View')}"><svg width="13" height="13"><use href="#icon-external"/></svg></button></td>
       </tr>`;
     }
     function renderTableRows() {
+      stopTableAutoScroll();
       tableRows = computeTableRows();
       const total = tableRows.length;
       const totalPages = Math.max(1, Math.ceil(total / TABLE_PAGE_SIZE));
-      // 看板模式不分页（自动滚动显示全部）；普通模式每页 20 条
-      if (wallboardMode) { tablePage = 1; }
-      else { if (tablePage > totalPages) tablePage = totalPages; if (tablePage < 1) tablePage = 1; }
-      const rows = wallboardMode ? tableRows : tableRows.slice((tablePage - 1) * TABLE_PAGE_SIZE, tablePage * TABLE_PAGE_SIZE);
+      // Bound the DOM to one page; the wallboard advances after each scroll cycle.
+      if (tablePage > totalPages) tablePage = totalPages; if (tablePage < 1) tablePage = 1;
+      const rows = tableRows.slice((tablePage - 1) * TABLE_PAGE_SIZE, tablePage * TABLE_PAGE_SIZE);
       const body = $('#iqcTableBody');
       body.innerHTML = rows.map(rowHtml).join('') + `<tr class="empty-row" id="emptyRow"><td colspan="14"><span data-i18n="empty_state">${t('empty_state')}</span></td></tr>`;
       // 侧边栏徽章 = 待办任务总数
@@ -424,10 +425,10 @@
       $('#visibleCount').textContent = total;
       const pageRange = $('#pageRange');
       if (pageRange) {
-        if (!wallboardMode && total > 0) {
+        if (total > 0) {
           const start = (tablePage - 1) * TABLE_PAGE_SIZE + 1;
           const end = Math.min(tablePage * TABLE_PAGE_SIZE, total);
-          pageRange.textContent = ` · 当前 ${start}-${end} 条`;
+          pageRange.textContent = ' · ' + ui('正在显示 {start}-{end} / {total}', {start, end, total});
         } else {
           pageRange.textContent = '';
         }
@@ -435,14 +436,14 @@
       $('#emptyRow').style.display = rows.length ? 'none' : 'table-row';
       const pag = $('#tablePagination');
       if (pag) {
-        if (wallboardMode) { pag.style.display = 'none'; }
-        else {
+        {
           pag.style.display = 'flex';
           $('#pageInfo').textContent = `${tablePage} / ${totalPages}`;
           $('#prevPageBtn').disabled = tablePage <= 1;
           $('#nextPageBtn').disabled = tablePage >= totalPages;
         }
       }
+      if (wallboardMode) startTableAutoScroll();
     }
     function gotoPage(p) {
       tablePage = p;
@@ -518,7 +519,7 @@
       $('#flowDonut').style.background = flowConic(data);
       const now = new Date(); const p = (n) => String(n).padStart(2, '0');
       const timeStr = `${p(now.getHours())}:${p(now.getMinutes())}`;
-      $('.donut-caption').textContent = (locale === 'th' ? 'ส่งตรวจสะสม · ถึง ' : locale === 'en' ? 'Cumulative intake · as of ' : '累计送检 · 截止 ') + timeStr;
+      $('.donut-caption').textContent = ui('累计送检 · 截止 {time}', {time:timeStr});
       $$('[data-range]').forEach((b) => b.classList.toggle('active', b.dataset.range === range));
     }
 
@@ -554,9 +555,9 @@
       $('#iqcTrendFoot').innerHTML = days.map((d) => `<span>${d.slice(5)}</span>`).join('');
       const note = $('#trendNote span');
       if (note) {
-        if (valid.length >= 2) note.textContent = locale === 'th' ? `มีข้อมูล ${valid.length} วัน · เฉลี่ย ${avg.toFixed(1)}%` : locale === 'en' ? `${valid.length} days with data · avg ${avg.toFixed(1)}%` : `近 7 日 ${valid.length} 天有数据 · 均值 ${avg.toFixed(1)}%`;
-        else if (valid.length === 1) note.textContent = locale === 'th' ? `มีข้อมูลเฉพาะ ${valid[0].d.slice(5)} · ${valid[0].passRate.toFixed(1)}%` : locale === 'en' ? `Only ${valid[0].d.slice(5)} · ${valid[0].passRate.toFixed(1)}%` : `仅 ${valid[0].d.slice(5)} 有数据 · ${valid[0].passRate.toFixed(1)}%`;
-        else note.textContent = locale === 'th' ? 'ไม่มีข้อมูลในช่วง 7 วัน' : locale === 'en' ? 'No data in the last 7 days' : '近 7 日暂无送检数据';
+        if (valid.length >= 2) note.textContent = ui('近 7 日 {days} 天有数据 · 均值 {rate}%', {days:valid.length,rate:avg.toFixed(1)});
+        else if (valid.length === 1) note.textContent = ui('仅 {date} 有数据 · {rate}%', {date:valid[0].d.slice(5),rate:valid[0].passRate.toFixed(1)});
+        else note.textContent = ui('近 7 日暂无送检数据');
       }
     }
 
@@ -576,9 +577,9 @@
     function renderInspectors() {
       const list = DASH.inspectors;
       $('#inspectorTotal').textContent = nf.format(list.reduce((a, b) => a + b.count, 0));
-      if (!list.length) { $('#inspectorColumns').innerHTML = '<div style="color:var(--muted);font-size: 12px;align-self:center">暂无待检任务</div>'; $('#capacityValue').textContent = '0%'; return; }
+      if (!list.length) { $('#inspectorColumns').innerHTML = `<div style="color:var(--muted);font-size: 12px;align-self:center">${ui('暂无待检任务')}</div>`; $('#capacityValue').textContent = '0%'; return; }
       const max = list[0].count || 1;
-      $('#inspectorColumns').innerHTML = list.map((e, i) => `<div class="inspector-column"><strong>${e.count}</strong><i style="--h:${Math.max(14, e.count / max * 93)}%"></i><span title="${escHtml(e.name)}">${escHtml(e.name)}</span></div>`).join('');
+      $('#inspectorColumns').innerHTML = list.map((e, i) => `<div class="inspector-column"><strong>${e.count}</strong><i style="--h:${Math.max(14, e.count / max * 93)}%"></i><span title="${escHtml(e.name === '未分配' ? ui('未分配') : e.name)}">${escHtml(e.name === '未分配' ? ui('未分配') : e.name)}</span></div>`).join('');
       $('#capacityValue').textContent = (list.reduce((a, b) => a + b.count, 0) / (list.length * max) * 100).toFixed(1) + '%';
     }
 
@@ -592,6 +593,10 @@
     let sbPrevMap = new Map();
     let sbCategories = [];
     const sbCharts = {};
+
+    function setChartOption(chart, option) {
+      chart.setOption({ ...option, animation: !(wallboardMode || supplierWallboardMode), animationDuration: 200 }, { notMerge: true, lazyUpdate: true });
+    }
 
     function ensureSbChart(key, el) {
       // 空态/加载提示替换了 canvas DOM 后，旧实例不能继续使用。
@@ -643,33 +648,33 @@
         const prevRate = sbPrevMap.has(e.code) ? sbPrevMap.get(e.code) : null;
         const delta = (rate !== null && prevRate !== null) ? (rate - prevRate) : null;
         const categories = Array.from(e._cats || []);
-        const obj = { ...e, categories, total, nonconforming, rate, raw: rate === null ? 0 : rate, score: rate === null ? '无数据' : rate.toFixed(1) + '%', insufficient, delta };
+        const obj = { ...e, categories, total, nonconforming, rate, raw: rate === null ? 0 : rate, score: rate === null ? ui('无数据') : rate.toFixed(1) + '%', insufficient, delta };
         delete obj._cats;
-        obj.risk = sbRiskInfo(obj); // 预计算风险，避免渲染时对 200+ 供应商重复计算
+        obj.risk = sbRiskInfo(obj); obj.riskLocale = locale; // 预计算风险，避免渲染时对 200+ 供应商重复计算
         return obj;
       }).sort((a, b) => (b.nonconforming - a.nonconforming) || (a.rate - b.rate) || (b.batches - a.batches));
     }
 
     function sbRiskInfo(s) {
-      if (s && s.risk) return s.risk; // 预计算缓存命中
+      if (s && s.risk && s.riskLocale === locale) return s.risk; // 预计算缓存命中
       const reasons = [];
       let level = 'normal';
       if (s.insufficient) {
         level = 'insufficient';
-        reasons.push('检验批次不足 5 批，暂不参与正式排名');
+        reasons.push(ui('检验批次不足 5 批，暂不参与正式排名'));
       } else {
-        if (s.rate === null) { level = 'insufficient'; reasons.push('无检验结果'); }
+        if (s.rate === null) { level = 'insufficient'; reasons.push(ui('无检验结果')); }
         else {
           if (s.rate < 90 || s.fail >= 2 || (s.fail === 1 && s.batches <= 2)) level = 'high';
           else if (s.rate < SB_TARGET || (s.delta !== null && s.delta < -2) || (s.total > 0 && s.special / s.total > 0.15)) level = 'mid';
-          if (s.rate < SB_TARGET) reasons.push(`合格率 ${s.rate.toFixed(1)}% 低于目标 ${SB_TARGET}%`);
-          if (s.fail >= 2) reasons.push(`连续 ${s.fail} 批不合格`);
-          if (s.fail === 1 && s.batches === 1) reasons.push('单批严重异常');
-          if (s.delta !== null && s.delta < -2) reasons.push(`环比下降 ${Math.abs(s.delta).toFixed(1)}pp`);
-          if (s.total > 0 && s.special / s.total > 0.15) reasons.push(`特采率 ${(s.special / s.total * 100).toFixed(0)}% 偏高`);
+          if (s.rate < SB_TARGET) reasons.push(ui('合格率 {value}% 低于目标 {target}%', {value:s.rate.toFixed(1),target:SB_TARGET}));
+          if (s.fail >= 2) reasons.push(ui('{value} 批不合格', {value:s.fail}));
+          if (s.fail === 1 && s.batches === 1) reasons.push(ui('单批严重异常'));
+          if (s.delta !== null && s.delta < -2) reasons.push(ui('环比下降 {value}pp', {value:Math.abs(s.delta).toFixed(1)}));
+          if (s.total > 0 && s.special / s.total > 0.15) reasons.push(ui('特采率 {value}% 偏高', {value:(s.special / s.total * 100).toFixed(0)}));
         }
       }
-      return { level, reasons };
+      const result = { level, reasons }; s.risk = result; s.riskLocale = locale; return result;
     }
 
     // 12 个月趋势：按月查 total，分批并发（每批 3 个月=12 请求），防 QMS 限流 + 防工厂切换竞态
@@ -732,58 +737,58 @@
       const sign = (v) => (v >= 0 ? '+' : '') + v;
       // 供应商数环比
       const supDelta = prevCount ? (list.length - prevCount) : null;
-      set('sbKpiSuppliers', `${nf.format(list.length)}<small>家</small>`, 'sbKpiSuppliersSub', supDelta === null ? '本月检验供应商' : `环比 ${sign(supDelta)} 家`, supDelta === null ? '' : (supDelta >= 0 ? 'up' : 'down'));
+      set('sbKpiSuppliers', `${nf.format(list.length)}<small>${ui('家')}</small>`, 'sbKpiSuppliersSub', supDelta === null ? ui('本月检验供应商') : `${ui('环比')} ${sign(supDelta)} ${ui('家')}`, supDelta === null ? '' : (supDelta >= 0 ? 'up' : 'down'));
       // 批次环比
       const lotDelta = prev.total ? ((totalLots - prev.total) / prev.total * 100) : null;
-      set('sbKpiLots', `${nf.format(totalLots)}<small>批</small>`, 'sbKpiLotsSub', lotDelta === null ? '本月来料检验批次' : `环比 ${sign(lotDelta.toFixed(1))}%`, lotDelta === null ? '' : (lotDelta >= 0 ? 'up' : 'down'));
+      set('sbKpiLots', `${nf.format(totalLots)}<small>${ui('批')}</small>`, 'sbKpiLotsSub', lotDelta === null ? ui('本月来料检验批次') : `${ui('环比')} ${sign(lotDelta.toFixed(1))}%`, lotDelta === null ? '' : (lotDelta >= 0 ? 'up' : 'down'));
       // 合格率（环比用 pp）
       const passDelta = (passRate !== null && prev.total > 0) ? (passRate - prev.passRate) : null;
-      set('sbKpiPassrate', passRate === null ? '无数据' : `${passRate.toFixed(1)}<small>%</small>`, 'sbKpiPassrateSub', passDelta === null ? `目标：${SB_TARGET}%` : `目标：${SB_TARGET}% · 环比 ${sign(passDelta.toFixed(1))}pp`, passDelta !== null && passDelta >= 0 ? 'up' : 'down');
+      set('sbKpiPassrate', passRate === null ? ui('无数据') : `${passRate.toFixed(1)}<small>%</small>`, 'sbKpiPassrateSub', passDelta === null ? `${ui('目标：{value}%', {value:SB_TARGET})}` : `${ui('目标：{value}%', {value:SB_TARGET})} · ${ui('环比')} ${sign(passDelta.toFixed(1))}pp`, passDelta !== null && passDelta >= 0 ? 'up' : 'down');
       // 不合格批次率（越低越好，环比用 pp）
       const prevFailRate = prev.total > 0 ? (prev.fail / prev.total * 100) : null;
       const failDelta = (failRate !== null && prevFailRate !== null) ? (failRate - prevFailRate) : null;
-      set('sbKpiFailrate', failRate === null ? '无数据' : `${failRate.toFixed(1)}<small>%</small>`, 'sbKpiFailrateSub', failDelta === null ? '不合格批次 / 总批次' : `环比 ${sign(failDelta.toFixed(1))}pp`, failDelta !== null && failDelta <= 0 ? 'up' : 'down');
+      set('sbKpiFailrate', failRate === null ? ui('无数据') : `${failRate.toFixed(1)}<small>%</small>`, 'sbKpiFailrateSub', failDelta === null ? ui('不合格批次 / 总批次') : `${ui('环比')} ${sign(failDelta.toFixed(1))}pp`, failDelta !== null && failDelta <= 0 ? 'up' : 'down');
       // 特采批次（越多越需关注）
       const spDelta = prev.total ? (totalSpecial - prev.special) : null;
-      set('sbKpiSpecial', `${nf.format(totalSpecial)}<small>批</small>`, 'sbKpiSpecialSub', spDelta === null ? '本月特采批次' : `环比 ${sign(spDelta)} 批`, spDelta === null ? '' : (spDelta <= 0 ? 'up' : 'down'));
-      set('sbKpiRisk', `${nf.format(risks.length)}<small>家</small>`, 'sbKpiRiskSub', '重点关注');
+      set('sbKpiSpecial', `${nf.format(totalSpecial)}<small>${ui('批')}</small>`, 'sbKpiSpecialSub', spDelta === null ? ui('本月特采批次') : `${ui('环比')} ${sign(spDelta)} ${ui('批')}`, spDelta === null ? '' : (spDelta <= 0 ? 'up' : 'down'));
+      set('sbKpiRisk', `${nf.format(risks.length)}<small>${ui('家')}</small>`, 'sbKpiRiskSub', ui('重点关注'));
     }
 
     function sbLevelTag(level) {
-      const map = { high: ['高风险', 'high'], mid: ['中风险', 'mid'], low: ['低风险', 'low'], normal: ['正常', 'normal'], insufficient: ['样本不足', 'insufficient'] };
+      const map = { high: [ui('高风险'), 'high'], mid: [ui('中风险'), 'mid'], low: [ui('低风险'), 'low'], normal: [ui('正常'), 'normal'], insufficient: [ui('样本不足'), 'insufficient'] };
       const [label, cls] = map[level] || map.normal;
       return `<span class="sb-tag ${cls}">${label}</span>`;
     }
 
     function renderSbTrendChart() {
       const el = $('#sbTrendChart'); if (!el) return;
-      if (!window.echarts) { el.innerHTML = sbEmptyHtml('图表库未加载', '请检查网络后重试'); return; }
+      if (!window.echarts) { el.innerHTML = sbEmptyHtml(ui('图表库未加载'), ui('请检查网络后重试')); return; }
       ensureSbChart('trend', el);
       const c = sbCharts.trend;
       const months = sbTrend12.map((d) => d.month);
       const batches = sbTrend12.map((d) => d.batches);
       const rates = sbTrend12.map((d) => d.passRate === null ? null : Number(d.passRate.toFixed(1)));
-      c.setOption({
-        tooltip: { trigger: 'axis', axisPointer: { type: 'cross' }, formatter: (params) => { const i = params && params[0] ? params[0].dataIndex : -1; const d = sbTrend12[i]; if (!d) return ''; const prevD = sbTrend12[i - 1]; const momTxt = (d.passRate !== null && prevD && prevD.passRate !== null) ? ((d.passRate - prevD.passRate >= 0 ? '+' : '') + (d.passRate - prevD.passRate).toFixed(1) + 'pp') : '—'; const rateTxt = d.passRate === null ? '无数据' : d.passRate.toFixed(1) + '%'; return `<strong>${d.month}</strong><br/>合格率：${rateTxt}<br/>检验批次：${nf.format(d.batches)}<br/>不合格批次：${nf.format(d.nonconforming)}<br/>环比：${momTxt}`; } },
-        legend: { data: ['检验批次', '批次合格率'], top: 0, textStyle: { color: '#64748B', fontSize: 12 } },
+      setChartOption(c, {
+        tooltip: { trigger: 'axis', axisPointer: { type: 'cross' }, formatter: (params) => { const i = params && params[0] ? params[0].dataIndex : -1; const d = sbTrend12[i]; if (!d) return ''; const prevD = sbTrend12[i - 1]; const momTxt = (d.passRate !== null && prevD && prevD.passRate !== null) ? ((d.passRate - prevD.passRate >= 0 ? '+' : '') + (d.passRate - prevD.passRate).toFixed(1) + 'pp') : '—'; const rateTxt = d.passRate === null ? ui('无数据') : d.passRate.toFixed(1) + '%'; return `<strong>${d.month}</strong><br/>${ui('合格率')}: ${rateTxt}<br/>${ui('检验批次')}: ${nf.format(d.batches)}<br/>${ui('不合格批次')}: ${nf.format(d.nonconforming)}<br/>${ui('环比')}: ${momTxt}`; } },
+        legend: { data: [ui('检验批次'), ui('批次合格率')], top: 0, textStyle: { color: '#64748B', fontSize: 12 } },
         grid: { left: 50, right: 50, top: 34, bottom: 28 },
         xAxis: { type: 'category', data: months, axisLabel: { color: '#64748B', fontSize: 11 }, axisLine: { lineStyle: { color: '#E5E7EB' } } },
         yAxis: [
-          { type: 'value', name: '合格率%', min: 0, max: 100, splitLine: { lineStyle: { color: '#F1F5F9' } }, axisLabel: { color: '#64748B', fontSize: 11 } },
-          { type: 'value', name: '批次', splitLine: { show: false }, axisLabel: { color: '#64748B', fontSize: 11 } }
+          { type: 'value', name: ui('合格率%'), min: 0, max: 100, splitLine: { lineStyle: { color: '#F1F5F9' } }, axisLabel: { color: '#64748B', fontSize: 11 } },
+          { type: 'value', name: ui('批次'), splitLine: { show: false }, axisLabel: { color: '#64748B', fontSize: 11 } }
         ],
         series: [
-          { name: '检验批次', type: 'bar', yAxisIndex: 1, data: batches, barMaxWidth: 22, itemStyle: { color: '#BFDBFE' } },
-          { name: '批次合格率', type: 'line', data: rates, connectNulls: false, symbol: 'circle', symbolSize: 6, itemStyle: { color: '#2563EB' }, lineStyle: { width: 2.5 }, markLine: { silent: true, symbol: 'none', label: { show: true, formatter: '目标 ' + SB_TARGET + '%', color: '#F59E0B', fontSize: 11, position: 'insideEndTop' }, lineStyle: { color: '#F59E0B', type: 'dashed', width: 1.5 }, data: [{ yAxis: SB_TARGET }] } }
+          { name: ui('检验批次'), type: 'bar', yAxisIndex: 1, data: batches, barMaxWidth: 22, itemStyle: { color: '#BFDBFE' } },
+          { name: ui('批次合格率'), type: 'line', data: rates, connectNulls: false, symbol: 'circle', symbolSize: 6, itemStyle: { color: '#2563EB' }, lineStyle: { width: 2.5 }, markLine: { silent: true, symbol: 'none', label: { show: true, formatter: ui('目标 ') + SB_TARGET + '%', color: '#F59E0B', fontSize: 11, position: 'insideEndTop' }, lineStyle: { color: '#F59E0B', type: 'dashed', width: 1.5 }, data: [{ yAxis: SB_TARGET }] } }
         ]
       });
     }
 
     function renderSbMatrixChart() {
       const el = $('#sbMatrixChart'); if (!el) return;
-      if (!window.echarts) { el.innerHTML = sbEmptyHtml('图表库未加载', '请检查网络后重试'); return; }
+      if (!window.echarts) { el.innerHTML = sbEmptyHtml(ui('图表库未加载'), ui('请检查网络后重试')); return; }
       const list = sbSuppliersData.filter((s) => s.batches > 0);
-      if (!list.length) { el.innerHTML = sbEmptyHtml('暂无供应商质量数据', '请调整时间范围或筛选条件'); if (sbCharts.matrix) { sbCharts.matrix.clear(); } return; }
+      if (!list.length) { el.innerHTML = sbEmptyHtml(ui('暂无供应商质量数据'), ui('请调整时间范围或筛选条件')); if (sbCharts.matrix) { sbCharts.matrix.clear(); } return; }
       ensureSbChart('matrix', el);
       const c = sbCharts.matrix;
       // 4 象限：X=检验批次，Y=合格率，气泡大小=不合格批次；颜色按风险等级
@@ -791,52 +796,52 @@
       const groups = { high: [], mid: [], normal: [], insufficient: [] };
       list.forEach((s) => { const r = sbRiskInfo(s); (groups[r.level] || groups.normal).push([s.batches, s.rate === null ? 0 : Number(s.rate.toFixed(1)), Math.max(s.nonconforming, 1), s.code, s.nonconforming, s.name]); });
       const series = Object.keys(groups).filter((k) => groups[k].length).map((k) => ({
-        name: { high: '高风险', mid: '重点观察', normal: '稳定供应商', insufficient: '样本不足' }[k],
+        name: { high: ui('高风险'), mid: ui('重点观察'), normal: ui('稳定供应商'), insufficient: ui('样本不足') }[k],
         type: 'scatter', data: groups[k].map((d) => ({ value: [d[0], d[1], d[2]], name: d[5], code: d[3], nc: d[4] })),
         symbolSize: (v) => Math.min(40, 10 + v[2] * 3), itemStyle: { color: col[k], opacity: .72 },
         label: { show: false }
       }));
-      c.setOption({
-        tooltip: { formatter: (p) => { const d = p.data; return `${d.name}<br/>合格率：${d.value[1]}%<br/>检验批次：${d.value[0]}<br/>不合格批次：${d.nc}<br/>风险等级：${p.seriesName}`; } },
+      setChartOption(c, {
+        tooltip: { formatter: (p) => { const d = p.data; return `${escHtml(d.name)}<br/>${ui('合格率')}: ${d.value[1]}%<br/>${ui('检验批次')}: ${d.value[0]}<br/>${ui('不合格批次')}: ${d.nc}<br/>${ui('风险等级')}: ${p.seriesName}`; } },
         legend: { top: 0, textStyle: { color: '#64748B', fontSize: 11 } },
         grid: { left: 50, right: 20, top: 34, bottom: 32 },
-        xAxis: { type: 'value', name: '检验批次', splitLine: { lineStyle: { color: '#F1F5F9' } }, axisLabel: { color: '#64748B', fontSize: 11 } },
-        yAxis: { type: 'value', name: '合格率%', min: 0, max: 100, splitLine: { lineStyle: { color: '#F1F5F9' } }, axisLabel: { color: '#64748B', fontSize: 11 } },
-        series: series.concat([{ name: '参考线', type: 'line', data: [], markLine: { silent: true, symbol: 'none', label: { show: true, fontSize: 11, color: '#94A3B8' }, lineStyle: { color: '#94A3B8', type: 'dashed' }, data: [{ yAxis: SB_TARGET, label: { formatter: '目标 ' + SB_TARGET + '%', color: '#F59E0B', position: 'insideEndTop' } }, { xAxis: SB_MIN_SAMPLE, label: { formatter: '样本 ' + SB_MIN_SAMPLE + ' 批', color: '#94A3B8', position: 'insideEndBottom' } }] } }])
+        xAxis: { type: 'value', name: ui('检验批次'), splitLine: { lineStyle: { color: '#F1F5F9' } }, axisLabel: { color: '#64748B', fontSize: 11 } },
+        yAxis: { type: 'value', name: ui('合格率%'), min: 0, max: 100, splitLine: { lineStyle: { color: '#F1F5F9' } }, axisLabel: { color: '#64748B', fontSize: 11 } },
+        series: series.concat([{ name: ui('参考线'), type: 'line', data: [], markLine: { silent: true, symbol: 'none', label: { show: true, fontSize: 11, color: '#94A3B8' }, lineStyle: { color: '#94A3B8', type: 'dashed' }, data: [{ yAxis: SB_TARGET, label: { formatter: ui('目标 ') + SB_TARGET + '%', color: '#F59E0B', position: 'insideEndTop' } }, { xAxis: SB_MIN_SAMPLE, label: { formatter: ui('样本 ') + SB_MIN_SAMPLE + ui(' 批'), color: '#94A3B8', position: 'insideEndBottom' } }] } }])
       });
       c.off('click'); c.on('click', (p) => { if (p.data && p.data.code) selectSbSupplier(p.data.code); });
     }
 
     function renderSbTop10Chart() {
       const el = $('#sbTop10Chart'); if (!el) return;
-      if (!window.echarts) { el.innerHTML = sbEmptyHtml('图表库未加载', '请检查网络后重试'); return; }
+      if (!window.echarts) { el.innerHTML = sbEmptyHtml(ui('图表库未加载'), ui('请检查网络后重试')); return; }
       ensureSbChart('top10', el);
       const c = sbCharts.top10;
       // 与来料检验看板右下角 supplierRankBoard 同口径：不合格批次(退货+特采)降序 + 合格率=(总批次-不合格)/总批次
       const refRate = (s) => (s.batches > 0 ? (s.batches - s.nonconforming) / s.batches * 100 : 0);
       const list = [...sbSuppliersData].filter((s) => s.nonconforming > 0).sort((a, b) => (b.nonconforming - a.nonconforming) || (refRate(a) - refRate(b))).slice(0, 10);
-      if (!list.length) { el.innerHTML = sbEmptyHtml(sbSuppliersData.length ? '暂无不合格批次' : '暂无供应商质量数据', sbSuppliersData.length ? '当前范围内没有退货或特采批次' : '请调整时间范围或筛选条件'); c.clear(); return; }
+      if (!list.length) { el.innerHTML = sbEmptyHtml(sbSuppliersData.length ? ui('暂无不合格批次') : ui('暂无供应商质量数据'), sbSuppliersData.length ? ui('当前范围内没有退货或特采批次') : ui('请调整时间范围或筛选条件')); c.clear(); return; }
       const names = list.map((s) => s.name);
       const barData = list.map((s) => s.nonconforming);
       const rateData = list.map((s) => (Math.floor(refRate(s)) / 100));
-      c.setOption({
+      setChartOption(c, {
         tooltip: {
           trigger: 'axis',
           formatter: (ps) => {
             const s = list[ps[0].dataIndex];
-            return `<b>${s.name}</b><br/>批次合格率：${Math.floor(refRate(s))}%<br/>不合格批次：${s.nonconforming}<br/>检验批次：${s.batches}`;
+            return `<b>${escHtml(s.name)}</b><br/>${ui('批次合格率')}: ${Math.floor(refRate(s))}%<br/>${ui('不合格批次')}: ${s.nonconforming}<br/>${ui('检验批次')}: ${s.batches}`;
           }
         },
         legend: { top: 0, right: 0, textStyle: { color: '#64748B', fontSize: 11 } },
         grid: { left: 6, right: 6, top: 34, bottom: 2, containLabel: true },
         xAxis: { type: 'category', data: names, axisTick: { show: false }, axisLine: { lineStyle: { color: '#E5E7EB' } }, axisLabel: { color: '#475569', fontSize: 11, interval: 0, rotate: 40, width: 64, overflow: 'truncate' } },
         yAxis: [
-          { type: 'value', name: '不合格批次', minInterval: 1, axisLabel: { color: '#64748B', fontSize: 11 }, splitLine: { lineStyle: { color: '#F1F5F9' } } },
-          { type: 'value', name: '合格率', min: 0, max: 1, axisLabel: { color: '#64748B', fontSize: 11, formatter: (v) => (v * 100).toFixed(0) + '%' }, splitLine: { show: false } }
+          { type: 'value', name: '', minInterval: 1, axisLabel: { color: '#64748B', fontSize: 11 }, splitLine: { lineStyle: { color: '#F1F5F9' } } },
+          { type: 'value', name: '', min: 0, max: 1, axisLabel: { color: '#64748B', fontSize: 11, formatter: (v) => (v * 100).toFixed(0) + '%' }, splitLine: { show: false } }
         ],
         series: [
-          { name: '不合格批次', type: 'bar', data: barData, barMaxWidth: 22, itemStyle: { color: '#EF4444', borderRadius: [3, 3, 0, 0] }, label: { show: true, position: 'top', color: '#334155', fontSize: 11 } },
-          { name: '合格率', type: 'line', yAxisIndex: 1, data: rateData, symbolSize: 6, lineStyle: { color: '#F59E0B', width: 2 }, itemStyle: { color: '#F59E0B' }, label: { show: true, position: 'top', formatter: (p) => (p.value * 100).toFixed(0) + '%', color: '#F59E0B', fontSize: 11 } }
+          { name: ui('不合格批次'), type: 'bar', data: barData, barMaxWidth: 22, itemStyle: { color: '#EF4444', borderRadius: [3, 3, 0, 0] }, label: { show: true, position: 'top', color: '#334155', fontSize: 11 } },
+          { name: ui('合格率'), type: 'line', yAxisIndex: 1, data: rateData, symbolSize: 6, lineStyle: { color: '#F59E0B', width: 2 }, itemStyle: { color: '#F59E0B' }, label: { show: true, position: 'top', formatter: (p) => (p.value * 100).toFixed(0) + '%', color: '#F59E0B', fontSize: 11 } }
         ]
       });
       c.off('click'); c.on('click', (p) => { if (list[p.dataIndex]) selectSbSupplier(list[p.dataIndex].code); });
@@ -845,18 +850,19 @@
     function renderSbPareto() {
       const el = $('#sbParetoChart'); if (!el) return;
       if (sbCharts.pareto) { sbCharts.pareto.dispose(); delete sbCharts.pareto; }
-      el.innerHTML = sbEmptyHtml('暂无不良项目数据', 'QMS 接口未提供不良类型字段');
+      el.innerHTML = sbEmptyHtml(ui('暂无不良项目数据'), ui('QMS 接口未提供不良类型字段'));
     }
 
     function renderSbRiskList() {
+      stopSbAutoScroll();
       const el = $('#sbRiskBody'); if (!el) return;
       const risks = sbApplyFilters().filter((s) => { const r = sbRiskInfo(s); return r.level === 'high' || r.level === 'mid'; });
-      if (!risks.length) { el.innerHTML = '<tr><td colspan="6" class="empty">暂无风险供应商</td></tr>'; return; }
+      if (!risks.length) { el.innerHTML = `<tr><td colspan="6" class="empty">${ui('暂无风险供应商')}</td></tr>`; return; }
       el.innerHTML = risks.map((s) => {
         const r = sbRiskInfo(s);
-        const deltaTxt = s.delta === null ? (sbPrevMap.has(s.code) ? '0.0pp' : '新增') : (s.delta >= 0 ? '+' : '') + s.delta.toFixed(1) + 'pp';
+        const deltaTxt = s.delta === null ? (sbPrevMap.has(s.code) ? '0.0pp' : ui('新增')) : (s.delta >= 0 ? '+' : '') + s.delta.toFixed(1) + 'pp';
         const deltaCls = s.delta === null ? '' : (s.delta < 0 ? 'down' : 'up');
-        return `<tr data-code="${escHtml(s.code)}" data-name="${escHtml(s.name)}" role="button" tabindex="0"><td>${escHtml(s.name)}</td><td>${s.score}</td><td>${nf.format(s.batches)}批</td><td class="sb-kpi-sub ${deltaCls}" style="margin:0">${deltaTxt}</td><td>${escHtml(r.reasons[0] || '—')}</td><td>${sbLevelTag(r.level)}</td></tr>`;
+        return `<tr data-code="${escHtml(s.code)}" data-name="${escHtml(s.name)}" role="button" tabindex="0"><td>${escHtml(s.name)}</td><td>${(s.rate === null ? ui('无数据') : s.score)}</td><td>${nf.format(s.batches)} ${ui('批')}</td><td class="sb-kpi-sub ${deltaCls}" style="margin:0">${deltaTxt}</td><td>${escHtml(r.reasons[0] || '—')}</td><td>${sbLevelTag(r.level)}</td></tr>`;
       }).join('');
       $$('#sbRiskBody tr[data-code]').forEach((tr) => { tr.addEventListener('click', () => selectSbSupplier(tr.dataset.code)); });
     }
@@ -873,10 +879,10 @@
       });
       alerts.sort((a, b) => (a.r.level === 'high' ? 0 : 1) - (b.r.level === 'high' ? 0 : 1));
       const top = alerts.slice(0, 5);
-      if (!top.length) { el.innerHTML = '<div class="sb-empty" style="grid-column:1/-1;min-height:80px"><strong>暂无质量预警</strong></div>'; return; }
+      if (!top.length) { el.innerHTML = `<div class="sb-empty" style="grid-column:1/-1;min-height:80px"><strong>${ui('暂无质量预警')}</strong></div>`; return; }
       el.innerHTML = top.map((a) => `<div class="sb-alert-card ${a.type === 'danger' ? '' : 'warn'}" data-code="${escHtml(a.s.code)}">
         <span class="sb-alert-dot"></span>
-        <div><div class="sb-alert-main">${escHtml(a.s.name)}：${escHtml(a.r.reasons[0] || '存在风险')}</div><div class="sb-alert-sub">最近批次：${escHtml(a.recent || '—')}</div></div>
+        <div><div class="sb-alert-main">${escHtml(a.s.name)}：${escHtml(a.r.reasons[0] || ui('存在风险'))}</div><div class="sb-alert-sub">${ui('最近批次')}: ${escHtml(a.recent || '—')}</div></div>
       </div>`).join('');
       $$('#sbAlertCards .sb-alert-card').forEach((card) => { card.addEventListener('click', () => selectSbSupplier(card.dataset.code)); });
     }
@@ -884,9 +890,9 @@
     function renderSbFilters() {
       const catEl = $('#sbCategoryFilter'), supEl = $('#sbSupplierFilter'), facEl = $('#sbFactoryFilter');
       sbCategories = Array.from(new Set(sbSuppliersData.flatMap((s) => s.categories || []))).sort();
-      if (catEl) { const cur = catEl.value; catEl.innerHTML = '<option value="">物料类别</option>' + sbCategories.map((c) => `<option value="${escHtml(c)}">${escHtml(c)}</option>`).join(''); catEl.value = cur; }
-      if (supEl) { const cur = supEl.value; const names = sbSuppliersData.map((s) => s.name).sort(); supEl.innerHTML = '<option value="">供应商</option>' + names.map((n) => `<option value="${escHtml(n)}">${escHtml(n)}</option>`).join(''); supEl.value = cur; }
-      if (facEl) { const cur = facEl.value; facEl.innerHTML = '<option value="">工厂</option>' + FACTORIES.map((f) => `<option value="${escHtml(f.code)}">${escHtml(f.name)}</option>`).join(''); facEl.value = cur; }
+      if (catEl) { const cur = catEl.value; catEl.innerHTML = `<option value="">${ui('物料类别')}</option>` + sbCategories.map((c) => `<option value="${escHtml(c)}">${escHtml(c)}</option>`).join(''); catEl.value = cur; }
+      if (supEl) { const cur = supEl.value; const names = sbSuppliersData.map((s) => s.name).sort(); supEl.innerHTML = `<option value="">${ui('供应商')}</option>` + names.map((n) => `<option value="${escHtml(n)}">${escHtml(n)}</option>`).join(''); supEl.value = cur; }
+      if (facEl) { const cur = facEl.value; facEl.innerHTML = `<option value="">${ui('工厂')}</option>` + FACTORIES.map((f) => `<option value="${escHtml(f.code)}">${escHtml(f.name)}</option>`).join(''); facEl.value = cur; }
     }
 
     function sbApplyFilters() {
@@ -911,15 +917,16 @@
       renderSbAlerts();
       renderSbFilters();
       renderSbFilterTags();
+      if (supplierWallboardMode) startSbAutoScroll();
       const upd = $('#sbUpdated'); if (upd) { const now = new Date(); const pad = (v) => String(v).padStart(2, '0'); upd.textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}`; }
     }
 
     function renderSbFilterTags() {
       const el = $('#sbFilterTags'); if (!el) return;
       const tags = [];
-      if (sbSelectedSupplier) { const s = sbSuppliersData.find((x) => x.code === sbSelectedSupplier); tags.push(`<span class="sb-filter-tag">供应商：${escHtml(s ? s.name : sbSelectedSupplier)}<button data-clear-supplier="1" title="取消">×</button></span>`); }
+      if (sbSelectedSupplier) { const s = sbSuppliersData.find((x) => x.code === sbSelectedSupplier); tags.push(`<span class="sb-filter-tag">${ui('供应商')}: ${escHtml(s ? s.name : sbSelectedSupplier)}<button data-clear-supplier="1" title="取消">×</button></span>`); }
       const cat = $('#sbCategoryFilter') ? $('#sbCategoryFilter').value : '';
-      if (cat) tags.push(`<span class="sb-filter-tag">物料类别：${escHtml(cat)}</span>`);
+      if (cat) tags.push(`<span class="sb-filter-tag">${ui('物料类别')}: ${escHtml(cat)}</span>`);
       el.innerHTML = tags.join('');
       const clearBtn = el.querySelector('[data-clear-supplier]');
       if (clearBtn) clearBtn.addEventListener('click', () => { sbSelectedSupplier = null; $('#sbCategoryFilter').value = ''; $('#sbSupplierFilter').value = ''; renderSbBoard(); });
@@ -933,7 +940,7 @@
 
     function initSupplierBoard() {
       // 初始化月份标签 + 下月按钮禁用（当前月为最新）
-      const lbl = $('#sbMonthLabel'); if (lbl) { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + supplierMonthOffset); lbl.textContent = `${d.getFullYear()}年${d.getMonth() + 1}月`; }
+      const lbl = $('#sbMonthLabel'); if (lbl) { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + supplierMonthOffset); lbl.textContent = supplierMonthLabel(supplierMonthOffset); }
       const nextBtn = $('#sbNextMonth'); if (nextBtn) nextBtn.disabled = supplierMonthOffset >= 0;
       // 周期切换
       $$('#sbPeriodSeg button').forEach((b) => b.addEventListener('click', () => {
@@ -948,18 +955,18 @@
         const b = $('#sbRefreshBtn');
         if (b.classList.contains('is-loading')) return;
         b.classList.add('is-loading');
-        showToast('正在刷新数据…');
+        showToast(ui('正在刷新数据…'));
         const done = () => { b.classList.remove('is-loading'); };
         loadDashboardData().then((ok) => {
           done();
-          showToast(ok ? '数据已更新' : '刷新未完成，请检查同步状态');
-        }).catch(() => { done(); showToast('刷新失败，请重试'); });
+          showToast(ok ? ui('数据已更新') : ui('刷新未完成，请检查同步状态'));
+        }).catch(() => { done(); showToast(ui('刷新失败，请重试')); });
       });
       $('#sbWallboardBtn').addEventListener('click', () => setSupplierWallboardMode(!supplierWallboardMode));
       $('#sbCategoryFilter').addEventListener('change', () => renderSbBoard());
       $('#sbSupplierFilter').addEventListener('change', () => renderSbBoard());
       $('#sbFactoryFilter').addEventListener('change', (e) => { if (e.target.value) { const f = FACTORIES.find((x) => x.code === e.target.value); if (f) selectFactory(f.code); } });
-      window.addEventListener('resize', () => { Object.values(sbCharts).forEach((c) => { try { c.resize(); } catch (e) {} }); });
+      window.addEventListener('resize', scheduleChartResize);
     }
 
     async function rebuildSbSuppliers() {
@@ -972,9 +979,9 @@
         // 季/年需拉取对应范围明细（异步），大分页减少请求次数
         const months = sbPeriod === 'quarter' ? 3 : 12;
         const from = monthRange(-(months - 1)).start;
-        showToast(sbPeriod === 'quarter' ? '正在加载季度数据…' : '正在加载年度数据…');
+        showToast(sbPeriod === 'quarter' ? ui('正在加载季度数据…') : ui('正在加载年度数据…'));
         try { records = await qmsSelectAll({ factoryCode: factory, createDateStart: from, createDateEnd: todayStr() }, 2000); }
-        catch (e) { if (seq === sbRequestSeq) showToast('周期数据加载失败，请重试'); return false; }
+        catch (e) { if (seq === sbRequestSeq) showToast(ui('周期数据加载失败，请重试')); return false; }
       }
       if (seq !== sbRequestSeq || factory !== QMS_CONFIG.factoryCode) return false;
       sbPrevMap = new Map();
@@ -991,7 +998,7 @@
       $$('#sbPeriodSeg button').forEach((b) => b.classList.toggle('active', b.dataset.period === 'month'));
       supplierMonthOffset = offset;
       // 立即更新月份标签与下月按钮，避免等待数据时显示旧状态
-      const lbl = $('#sbMonthLabel'); if (lbl) { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + offset); lbl.textContent = `${d.getFullYear()}年${d.getMonth() + 1}月`; }
+      const lbl = $('#sbMonthLabel'); if (lbl) { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + offset); lbl.textContent = supplierMonthLabel(supplierMonthOffset); }
       const next = $('#sbNextMonth'); if (next) next.disabled = offset >= 0;
       let records;
       if (offset === 0) records = DASH.month;
@@ -1000,7 +1007,7 @@
         sbPrevMap = new Map();
         const r = monthRange(offset);
         try { records = await qmsSelectAll({ factoryCode: factory, createDateStart: r.start, createDateEnd: r.end }, 2000); }
-        catch (e) { if (seq === sbRequestSeq) showToast('月份数据加载失败，请重试'); return false; }
+        catch (e) { if (seq === sbRequestSeq) showToast(ui('月份数据加载失败，请重试')); return false; }
       }
       if (seq !== sbRequestSeq || factory !== QMS_CONFIG.factoryCode) return false;
       sbPrevMap = new Map();
@@ -1010,21 +1017,23 @@
       return true;
     }
 
+    let openSupplierCode = null;
     function openSupplierDetail(code) {
+      openSupplierCode = code;
       const s = sbSuppliersData.find((x) => x.code === code) || supplierRankings.find((x) => x.code === code);
       if (!s) return;
       $('#supplierDetailModalName').textContent = `${s.name} · ${s.code}`;
       const r = sbRiskInfo(s);
       $('#supplierDetailModalStats').innerHTML = `
-        <div class="sms-item"><label>检验批次</label><strong>${nf.format(s.batches)}</strong></div>
-        <div class="sms-item"><label>合格</label><strong>${nf.format(s.pass)}</strong></div>
-        <div class="sms-item"><label>特采</label><strong>${nf.format(s.special)}</strong></div>
-        <div class="sms-item bad"><label>不合格</label><strong>${nf.format(s.fail)}</strong></div>
-        <div class="sms-item good"><label>批次合格率</label><strong>${s.score}</strong></div>`;
+        <div class="sms-item"><label>${ui('检验批次')}</label><strong>${nf.format(s.batches)}</strong></div>
+        <div class="sms-item"><label>${ui('合格')}</label><strong>${nf.format(s.pass)}</strong></div>
+        <div class="sms-item"><label>${ui('特采')}</label><strong>${nf.format(s.special)}</strong></div>
+        <div class="sms-item bad"><label>${ui('不合格')}</label><strong>${nf.format(s.fail)}</strong></div>
+        <div class="sms-item good"><label>${ui('批次合格率')}</label><strong>${s.score}</strong></div>`;
       // 风险等级 + 环比 + 物料类别
-      const deltaTxt = s.delta === null ? (sbPrevMap.has(s.code) ? '0.0pp' : '新增') : (s.delta >= 0 ? '+' : '') + s.delta.toFixed(1) + 'pp';
+      const deltaTxt = s.delta === null ? (sbPrevMap.has(s.code) ? '0.0pp' : ui('新增')) : (s.delta >= 0 ? '+' : '') + s.delta.toFixed(1) + 'pp';
       const cats = (s.categories && s.categories.length) ? s.categories : Array.from(new Set(DASH.month.filter((x) => (x.supplierName || '') === code).map((x) => x.materialCategory).filter(Boolean)));
-      $('#supplierDetailModalMeta').innerHTML = `<span class="m-label">风险等级</span><span>${sbLevelTag(r.level)}</span><span class="m-label">环比</span><strong>${deltaTxt}</strong><span class="m-label">物料类别</span><strong>${escHtml(cats.join('、') || '—')}</strong>`;
+      $('#supplierDetailModalMeta').innerHTML = `<span class="m-label">${ui('风险等级')}</span><span>${sbLevelTag(r.level)}</span><span class="m-label">${ui('环比')}</span><strong>${deltaTxt}</strong><span class="m-label">${ui('物料类别')}</span><strong>${escHtml(cats.join('、') || '—')}</strong>`;
       // 风险提示
       const reasons = r.reasons;
       const riskBox = $('#supplierDetailModalStats');
@@ -1032,26 +1041,26 @@
         const el = document.createElement('div');
         el.className = 'supplier-risk-box';
         el.style.gridColumn = '1 / -1';
-        el.innerHTML = `<strong>风险提示</strong><ul>${reasons.map((x) => `<li>${escHtml(x)}</li>`).join('')}</ul>`;
+        el.innerHTML = `<strong>${ui('风险提示')}</strong><ul>${reasons.map((x) => `<li>${escHtml(x)}</li>`).join('')}</ul>`;
         riskBox.appendChild(el);
       }
       // 主要不良 TOP5（数据缺失）
-      $('#supplierDetailModalDefects').innerHTML = '暂无不良类型数据（QMS 接口未提供不良类型字段）';
+      $('#supplierDetailModalDefects').innerHTML = ui('暂无不良类型数据（QMS 接口未提供不良类型字段）');
       // 最近检验记录（按 supplierName 匹配）
       const recs = DASH.records
         .filter((x) => (x.supplierName || '') === code)
         .sort((a, b) => (b.createDate || '').localeCompare(a.createDate || ''))
         .slice(0, 10);
       if (!recs.length) {
-        $('#supplierDetailModalRecords').innerHTML = '<div class="empty">当前筛选范围内暂无该供应商的检验记录</div>';
+        $('#supplierDetailModalRecords').innerHTML = `<div class="empty">${ui('当前筛选范围内暂无该供应商的检验记录')}</div>`;
       } else {
-        $('#supplierDetailModalRecords').innerHTML = `<table><thead><tr><th>单号</th><th>料号</th><th>物料</th><th>送检日期</th><th>检验结果</th></tr></thead><tbody>${recs.map((x) => {
+        $('#supplierDetailModalRecords').innerHTML = `<table><thead><tr><th>${ui('单号')}</th><th>${ui('料号')}</th><th>${ui('物料')}</th><th>${ui('送检日期')}</th><th>${ui('检验结果')}</th></tr></thead><tbody>${recs.map((x) => {
           const res = mapResult(x);
           return `<tr><td class="mono">${escHtml(x.orderNumber)}</td><td class="mono">${escHtml(x.materialNumber)}</td><td title="${escHtml(x.materialName || '')}">${escHtml(x.materialName || '—')}</td><td class="mono">${escHtml(x.createDate || '')}</td><td><span class="status-pill ${res.key}">${res.label}</span></td></tr>`;
         }).join('')}</tbody></table>`;
       }
       // 最近 6 个月趋势（异步）
-      $('#supplierDetailModalTrend').innerHTML = '<div class="sb-empty" style="min-height:120px"><span>趋势加载中…</span></div>';
+      $('#supplierDetailModalTrend').innerHTML = `<div class="sb-empty" style="min-height:120px"><span>${ui('趋势加载中…')}</span></div>`;
       loadSupplierTrend6(code);
       $('#supplierDetailModalBackdrop').classList.add('open');
     }
@@ -1079,38 +1088,38 @@
         if (!window.echarts) { el.innerHTML = ''; return; }
         ensureSbChart('detailTrend', el);
         const c = sbCharts.detailTrend;
-        c.setOption({
+        setChartOption(c, {
           tooltip: { trigger: 'axis' },
-          legend: { data: ['检验批次', '合格率'], top: 0, textStyle: { color: '#64748B', fontSize: 11 } },
+          legend: { data: [ui('检验批次'), ui('合格率')], top: 0, textStyle: { color: '#64748B', fontSize: 11 } },
           grid: { left: 46, right: 42, top: 32, bottom: 22 },
           xAxis: { type: 'category', data: data.map((d) => d.m), axisLabel: { color: '#64748B', fontSize: 11 } },
           yAxis: [
-            { type: 'value', name: '合格率%', min: 0, max: 100, splitLine: { lineStyle: { color: '#F1F5F9' } }, axisLabel: { color: '#64748B', fontSize: 11 } },
-            { type: 'value', name: '批次', splitLine: { show: false }, axisLabel: { color: '#64748B', fontSize: 11 } }
+            { type: 'value', name: ui('合格率%'), min: 0, max: 100, splitLine: { lineStyle: { color: '#F1F5F9' } }, axisLabel: { color: '#64748B', fontSize: 11 } },
+            { type: 'value', name: ui('批次'), splitLine: { show: false }, axisLabel: { color: '#64748B', fontSize: 11 } }
           ],
           series: [
-            { name: '检验批次', type: 'bar', yAxisIndex: 1, data: data.map((d) => d.batches), barMaxWidth: 18, itemStyle: { color: '#BFDBFE' } },
-            { name: '合格率', type: 'line', data: data.map((d) => d.passRate), symbol: 'circle', symbolSize: 6, itemStyle: { color: '#2563EB' }, lineStyle: { width: 2 }, markLine: { silent: true, symbol: 'none', label: { show: false }, lineStyle: { color: '#F59E0B', type: 'dashed' }, data: [{ yAxis: SB_TARGET }] } }
+            { name: ui('检验批次'), type: 'bar', yAxisIndex: 1, data: data.map((d) => d.batches), barMaxWidth: 18, itemStyle: { color: '#BFDBFE' } },
+            { name: ui('合格率'), type: 'line', data: data.map((d) => d.passRate), symbol: 'circle', symbolSize: 6, itemStyle: { color: '#2563EB' }, lineStyle: { width: 2 }, markLine: { silent: true, symbol: 'none', label: { show: false }, lineStyle: { color: '#F59E0B', type: 'dashed' }, data: [{ yAxis: SB_TARGET }] } }
           ]
         });
-      } catch (e) { if (seq === detailTrendSeq) el.innerHTML = '<div class="sb-empty" style="min-height:120px"><span>趋势加载失败</span></div>'; }
+      } catch (e) { if (seq === detailTrendSeq) el.innerHTML = `<div class="sb-empty" style="min-height:120px"><span>${ui('趋势加载失败')}</span></div>`; }
     }
 
     function renderAlerts() {
       const all = DASH.alerts;
-      if (!all.length) { $('#alertList').innerHTML = '<div class="alert-item"><span class="alert-icon"><svg width="14" height="14"><use href="#icon-check"/></svg></span><div><div class="alert-main"><span class="alert-title">暂无异常</span></div></div></div>'; $('#alertCount').textContent = '0 条需关注'; return; }
+      if (!all.length) { $('#alertList').innerHTML = `<div class="alert-item"><span class="alert-icon"><svg width="14" height="14"><use href="#icon-check"/></svg></span><div><div class="alert-main"><span class="alert-title">${ui('暂无异常')}</span></div></div></div>`; $('#alertCount').textContent = ui('{value} 条需关注', {value:0}); return; }
       const list = all.slice(0, 3);
       $('#alertList').innerHTML = list.map((a) => {
         const icon = a.type === 'danger' ? 'icon-alert' : a.type === 'info' ? 'icon-info' : 'icon-clock';
         return `<div class="alert-item ${a.type === 'danger' ? 'danger' : a.type === 'info' ? 'info' : ''}"><span class="alert-icon"><svg width="14" height="14"><use href="#${icon}"/></svg></span><div><div class="alert-main"><span class="alert-title" data-i18n="${a.titleKey}">${t(a.titleKey)}</span><span class="alert-time"></span></div><div class="alert-copy">${escHtml(a.copy)}</div></div></div>`;
       }).join('');
-      $('#alertCount').textContent = `${all.length} ${locale === 'th' ? 'รายการ' : locale === 'en' ? 'items' : '条需关注'}`;
+      $('#alertCount').textContent = ui('{value} 条需关注', {value:all.length});
     }
     function openAlertsModal() {
       const all = DASH.alerts;
       const body = $('#alertsModalList');
       if (!body) return;
-      if (!all.length) { body.innerHTML = '<div class="alert-item"><span class="alert-icon"><svg width="14" height="14"><use href="#icon-check"/></svg></span><div><div class="alert-main"><span class="alert-title">暂无异常</span></div></div></div>'; }
+      if (!all.length) { body.innerHTML = `<div class="alert-item"><span class="alert-icon"><svg width="14" height="14"><use href="#icon-check"/></svg></span><div><div class="alert-main"><span class="alert-title">${ui('暂无异常')}</span></div></div></div>`; }
       else {
         body.innerHTML = all.map((a) => {
           const icon = a.type === 'danger' ? 'icon-alert' : a.type === 'info' ? 'icon-info' : 'icon-clock';
@@ -1129,20 +1138,22 @@
       if (rs) rs.textContent = t('result_subtitle') + ' · ' + monthPrefix(0).replace('-', '.');
     }
 
+    let syncState = { loading: true, error: null, mode: null };
     function setSyncState(loading, error, mode) {
+      syncState = { loading, error, mode };
       const dot = $('.sync-head .live-dot'), live = $('.sync-live'), copy = $('.sync-copy');
       if (loading) {
         dot.style.background = '#e5a43b'; live.textContent = 'SYNC'; live.style.color = '#b27b1d'; live.style.background = '#fff5de';
-        copy.textContent = '正在同步 QMS 数据…';
+        copy.textContent = ui('正在同步 QMS 数据…');
       } else if (error) {
         dot.style.background = '#e55d68'; live.textContent = 'ERR'; live.style.color = '#cf3f50'; live.style.background = '#ffedef';
-        copy.textContent = 'QMS 连接异常，请检查账号或网络。';
+        copy.textContent = ui('QMS 连接异常，请检查账号或网络。');
       } else if (mode === 'cached') {
         dot.style.background = '#e5a43b'; live.textContent = 'CACHE'; live.style.color = '#b27b1d'; live.style.background = '#fff5de';
-        copy.textContent = '显示上次缓存数据 · 实时接口暂不可用';
+        copy.textContent = ui('显示上次缓存数据 · 实时接口暂不可用');
       } else {
         dot.style.background = '#46d7ad'; live.textContent = 'LIVE'; live.style.color = '#238e70'; live.style.background = '#e8f7f1';
-        copy.textContent = '已连接 QMS 数据源 · 每 5 分钟自动同步';
+        copy.textContent = ui('已连接 QMS 数据源 · 每 5 分钟自动同步');
       }
     }
 
@@ -1170,37 +1181,37 @@
       const now = new Date();
       const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
       const titleEl = $('#supplierRankTitle');
-      if (titleEl) titleEl.textContent = (isBottom ? '倒数前10名供应商' : '正向前10名供应商') + '-' + ym;
-      if (!window.echarts) { el.innerHTML = '<div class="sb-empty" style="padding:20px"><strong>图表库未加载</strong></div>'; return; }
-      if (!list.length) { el.innerHTML = '<div class="sb-empty" style="padding:20px"><strong>暂无供应商质量数据</strong></div>'; if (sbCharts.supplierRank) { try { sbCharts.supplierRank.clear(); } catch (e) {} } return; }
+      if (titleEl) titleEl.textContent = (isBottom ? ui('倒数前10名供应商') : ui('正向前10名供应商')) + '-' + ym;
+      if (!window.echarts) { el.innerHTML = `<div class="sb-empty" style="padding:20px"><strong>${ui('图表库未加载')}</strong></div>`; return; }
+      if (!list.length) { el.innerHTML = `<div class="sb-empty" style="padding:20px"><strong>${ui('暂无供应商质量数据')}</strong></div>`; if (sbCharts.supplierRank) { try { sbCharts.supplierRank.clear(); } catch (e) {} } return; }
       ensureSbChart('supplierRank', el);
       const c = sbCharts.supplierRank;
       const names = list.map((s) => s.name);
       // 柱：倒数=不合格批次数，正向=合格批次数；线：合格率(0~1)，与 QMS 同口径截断到整数百分比
       const barData = list.map((s) => (isBottom ? s.nonconforming : s.pass));
-      const barName = isBottom ? '不合格批次' : '合格批次';
+      const barName = isBottom ? ui('不合格批次') : ui('合格批次');
       const rateData = list.map((s) => (Math.floor(refRate(s)) / 100));
-      c.setOption({
+      setChartOption(c, {
         tooltip: {
           trigger: 'axis',
           formatter: (ps) => {
             const s = list[ps[0].dataIndex];
-            return `<b>${s.name}</b><br/>批次合格率：${Math.floor(refRate(s))}%<br/>${barName}：${isBottom ? s.nonconforming : s.pass}<br/>检验批次：${s.batches}`;
+            return `<b>${escHtml(s.name)}</b><br/>${ui('批次合格率')}: ${Math.floor(refRate(s))}%<br/>${barName}：${isBottom ? s.nonconforming : s.pass}<br/>${ui('检验批次')}: ${s.batches}`;
           }
         },
         legend: { top: 0, right: 0, textStyle: { color: '#64748B', fontSize: 11 } },
         grid: { left: 6, right: 6, top: 34, bottom: 2, containLabel: true },
         xAxis: { type: 'category', data: names, axisTick: { show: false }, axisLine: { lineStyle: { color: '#E5E7EB' } }, axisLabel: { color: '#475569', fontSize: 11, interval: 0, rotate: 40, width: 64, overflow: 'truncate' } },
         yAxis: [
-          { type: 'value', name: barName, minInterval: 1, axisLabel: { color: '#64748B', fontSize: 11 }, splitLine: { lineStyle: { color: '#F1F5F9' } } },
-          { type: 'value', name: '合格率', min: 0, max: 1, axisLabel: { color: '#64748B', fontSize: 11, formatter: (v) => (v * 100).toFixed(0) + '%' }, splitLine: { show: false } }
+          { type: 'value', name: '', minInterval: 1, axisLabel: { color: '#64748B', fontSize: 11 }, splitLine: { lineStyle: { color: '#F1F5F9' } } },
+          { type: 'value', name: '', min: 0, max: 1, axisLabel: { color: '#64748B', fontSize: 11, formatter: (v) => (v * 100).toFixed(0) + '%' }, splitLine: { show: false } }
         ],
         series: [
           { name: barName, type: 'bar', data: barData, barMaxWidth: 22, itemStyle: { color: isBottom ? '#EF4444' : '#16A34A', borderRadius: [3, 3, 0, 0] }, label: { show: true, position: 'top', color: '#334155', fontSize: 11 } },
-          { name: '合格率', type: 'line', yAxisIndex: 1, data: rateData, symbolSize: 6, lineStyle: { color: '#F59E0B', width: 2 }, itemStyle: { color: '#F59E0B' }, label: { show: true, position: 'top', formatter: (p) => (p.value * 100).toFixed(0) + '%', color: '#F59E0B', fontSize: 11 } }
+          { name: ui('合格率'), type: 'line', yAxisIndex: 1, data: rateData, symbolSize: 6, lineStyle: { color: '#F59E0B', width: 2 }, itemStyle: { color: '#F59E0B' }, label: { show: true, position: 'top', formatter: (p) => (p.value * 100).toFixed(0) + '%', color: '#F59E0B', fontSize: 11 } }
         ]
       });
-      try { c.resize(); } catch (e) {}
+      scheduleChartResize();
     }
     function renderAll() {
       renderKpis();
@@ -1313,7 +1324,7 @@
         if (mySeq !== loadSeq) return;
         console.error(err);
         if (fromCache) { setSyncState(false, null, 'cached'); }
-        else { setSyncState(false, err); if (!silent) showToast('数据加载失败：' + (err.message || err)); }
+        else { setSyncState(false, err); if (!silent) showToast(ui('数据加载失败')); }
         return false;
       } finally { if (mySeq === loadSeq) qmsLoading = false; }
     }
@@ -1339,7 +1350,7 @@
       updatePageUi();
       if (updateHash && window.location.hash !== `#${currentPage}`) history.pushState(null, '', `#${currentPage}`);
       // 切换到供应商页时，ECharts 图表从 display:none 变为可见，需重新 resize
-      if (currentPage === 'suppliers') setTimeout(() => { Object.values(sbCharts).forEach((c) => { try { c.resize(); } catch (e) {} }); }, 60);
+      scheduleChartResize();
     }
     function updateSidebarUi() {
       const shell = $('.app-shell'), button = $('#sidebarToggle');
@@ -1360,85 +1371,35 @@
       $('#wallboardModeLabel').textContent = t(supplierWallboardMode ? 'supplier_wallboard_live' : 'wallboard_live');
       $('#wallboardExitText').textContent = t(supplierWallboardMode ? 'exit_supplier_wallboard' : 'exit_wallboard');
     }
-    let tableAutoScrollTimer = null;
-    function stopTableAutoScroll() {
-      if (tableAutoScrollTimer) { cancelAnimationFrame(tableAutoScrollTimer); tableAutoScrollTimer = null; }
-    }
+    let tableScroller = null, riskScroller = null;
+    function stopTableAutoScroll() { tableScroller?.stop(); tableScroller = null; }
     function startTableAutoScroll() {
       stopTableAutoScroll();
-      const wrap = $('.table-card .table-wrap');
-      if (!wrap) return;
-      let last = performance.now();
-      let acc = 0;
-      const speed = 40; // 像素/秒
-      const step = (now) => {
-        const dt = Math.min((now - last) / 1000, 0.1);
-        last = now;
-        if (!wrap.matches(':hover')) {
-          const max = wrap.scrollHeight - wrap.clientHeight;
-          if (max > 0) {
-            acc += speed * dt;
-            const stepPx = Math.floor(acc);
-            if (stepPx > 0) {
-              acc -= stepPx;
-              wrap.scrollTop = wrap.scrollTop >= max - 1 ? 0 : wrap.scrollTop + stepPx;
-            }
-          }
-        }
-        tableAutoScrollTimer = requestAnimationFrame(step);
-      };
-      tableAutoScrollTimer = requestAnimationFrame(step);
+      if (!wallboardMode) return;
+      const pages = Math.ceil(tableRows.length / TABLE_PAGE_SIZE);
+      tableScroller = createTableScroller($('.table-card .table-wrap'), {
+        speed: 28,
+        onEnd: pages > 1 ? () => gotoPage(tablePage >= pages ? 1 : tablePage + 1) : undefined
+      });
     }
-    let sbAutoScrollTimer = null;
-    function stopSbAutoScroll() {
-      if (sbAutoScrollTimer) { cancelAnimationFrame(sbAutoScrollTimer); sbAutoScrollTimer = null; }
-      const wrap = $('.sb-risk-table-wrap');
-      const table = wrap ? wrap.querySelector('table') : null;
-      if (table) table.style.transform = '';
-    }
+    function stopSbAutoScroll() { riskScroller?.stop(); riskScroller = null; }
     function startSbAutoScroll() {
       stopSbAutoScroll();
-      const wrap = $('.sb-risk-table-wrap');
-      if (!wrap) return;
-      const table = wrap.querySelector('table');
-      if (!table) return;
-      table.style.willChange = 'transform';
-      let last = performance.now();
-      let pos = 0;
-      const speed = 22; // 像素/秒，慢速轮播
-      const step = (now) => {
-        const dt = Math.min((now - last) / 1000, 0.1);
-        last = now;
-        const max = wrap.scrollHeight - wrap.clientHeight;
-        if (!wrap.matches(':hover') && max > 0) {
-          pos += speed * dt;
-          if (pos >= max) pos = 0;
-          // 用 transform 亚像素平移，避免 scrollTop 整数截断导致的卡顿/低帧率
-          table.style.transform = `translateY(${-pos}px)`;
-        }
-        sbAutoScrollTimer = requestAnimationFrame(step);
-      };
-      sbAutoScrollTimer = requestAnimationFrame(step);
+      if (supplierWallboardMode) riskScroller = createTableScroller($('.sb-risk-table-wrap'), { speed: 22 });
     }
     function syncWallboardClasses() {
       document.body.classList.toggle('wallboard-mode', wallboardMode);
       document.body.classList.toggle('supplier-wallboard-mode', supplierWallboardMode);
       const supplierBoard = $('#suppliers');
       if (supplierBoard) {
-        if (supplierWallboardMode) supplierBoard.style.setProperty('display', 'block', 'important');
+        if (supplierWallboardMode) supplierBoard.style.removeProperty('display');
         else supplierBoard.style.removeProperty('display');
       }
       if (wallboardMode) startTableAutoScroll();
       else stopTableAutoScroll();
       if (supplierWallboardMode) startSbAutoScroll();
       else stopSbAutoScroll();
-      // 看板模式切换后，图表从 display:none 变为可见，需重绘；但全屏切换尚未完成，
-      // 这里只作兜底延迟（正常由 fullscreenchange 更早触发），避免"先错后对"的跳变
-      if (wallboardMode || supplierWallboardMode) {
-        setTimeout(() => {
-          Object.values(sbCharts).forEach((c) => { try { c.resize(); } catch (e) {} });
-        }, 400);
-      }
+      scheduleChartResize();
     }
     function setWallboardMode(enabled, useFullscreen = true) {
       if (enabled) supplierWallboardMode = false;
@@ -1456,17 +1417,28 @@
       if (!supplierWallboardMode && document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
     }
     function updateWallboardClock() {
+      if (document.hidden || (!wallboardMode && !supplierWallboardMode)) return;
       const now = new Date(); const pad = (v) => String(v).padStart(2, '0');
       $('#wallboardClock').textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
     }
     function applyLocale() {
+      try { localStorage.setItem('iqc_locale', locale); } catch {}
+      translateStaticUi();
+      $('#sbMonthLabel').textContent = supplierMonthLabel(supplierMonthOffset);
+      setSyncState(syncState.loading, syncState.error, syncState.mode);
       document.documentElement.lang = locale === 'th' ? 'th' : locale === 'en' ? 'en' : 'zh-CN';
       $$('[data-i18n]').forEach((node) => { node.textContent = t(node.dataset.i18n); });
       $$('[data-i18n-placeholder]').forEach((node) => { node.placeholder = t(node.dataset.i18nPlaceholder); });
       $$('[data-locale]').forEach((button) => { button.classList.toggle('active', button.dataset.locale === locale); button.setAttribute('aria-pressed', button.dataset.locale === locale ? 'true' : 'false'); });
       setFlowRange(currentFlowRange);
       updateSidebarUi(); updatePageUi(); updateWallboardUi();
-      if (DASH.records.length) { renderKpis(); renderTrend(); renderResultStats(); renderInspectors(); renderAlerts(); renderTableRows(); applyFilters(); renderSbBoard(); }
+      if (uiReady) {
+        DASH.alerts = computeAlerts();
+      renderKpis(); renderTrend(); renderResultStats(); renderInspectors(); renderAlerts(); renderTableRows(); renderSbBoard(); renderSupplierRankings();
+      if ($('#alertsModalBackdrop').classList.contains('open')) openAlertsModal();
+      if (openSupplierCode && $('#supplierDetailModalBackdrop').classList.contains('open')) openSupplierDetail(openSupplierCode);
+      }
+      setSyncState(syncState.loading, syncState.error, syncState.mode);
       updateDatePill();
     }
     function showToast(message) {
@@ -1492,14 +1464,14 @@
       $('#detailInspector').textContent = rec.inspectorName || c[9].textContent.trim();
       $('#detailDate').textContent = rec.createDate || c[8].textContent.trim();
       $('#detailStatus').innerHTML = c[11].innerHTML;
-      $('#detailSla').textContent = rec.totalTime ? rec.totalTime : (row.dataset.status === 'overdue' ? (locale === 'th' ? 'เกินเวลา' : '已超时') : (locale === 'th' ? 'อยู่ใน SLA' : 'SLA 内'));
+      $('#detailSla').textContent = rec.totalTime || ui(row.dataset.status === 'overdue' ? '已超时' : 'SLA 内');
       const done = (rec.inspectionStatus === '1' || rec.inspectionStatus === '3');
       $$('.timeline-step').forEach((step, i) => { step.classList.toggle('current', done ? i === 3 : i === 2); step.classList.toggle('done', done ? i < 4 : i < 2); });
       $('#detailBackdrop').classList.add('open');
     }
     function closeDetail() { $('#detailBackdrop').classList.remove('open'); }
     function downloadCsv() {
-      const headers = ['单号', '料号', '物料名称', '物料类别', '收料工厂', '供应商', '供应商编码', '来料数量', '是否加急', '送检日期', '检验员', '流程节点', '时效状态', '检验结果'];
+      const headers = [ui('单号'), ui('料号'), ui('物料名称'), ui('物料类别'), ui('收料工厂'), ui('供应商'), ui('供应商编码'), ui('来料数量'), ui('是否加急'), ui('送检日期'), ui('检验员'), ui('流程节点'), ui('时效状态'), ui('检验结果')];
       const values = tableRows.map((r) => {
         const st = mapStatus(r), res = mapResult(r);
         return [r.orderNumber, r.materialNumber, r.materialName || '', r.materialCategory || '', QMS_CONFIG.factoryName, cleanSupplierName(r.supplierName), r.supplierCode || '', r.qty != null ? r.qty : '', r.expeditedFlagName === '是' ? t('yes') : t('no'), r.createDate || '', r.inspectorName || '', r.taskName || '', st.label, res.label];
@@ -1539,9 +1511,7 @@
       document.addEventListener('fullscreenchange', () => {
         if (document.fullscreenElement) {
           // 进入全屏后，等布局稳定再统一重绘所有图表，消除"先错后对"的缩放跳变
-          requestAnimationFrame(() => requestAnimationFrame(() => {
-            Object.values(sbCharts).forEach((c) => { try { c.resize(); } catch (e) {} });
-          }));
+          scheduleChartResize();
         }
         if (!document.fullscreenElement && wallboardMode) setWallboardMode(false, false);
         if (!document.fullscreenElement && supplierWallboardMode) setSupplierWallboardMode(false, false);
@@ -1616,6 +1586,7 @@
     let tableRows = [];
     let tableSort = null;
     const TABLE_PAGE_SIZE = 20;
+    let uiReady = false;
 
     applyLocale();
     loadSavedFactory();
@@ -1623,6 +1594,7 @@
     loadFactories();
     bindEvents();
     initSupplierBoard();
+    uiReady = true;
     applyFilters();
     loadDashboardData();
     setInterval(() => { if (!qmsLoading) loadDashboardData(true); }, 5 * 60 * 1000);

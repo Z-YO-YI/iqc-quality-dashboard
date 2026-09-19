@@ -38,7 +38,7 @@
 
   <div class="app-shell">
     <aside class="sidebar">
-      <div class="plant-switch" id="plantSwitch" role="button" tabindex="0" title="切换工厂">
+      <div class="plant-switch" id="plantSwitch" role="button" tabindex="0" title="切换工厂" data-ui-title="切换工厂">
         <span class="eyebrow" data-i18n="current_plant">当前工厂</span>
         <div class="plant-name"><span id="plantName">泰国协创</span><svg width="15" height="15"><use href="#icon-chevron"/></svg></div>
         <span class="plant-sub" id="plantSub">STTH · 泰国协创</span>
@@ -168,7 +168,7 @@
           <article class="card overview-card alert-card">
             <div class="card-head"><div><h2 class="card-title" data-i18n="alert_title">异常与预警</h2><p class="card-subtitle" data-i18n="alert_subtitle">需要质量团队及时关注</p></div><span class="alert-count" id="alertCount" data-i18n="alert_count">3 条需关注</span></div>
             <div class="alert-list" id="alertList">
-              <div class="alert-item"><span class="alert-icon"><svg width="14" height="14"><use href="#icon-check"/></svg></span><div><div class="alert-main"><span class="alert-title">暂无异常</span></div></div></div>
+              <div class="alert-item"><span class="alert-icon"><svg width="14" height="14"><use href="#icon-check"/></svg></span><div><div class="alert-main"><span class="alert-title" data-ui="暂无异常">暂无异常</span></div></div></div>
             </div>
             <button class="alert-link" id="alertLink"><span data-i18n="view_all_alerts">查看全部预警</span><svg width="12" height="12"><use href="#icon-chevron-right"/></svg></button>
           </article>
@@ -179,13 +179,13 @@
             <div><h2 class="card-title" data-i18n="table_title">来料检验任务</h2><p class="card-subtitle" data-i18n="table_subtitle">接入 QMS 的最新检验任务 · 支持按状态、加急与关键字快速定位</p></div>
             <div class="filters">
               <label class="search-box"><svg width="14" height="14"><use href="#icon-search"/></svg><input id="globalSearch" type="search" data-i18n-placeholder="search_placeholder" placeholder="搜索单号 / 料号 / 供应商" /></label>
-              <select class="filter-select" id="rangeFilter" aria-label="Date range"><option value="todo" data-i18n="range_todo">待办任务</option><option value="today" data-i18n="range_today">今日</option><option value="week" data-i18n="range_week">本周</option><option value="month" data-i18n="range_month">本月</option><option value="custom">自定义日期</option></select>
+              <select class="filter-select" id="rangeFilter" aria-label="Date range"><option value="todo" data-i18n="range_todo">待办任务</option><option value="today" data-i18n="range_today">今日</option><option value="week" data-i18n="range_week">本周</option><option value="month" data-i18n="range_month">本月</option><option value="custom" data-ui="自定义日期">自定义日期</option></select>
               <input type="date" class="filter-select" id="dateStart" hidden><span id="dateSep" hidden>~</span><input type="date" class="filter-select" id="dateEnd" hidden>
               <select class="filter-select" id="statusFilter" aria-label="Status"><option value="all" data-i18n="all_status">全部状态</option><option value="pending" data-i18n="status_pending">待检</option><option value="processing" data-i18n="status_processing">检验中</option><option value="overdue" data-i18n="status_overdue">超时未完成</option></select>
               <button class="btn filter-toggle" id="urgentFilter"><svg width="14" height="14"><use href="#icon-filter"/></svg><span data-i18n="urgent_only">仅看加急</span></button>
             </div>
           </div>
-          <div class="table-meta"><div class="table-meta-left"><span class="live-dot"></span><span data-i18n="live_data">QMS 实时同步</span><span>·</span><span data-i18n="refresh_every">每 5 分钟刷新</span></div><div>共 <strong id="visibleCount">0</strong> <span data-i18n="unit_task">条任务</span><span id="pageRange" class="page-range"></span></div></div>
+          <div class="table-meta"><div class="table-meta-left"><span class="live-dot"></span><span data-i18n="live_data">QMS 实时同步</span><span>·</span><span data-i18n="refresh_every">每 5 分钟刷新</span></div><div><span data-ui="共">共</span> <strong id="visibleCount">0</strong> <span data-i18n="unit_task">条任务</span><span id="pageRange" class="page-range"></span></div></div>
           <div class="table-wrap">
             <table id="iqcTable">
               <colgroup><col style="width:155px"><col style="width:92px"><col style="width:207px"><col style="width:83px"><col style="width:98px"><col style="width:141px"><col style="width:90px"><col style="width:66px"><col style="width:107px"><col style="width:78px"><col style="width:84px"><col style="width:100px"><col style="width:100px"><col style="width:58px"></colgroup>
@@ -211,9 +211,9 @@
             </table>
           </div>
           <div class="table-pagination" id="tablePagination">
-            <button class="page-btn" id="prevPageBtn" aria-label="上一页"><svg width="14" height="14"><use href="#icon-chevron-left"/></svg></button>
+            <button class="page-btn" id="prevPageBtn" aria-label="上一页" data-ui-aria-label="上一页"><svg width="14" height="14"><use href="#icon-chevron-left"/></svg></button>
             <span class="page-info" id="pageInfo">1 / 1</span>
-            <button class="page-btn" id="nextPageBtn" aria-label="下一页"><svg width="14" height="14"><use href="#icon-chevron-right"/></svg></button>
+            <button class="page-btn" id="nextPageBtn" aria-label="下一页" data-ui-aria-label="下一页"><svg width="14" height="14"><use href="#icon-chevron-right"/></svg></button>
           </div>
         </section>
 
@@ -245,82 +245,82 @@
         <section class="sb-page" id="suppliers">
       <div class="sb-topbar">
         <div class="sb-title">
-          <h1 class="sb-main-title">供应商质量看板</h1>
-          <p class="sb-sub">来料质量 / 供应商绩效 / 风险预警</p>
+          <h1 class="sb-main-title" data-ui="供应商质量看板">供应商质量看板</h1>
+          <p class="sb-sub" data-ui="来料质量 / 供应商绩效 / 风险预警">来料质量 / 供应商绩效 / 风险预警</p>
           <div class="sb-filter-tags" id="sbFilterTags"></div>
         </div>
         <div class="sb-filters">
           <div class="sb-month-nav">
-            <button class="sb-month-btn" id="sbPrevMonth" aria-label="上个月"><svg width="14" height="14"><use href="#icon-chevron-left"/></svg></button>
+            <button class="sb-month-btn" id="sbPrevMonth" aria-label="上个月" data-ui-aria-label="上个月"><svg width="14" height="14"><use href="#icon-chevron-left"/></svg></button>
             <span class="sb-month-label" id="sbMonthLabel">2026年9月</span>
-            <button class="sb-month-btn" id="sbNextMonth" aria-label="下个月"><svg width="14" height="14"><use href="#icon-chevron-right"/></svg></button>
+            <button class="sb-month-btn" id="sbNextMonth" aria-label="下个月" data-ui-aria-label="下个月"><svg width="14" height="14"><use href="#icon-chevron-right"/></svg></button>
           </div>
           <div class="sb-seg" id="sbPeriodSeg">
-            <button data-period="month" class="active">月</button>
-            <button data-period="quarter">季</button>
-            <button data-period="year">年</button>
+            <button data-period="month" class="active" data-ui="月">月</button>
+            <button data-period="quarter" data-ui="季">季</button>
+            <button data-period="year" data-ui="年">年</button>
           </div>
-          <select class="sb-select" id="sbCategoryFilter"><option value="">物料类别</option></select>
-          <select class="sb-select" id="sbSupplierFilter"><option value="">供应商</option></select>
-          <select class="sb-select" id="sbFactoryFilter"><option value="">工厂</option></select>
+          <select class="sb-select" id="sbCategoryFilter"><option value="" data-ui="物料类别">物料类别</option></select>
+          <select class="sb-select" id="sbSupplierFilter"><option value="" data-ui="供应商">供应商</option></select>
+          <select class="sb-select" id="sbFactoryFilter"><option value="" data-ui="工厂">工厂</option></select>
         </div>
         <div class="sb-actions">
-          <button class="sb-btn" id="sbRefreshBtn"><svg width="14" height="14"><use href="#icon-refresh"/></svg>刷新</button>
-          <button class="sb-btn sb-btn-primary" id="sbWallboardBtn"><svg width="14" height="14"><use href="#icon-grid"/></svg>看板模式</button>
-          <span class="sb-updated">更新于 <span id="sbUpdated">--:--</span></span>
+          <button class="sb-btn" id="sbRefreshBtn"><svg width="14" height="14"><use href="#icon-refresh"/></svg><span data-ui="刷新">刷新</span></button>
+          <button class="sb-btn sb-btn-primary" id="sbWallboardBtn"><svg width="14" height="14"><use href="#icon-grid"/></svg><span data-ui="看板模式">看板模式</span></button>
+          <span class="sb-updated"><span data-ui="更新于">更新于</span> <span id="sbUpdated">--:--</span></span>
         </div>
       </div>
 
       <div class="sb-kpis">
-        <div class="sb-kpi"><div class="sb-kpi-label">检验供应商数</div><div class="sb-kpi-value" id="sbKpiSuppliers">—</div><div class="sb-kpi-sub" id="sbKpiSuppliersSub">—</div></div>
-        <div class="sb-kpi"><div class="sb-kpi-label">来料检验批次</div><div class="sb-kpi-value" id="sbKpiLots">—</div><div class="sb-kpi-sub" id="sbKpiLotsSub">—</div></div>
-        <div class="sb-kpi"><div class="sb-kpi-label">批次合格率</div><div class="sb-kpi-value" id="sbKpiPassrate">—</div><div class="sb-kpi-sub" id="sbKpiPassrateSub">—</div></div>
-        <div class="sb-kpi"><div class="sb-kpi-label">不合格批次率</div><div class="sb-kpi-value" id="sbKpiFailrate">—</div><div class="sb-kpi-sub" id="sbKpiFailrateSub">—</div></div>
-        <div class="sb-kpi"><div class="sb-kpi-label">特采批次</div><div class="sb-kpi-value" id="sbKpiSpecial">—</div><div class="sb-kpi-sub" id="sbKpiSpecialSub">—</div></div>
-        <div class="sb-kpi sb-kpi-risk"><div class="sb-kpi-label">风险供应商</div><div class="sb-kpi-value" id="sbKpiRisk">—</div><div class="sb-kpi-sub" id="sbKpiRiskSub">—</div></div>
+        <div class="sb-kpi"><div class="sb-kpi-label" data-ui="检验供应商数">检验供应商数</div><div class="sb-kpi-value" id="sbKpiSuppliers">—</div><div class="sb-kpi-sub" id="sbKpiSuppliersSub">—</div></div>
+        <div class="sb-kpi"><div class="sb-kpi-label" data-ui="来料检验批次">来料检验批次</div><div class="sb-kpi-value" id="sbKpiLots">—</div><div class="sb-kpi-sub" id="sbKpiLotsSub">—</div></div>
+        <div class="sb-kpi"><div class="sb-kpi-label" data-ui="批次合格率">批次合格率</div><div class="sb-kpi-value" id="sbKpiPassrate">—</div><div class="sb-kpi-sub" id="sbKpiPassrateSub">—</div></div>
+        <div class="sb-kpi"><div class="sb-kpi-label" data-ui="不合格批次率">不合格批次率</div><div class="sb-kpi-value" id="sbKpiFailrate">—</div><div class="sb-kpi-sub" id="sbKpiFailrateSub">—</div></div>
+        <div class="sb-kpi"><div class="sb-kpi-label" data-ui="特采批次">特采批次</div><div class="sb-kpi-value" id="sbKpiSpecial">—</div><div class="sb-kpi-sub" id="sbKpiSpecialSub">—</div></div>
+        <div class="sb-kpi sb-kpi-risk"><div class="sb-kpi-label" data-ui="风险供应商">风险供应商</div><div class="sb-kpi-value" id="sbKpiRisk">—</div><div class="sb-kpi-sub" id="sbKpiRiskSub">—</div></div>
       </div>
 
       <div class="sb-row sb-row-top">
         <div class="sb-card sb-card-trend">
-          <div class="sb-card-head"><h3 class="sb-card-title">最近12个月供应商质量趋势</h3><span class="sb-card-note">目标 98.5%</span></div>
+          <div class="sb-card-head"><h3 class="sb-card-title" data-ui="最近12个月供应商质量趋势">最近12个月供应商质量趋势</h3><span class="sb-card-note" data-ui="目标 98.5%">目标 98.5%</span></div>
           <div class="sb-chart" id="sbTrendChart"></div>
         </div>
         <div class="sb-card sb-card-matrix">
-          <div class="sb-card-head"><h3 class="sb-card-title">供应商质量风险矩阵</h3></div>
+          <div class="sb-card-head"><h3 class="sb-card-title" data-ui="供应商质量风险矩阵">供应商质量风险矩阵</h3></div>
           <div class="sb-chart" id="sbMatrixChart"></div>
         </div>
       </div>
 
       <div class="sb-row sb-row-bottom">
         <div class="sb-card sb-card-top10">
-          <div class="sb-card-head"><h3 class="sb-card-title">倒数供应商 TOP10</h3></div>
+          <div class="sb-card-head"><h3 class="sb-card-title" data-ui="倒数供应商 TOP10">倒数供应商 TOP10</h3></div>
           <div class="sb-chart" id="sbTop10Chart"></div>
         </div>
         <div class="sb-card sb-card-pareto">
-          <div class="sb-card-head"><h3 class="sb-card-title">不良项目 Pareto</h3><div class="sb-seg sb-seg-mini" id="sbParetoSeg"><button data-pareto="item" class="active">按不良项目</button><button data-pareto="category">按物料类别</button></div></div>
+          <div class="sb-card-head"><h3 class="sb-card-title" data-ui="不良项目 Pareto">不良项目 Pareto</h3><div class="sb-seg sb-seg-mini" id="sbParetoSeg"><button data-pareto="item" class="active" data-ui="按不良项目">按不良项目</button><button data-pareto="category" data-ui="按物料类别">按物料类别</button></div></div>
           <div class="sb-chart" id="sbParetoChart"></div>
         </div>
         <div class="sb-card sb-card-risklist">
-          <div class="sb-card-head"><h3 class="sb-card-title">重点风险供应商</h3></div>
-          <div class="sb-risk-table-wrap"><table class="sb-risk-table"><thead><tr><th>供应商</th><th>合格率</th><th>检验批次</th><th>环比</th><th>风险原因</th><th>风险等级</th></tr></thead><tbody id="sbRiskBody"></tbody></table></div>
+          <div class="sb-card-head"><h3 class="sb-card-title" data-ui="重点风险供应商">重点风险供应商</h3></div>
+          <div class="sb-risk-table-wrap"><table class="sb-risk-table"><thead><tr><th data-ui="供应商">供应商</th><th data-ui="合格率">合格率</th><th data-ui="检验批次">检验批次</th><th data-ui="环比">环比</th><th data-ui="风险原因">风险原因</th><th data-ui="风险等级">风险等级</th></tr></thead><tbody id="sbRiskBody"></tbody></table></div>
         </div>
       </div>
 
       <div class="sb-card sb-alerts">
-        <div class="sb-card-head"><h3 class="sb-card-title">质量预警</h3></div>
+        <div class="sb-card-head"><h3 class="sb-card-title" data-ui="质量预警">质量预警</h3></div>
         <div class="sb-alert-cards" id="sbAlertCards"></div>
       </div>
     </section>
 
         <section class="card supplier-dashboard" id="supplierRankBoard">
           <div class="card-head">
-            <div><h2 class="card-title" id="supplierRankTitle">倒数前10名供应商</h2><p class="card-subtitle">柱 = 不合格批次数 · 折线 = 批次合格率（与 QMS 看板同口径）</p></div>
+            <div><h2 class="card-title" id="supplierRankTitle" data-ui="倒数前10名供应商">倒数前10名供应商</h2><p class="card-subtitle" data-ui="柱 = 不合格批次数 · 折线 = 批次合格率（与 QMS 看板同口径）">柱 = 不合格批次数 · 折线 = 批次合格率（与 QMS 看板同口径）</p></div>
             <div class="rank-tabs"><button class="active" data-supplier-mode="bottom" data-i18n="bottom_rank">倒数排名</button><button data-supplier-mode="top" data-i18n="top_rank">正向排名</button></div>
           </div>
           <div class="supplier-rank-chart" id="supplierRankChart"></div>
         </section>
 
-        <footer class="page-footer"><span>SHARETRONIC.IQC · IQC 来料检验看板</span><span><span data-i18n="last_refresh">上次更新</span> <strong id="lastRefresh">—</strong></span></footer>
+        <footer class="page-footer"><span data-ui="SHARETRONIC.IQC · IQC 来料检验看板">SHARETRONIC.IQC · IQC 来料检验看板</span><span><span data-i18n="last_refresh">上次更新</span> <strong id="lastRefresh">—</strong></span></footer>
       </div>
     </main>
   </div>
@@ -354,34 +354,37 @@
   </div>
   <div class="modal-backdrop" id="settingsModalBackdrop" role="dialog" aria-modal="true">
     <div class="detail-modal" style="max-width: 540px;">
-      <div class="modal-head"><div><div class="modal-kicker" data-i18n="current_plant">当前工厂</div><h2 class="modal-title">工厂选择</h2></div><button class="modal-close" id="settingsModalClose"><svg width="16" height="16"><use href="#icon-close"/></svg></button></div>
+      <div class="modal-head"><div><div class="modal-kicker" data-i18n="current_plant">当前工厂</div><h2 class="modal-title" data-ui="工厂选择">工厂选择</h2></div><button class="modal-close" id="settingsModalClose"><svg width="16" height="16"><use href="#icon-close"/></svg></button></div>
       <div class="modal-body">
-        <p class="settings-hint">选择要查看的收料工厂，切换后看板数据将重新加载。</p>
+        <p class="settings-hint" data-ui="选择要查看的收料工厂，切换后看板数据将重新加载。">选择要查看的收料工厂，切换后看板数据将重新加载。</p>
         <div class="factory-list" id="factoryList"></div>
       </div>
     </div>
   </div>
   <div class="modal-backdrop" id="supplierDetailModalBackdrop" role="dialog" aria-modal="true">
     <div class="detail-modal" style="max-width: 780px;">
-      <div class="modal-head"><div><div class="modal-kicker">供应商质量分析</div><h2 class="modal-title" id="supplierDetailModalName">—</h2></div><button class="modal-close" id="supplierDetailModalClose"><svg width="16" height="16"><use href="#icon-close"/></svg></button></div>
+      <div class="modal-head"><div><div class="modal-kicker" data-ui="供应商质量分析">供应商质量分析</div><h2 class="modal-title" id="supplierDetailModalName">—</h2></div><button class="modal-close" id="supplierDetailModalClose"><svg width="16" height="16"><use href="#icon-close"/></svg></button></div>
       <div class="modal-body">
         <div class="supplier-modal-stats" id="supplierDetailModalStats"></div>
         <div class="supplier-modal-meta" id="supplierDetailModalMeta"></div>
-        <h3 class="detail-section-title">最近 6 个月趋势</h3>
+        <h3 class="detail-section-title" data-ui="最近 6 个月趋势">最近 6 个月趋势</h3>
         <div class="supplier-modal-trend" id="supplierDetailModalTrend"></div>
-        <h3 class="detail-section-title">主要不良 TOP5</h3>
+        <h3 class="detail-section-title" data-ui="主要不良 TOP5">主要不良 TOP5</h3>
         <div class="supplier-modal-defects" id="supplierDetailModalDefects"></div>
-        <h3 class="detail-section-title">最近检验记录</h3>
+        <h3 class="detail-section-title" data-ui="最近检验记录">最近检验记录</h3>
         <div class="supplier-modal-records" id="supplierDetailModalRecords"></div>
       </div>
     </div>
   </div>
-  <div class="toast" id="toast"><svg width="14" height="14"><use href="#icon-check"/></svg><span id="toastText">操作完成</span></div>
+  <div class="toast" id="toast"><svg width="14" height="14"><use href="#icon-check"/></svg><span id="toastText" data-ui="操作完成">操作完成</span></div>
   <div class="wallboard-bar" id="wallboardBar">
     <div class="wallboard-status"><span class="live-dot"></span><strong id="wallboardModeLabel" data-i18n="wallboard_live">来料检验看板 · 实时</strong><span class="wallboard-clock" id="wallboardClock">--:--:--</span></div>
+    <div class="wallboard-languages" aria-label="Language"><button data-locale="zh">中文</button><button data-locale="th">ไทย</button><button data-locale="en">EN</button><button data-locale="mix">中泰</button></div>
     <button class="wallboard-exit" id="wallboardExit"><svg width="12" height="12"><use href="#icon-close"/></svg><span id="wallboardExitText" data-i18n="exit_wallboard">退出看板</span></button>
   </div>
 
+  <script src="assets/ui-i18n.js"></script>
+  <script src="assets/wallboard.js"></script>
   <script src="assets/dashboard.js"></script>
 </body>
 </html>
