@@ -24,11 +24,8 @@ function syncThemeControls() {
 function applyTransparency(value, persist = true) {
   transparency = normalizeTransparency(value);
   const alpha = 1 - transparency / 100;
-  const edge = alpha * (1 - alpha) * 0.5;
   const style = document.documentElement.style;
   style.setProperty('--surface-alpha', alpha.toFixed(4));
-  style.setProperty('--surface-high', (alpha + edge).toFixed(4));
-  style.setProperty('--surface-low', (alpha - edge).toFixed(4));
   if (persist) { try { localStorage.setItem('iqc_transparency', String(transparency)); } catch {} }
   syncThemeControls();
 }

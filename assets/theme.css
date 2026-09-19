@@ -9,17 +9,13 @@
   --subtle: #536783;
   --line: rgba(255,255,255,.8);
   --line-strong: rgba(136,164,206,.36);
-  --glass-surface: linear-gradient(135deg, rgba(255,255,255,var(--surface-high, .405)), rgba(255,255,255,var(--surface-low, .195)));
+  --glass-surface: rgba(255,255,255,var(--surface-alpha, .3));
   --glass-shadow: inset 0 1px 0 rgba(255,255,255,.96), inset 0 -1px 0 rgba(255,255,255,.3), 0 8px 28px rgba(56,83,130,.09);
   --shadow: 0 10px 30px rgba(56,83,130,.1);
   --shadow-strong: 0 20px 65px rgba(39,65,107,.2);
 }
 html:is([data-theme="glass"], [data-theme="transparent"]) body {
-  background: radial-gradient(ellipse at 8% 12%, rgba(130,179,255,.68), transparent 48%),
-    radial-gradient(ellipse at 94% 28%, rgba(182,157,244,.54), transparent 43%),
-    radial-gradient(ellipse at 62% 78%, rgba(118,219,200,.62), transparent 42%),
-    radial-gradient(ellipse at 18% 100%, rgba(244,194,224,.44), transparent 42%), #e7f0fb;
-  background-attachment: fixed;
+  background: #e6effb;
 }
 html:is([data-theme="glass"], [data-theme="transparent"]) :is(.card, .sb-card, .sb-kpi, .sidebar, .topbar, .wallboard-bar, .detail-modal) {
   background: var(--glass-surface);
@@ -33,7 +29,7 @@ html:is([data-theme="glass"], [data-theme="transparent"]) .sidebar { border-righ
 html:is([data-theme="glass"], [data-theme="transparent"]) .sb-page { --sb-muted: #536783; --sb-border: rgba(255,255,255,.8); }
 html:is([data-theme="glass"], [data-theme="transparent"]) :is(.plant-switch, .sync-card) { background: var(--card); border-color: rgba(255,255,255,.7); box-shadow: inset 0 1px 0 rgba(255,255,255,.8); }
 html:is([data-theme="glass"], [data-theme="transparent"]) .plant-switch { background: var(--glass-surface); }
-html:is([data-theme="glass"], [data-theme="transparent"]) .nav-item.active { background: linear-gradient(110deg, rgba(255,255,255,.55), rgba(200,220,255,.28)); box-shadow: inset 0 1px 0 #fff, 0 4px 12px rgba(52,90,149,.08); }
+html:is([data-theme="glass"], [data-theme="transparent"]) .nav-item.active { background: rgba(221,233,252,.55); box-shadow: inset 0 1px 0 #fff, 0 4px 12px rgba(52,90,149,.08); }
 html:is([data-theme="glass"], [data-theme="transparent"]) :is(.btn:not(.primary), .icon-button, .search-box, .filter-select, .sb-select, .sb-btn:not(.sb-btn-primary), .sb-month-nav, .sb-seg, .rank-tabs, .date-pill, .wallboard-exit) {
   background: var(--card);
   border-color: rgba(255,255,255,.92);
@@ -41,7 +37,7 @@ html:is([data-theme="glass"], [data-theme="transparent"]) :is(.btn:not(.primary)
   color: var(--ink);
 }
 html:is([data-theme="glass"], [data-theme="transparent"]) :is(.btn:not(.primary), .icon-button, .sb-btn:not(.sb-btn-primary)):hover { background: rgba(255,255,255,.85); }
-html:is([data-theme="glass"], [data-theme="transparent"]) :is(.btn.primary, .sb-btn-primary) { background: linear-gradient(145deg, #5a8af4, #3468d8); box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 5px 14px rgba(50,100,210,.2); }
+html:is([data-theme="glass"], [data-theme="transparent"]) :is(.btn.primary, .sb-btn-primary) { background: #4278df; box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 5px 14px rgba(50,100,210,.2); }
 html:is([data-theme="glass"], [data-theme="transparent"]) .toast { background: #f4f8ff; border-color: #fff; box-shadow: var(--shadow-strong); }
 html:is([data-theme="glass"], [data-theme="transparent"]) :is(.table-wrap thead th, .sb-risk-table th, .supplier-detail-table th) { background: #edf3fc; color: #536783; }
 html:is([data-theme="glass"], [data-theme="transparent"]) :is(th, td) { border-color: rgba(133,157,194,.14); }
@@ -60,7 +56,7 @@ html:is([data-theme="glass"], [data-theme="transparent"]) :is(body.wallboard-mod
   backdrop-filter: none;
   background: var(--glass-surface);
 }
-:root[data-theme="transparent"] { --glass-surface: rgba(255,255,255,var(--surface-alpha, .3)); --glass-shadow: 0 6px 22px rgba(45,68,105,.07); }
+:root[data-theme="transparent"] { --glass-shadow: 0 6px 22px rgba(45,68,105,.07); }
 html[data-theme="transparent"] :is(.card, .sb-card, .sb-kpi, .sidebar, .topbar, .wallboard-bar, .detail-modal) { -webkit-backdrop-filter: none; backdrop-filter: none; }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   :root[data-theme="glass"] { --glass-surface: rgba(248,251,255,.96); }
@@ -80,9 +76,9 @@ html[data-theme="transparent"] :is(.card, .sb-card, .sb-kpi, .sidebar, .topbar, 
 .settings-languages button.active, .settings-themes button.active { border-color: #5882de; color: #244eaa; background: #eaf1ff; box-shadow: inset 0 0 0 1px #5882de; font-weight: 750; }
 .settings-themes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .settings-themes button { display: grid; align-content: start; gap: 9px; padding: 9px 6px; }
-.theme-preview { display: block; height: 46px; position: relative; overflow: hidden; border-radius: 7px; background: linear-gradient(125deg, #93b8f2, #b6c8f2 45%, #8dd8c6); }
+.theme-preview { display: block; height: 46px; position: relative; overflow: hidden; border-radius: 7px; background: #9fb9df; }
 .theme-preview::after { content: ''; position: absolute; inset: 9px 12px; border: 1px solid #fff; border-radius: 5px; background: #fff; }
-.theme-preview.glass::after { background: linear-gradient(135deg, #ffffff90, #ffffff20); box-shadow: inset 0 1px 0 #fff; backdrop-filter: blur(3px); }
+.theme-preview.glass::after { background: #ffffff55; box-shadow: inset 0 1px 0 #fff; backdrop-filter: blur(3px); }
 .theme-preview.transparent::after { background: #ffffff30; box-shadow: none; }
 .transparency-label { display: flex; justify-content: space-between; gap: 12px; font-weight: 750; }
 .transparency-label output { color: #315fbf; font-variant-numeric: tabular-nums; }
